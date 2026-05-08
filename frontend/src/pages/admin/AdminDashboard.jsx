@@ -30,7 +30,7 @@ const AdminDashboard = () => {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-800 border-b pb-2">Tableau de Bord Administrateur</h1>
-          <p className="text-gray-600 mt-2">Vue d'ensemble des utilisateurs, rôles et actions rapides.</p>
+          <p className="text-gray-600 mt-2">Turabire hamwe des utilisateurs, rôles et actions rapides.</p>
         </div>
       </div>
 
