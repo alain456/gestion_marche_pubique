@@ -1,0 +1,171 @@
+Création de la base de donne
+    1. Création da la base de donne
+CREATE DATABASE gestion_marche_publique;
+USE gestion_marche_publique;
+
+    2. Table role
+CREATE TABLE role (
+    idRole INT AUTO_INCREMENT PRIMARY KEY,
+    nomRole VARCHAR(50)
+);
+
+    3. Table utilisation
+CREATE TABLE utilisateur (
+    idUser INT AUTO_INCREMENT PRIMARY KEY,
+    idRole INT,
+    nom VARCHAR(100),
+    email VARCHAR(100),
+    password VARCHAR(255),
+
+    FOREIGN KEY (idRole) REFERENCES role(idRole)
+);
+
+    4. Table serviceDemandeur
+                CREATE TABLE serviceDemandeur (
+                 idService int auto_increment primary key,
+                 nomService varchar(100)
+                );
+    5. Table article
+
+CREATE TABLE article (
+    idArticle int auto_increment primary key,
+    nomArticle varchar(100)
+);
+
+    6. Table demande
+
+CREATE TABLE demande (
+    idDemande int auto_increment primary key,
+    idService int,
+    nomArticle varchar(100),
+    description text,
+    typemarche varchar(50),
+    quantite int,
+    datedemande date,
+    responsable varchar(100),
+    statut varchar(50),
+
+    foreign key (idservice) references servicedemandeur(idservice),
+    foreign key (nomArticle) references Article(nomArticle)
+);
+
+
+
+    7. Table budget
+
+CREATE TABLE budget (
+    idBudget INT AUTO_INCREMENT PRIMARY KEY,
+    idDemande INT ,
+    exerciceBudgetaire INT,
+    montantEstime INT,
+    sourceFinancier VARCHAR(100),
+    statusValidation VARCHAR(50),
+    dateValidation DATE,
+    responsableFinancier VARCHAR(100),
+
+    FOREIGN KEY (idDemande) REFERENCES demande(idDemande)
+);
+
+    8. Table marche
+CREATE TABLE marche (
+    idMarche INT AUTO_INCREMENT PRIMARY KEY,
+    idDemande INT,
+    montantEstime INT,
+    modePassation VARCHAR(50),
+    justificationChoix TEXT,
+    seuilReglementaireApplique VARCHAR(100),
+    dateSelection DATE,
+    validateur VARCHAR(100),
+    statut VARCHAR(50),
+    dateCloture DATE,
+    cloturePar VARCHAR(100),
+    commentaire TEXT,
+    FOREIGN KEY (idDemande) REFERENCES demande(idDemande)
+);
+
+    9. Table soumissionnaire
+CREATE TABLE soumissionnaire (
+    idOffre INT AUTO_INCREMENT PRIMARY KEY,
+    idMarche INT,
+    nomSoumissionnaire VARCHAR(100),
+    adresse VARCHAR(150),
+    telephone VARCHAR(20),
+    email VARCHAR(100),
+    referenceAppelOffre INT,
+    dateSoumission DATE,
+    montantPropose int,
+    FOREIGN KEY (idMarche) REFERENCES marche(idMarche)
+);
+
+    10. Table contrat
+
+CREATE TABLE contrat (
+    idContrat INT AUTO_INCREMENT PRIMARY KEY,
+    idMarche INT UNIQUE,
+    titulaireMarche VARCHAR(100),
+    montant INT,
+    dateDebut DATE,
+    dateFin DATE,
+    dureeContrat VARCHAR(50),
+    conditionsContractuelles VARCHAR(100),
+    statut VARCHAR(50),
+
+    FOREIGN KEY (idMarche) REFERENCES marche(idMarche)
+);
+
+    11. Table execution
+
+CREATE TABLE execution (
+    idExecution INT AUTO_INCREMENT PRIMARY KEY,
+    idMarche INT,
+    livreur VARCHAR(100),
+    dateExecution DATE,
+
+    FOREIGN KEY (idMarche) REFERENCES marche(idMarche)
+);
+
+
+
+
+
+
+
+
+    12. Table reception
+
+CREATE TABLE reception (
+    idReception INT AUTO_INCREMENT PRIMARY KEY,
+    idExecution INT,
+    idContrat INT,
+    typeReception VARCHAR(50),
+    dateReception DATE,
+    conformite VARCHAR(50),
+    observation TEXT,
+    etat VARCHAR(50),
+
+    FOREIGN KEY (idExecution) REFERENCES execution(idExecution),
+    FOREIGN KEY (idContrat) REFERENCES contrat(idContrat)
+);
+
+    13. Paiement
+
+CREATE TABLE paiement (
+    idPaiement INT AUTO_INCREMENT PRIMARY KEY,
+    idReception INT,
+    montant INT,
+    datePaiement DATE,
+
+    FOREIGN KEY (idReception) REFERENCES reception(idReception)
+);
+
+    14. Table notification
+
+CREATE TABLE notification (
+    idNotification INT AUTO_INCREMENT PRIMARY KEY,
+    idMarche INT,
+    message varchar(100),
+    dateEnvoi DATE,
+    modeNotification VARCHAR(50),
+
+    FOREIGN KEY (idMarche) REFERENCES marche(idMarche)
+);

@@ -1,0 +1,94 @@
+🎯 PROMPT COMPLET
+
+Je développe une application web de gestion de passation des marchés publics (cas du SETIC) en utilisant :
+
+Frontend : React.js
+Backend : Node.js (Express)
+Base de données : MySQL
+
+En te basant sur le diagramme de cas d’utilisation fourni, je veux que tu :
+
+🔹 1. Identifier clairement tous les acteurs du système
+
+Les acteurs sont :
+
+Admin
+Chef d’institution
+RAF (Responsable Administratif et Financier)
+CGMP
+Réceptionniste
+Service Demandeur
+🔹 2. Détailler les tâches de chaque acteur (très important)
+
+Pour chaque acteur :
+
+Décris ses responsabilités principales
+Liste toutes les fonctionnalités qu’il peut exécuter
+Explique son rôle dans le processus de passation de marché
+🔹 3. Définir les interfaces utilisateur (UI/UX)
+
+Pour chaque acteur, propose :
+
+👉 Une interface dédiée (dashboard spécifique)
+👉 Les pages ou modules accessibles
+👉 Les actions possibles
+
+Exemple attendu :
+
+Admin
+Interface : tableau de bord admin
+Fonctionnalités :
+gérer les utilisateurs
+gérer les rôles
+Pages :
+gestion utilisateurs
+gestion rôles
+
+👉 Faire ça pour TOUS les acteurs
+
+🔹 4. Décrire les fonctionnalités globales du système
+
+Inclure :
+
+Authentification (login/logout sécurisé)
+Gestion des rôles
+Gestion des marchés
+Gestion des demandes
+Gestion du budget
+Gestion des offres
+Gestion des contrats
+Gestion de l’exécution
+Gestion de la réception
+Gestion des paiements
+Notifications
+🔹 5. Expliquer le flux du système (workflow)
+
+Décrire le processus complet :
+
+Service Demandeur → crée une demande
+RAF → valide le budget
+CGMP → lance le marché
+Soumissionnaires → envoient les offres
+Évaluation → sélection
+Chef d’institution → valide
+Contrat → signé
+Exécution → livraison
+Réception → validation
+Paiement
+🔹 6. Proposer une architecture technique
+Frontend (React) :
+composants
+pages
+gestion des rôles (protected routes)
+Backend (Node.js) :
+routes API
+controllers
+middlewares (auth, roles)
+Base de données (MySQL) :
+tables principales
+relations
+🔹 7. Bonus (optionnel mais très utile)
+Sécurité (JWT, rôles)
+Notifications (email ou système interne)
+Logs d’activités
+Dashboard statistiques

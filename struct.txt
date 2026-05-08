@@ -1,0 +1,33 @@
+gestion_marche_publique/
+│
+├── backend/                      # ⚙️ Partie Serveur et API (Node.js/Express)
+│   ├── src/
+│   │   ├── config/               # Configuration (Connexion à la base MySQL, etc.)
+│   │   ├── controllers/          # La logique de l'application (ex: creationDemande, validationBudget)
+│   │   ├── middlewares/          # Vérifications avant d'accéder aux routes (ex: vérifier le JWT, vérifier le rôle)
+│   │   ├── models/               # Représentation des tables de la DB (Demande, Marche, Utilisateur...)
+│   │   ├── routes/               # Définition des URLs de l'API (ex: /api/demandes, /api/auth)
+│   │   └── server.js             # Le fichier principal qui démarre le serveur backend
+│   │
+│   ├── .env                      # Variables secrètes (Mots de passe DB, clé JWT)
+│   └── package.json              # Liste des dépendances Node.js (express, mysql2, bcrypt...)
+│
+└── frontend/                     # 🖥️ Partie Interface Utilisateur (React.js)
+    ├── public/                   # Fichiers publics (favicon, index.html)
+    ├── src/
+    │   ├── assets/               # Images, icônes, et fichiers CSS globaux
+    │   ├── components/           # Composants réutilisables (Boutons, Navbar, Sidebar, Modales)
+    │   ├── contexts/             # Gestion de l'état global (ex: AuthContext pour savoir qui est connecté)
+    │   ├── pages/                # Les différentes vues de l'application (groupées par acteur)
+    │   │   ├── admin/            # Pages de l'administrateur
+    │   │   ├── cgmp/             # Pages de la cellule de gestion
+    │   │   ├── demandeur/        # Pages du service demandeur
+    │   │   ├── raf/              # Pages du responsable financier
+    │   │   └── auth/             # Pages de connexion (Login)
+    │   ├── services/             # Fonctions pour communiquer avec le backend (requêtes Axios vers l'API)
+    │   ├── utils/                # Fonctions utilitaires (ex: formatage de dates, de monnaie)
+    │   ├── App.jsx               # Configuration du routeur (les liens entre les pages)
+    │   └── main.jsx              # Point d'entrée principal de React
+    │
+    ├── .env                      # Variables d'environnement frontend (URL du backend)
+    └── package.json              # Liste des dépendances React (react-router, axios, tailwind...)

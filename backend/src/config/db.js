@@ -1,0 +1,37 @@
+const mysql = require('mysql2/promise');
+require('dotenv').config(); // Permet de lire les variables du fichier .env
+
+// Création d'un pool de connexions
+const pool = mysql.createPool({
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'gestion_marche_publique',
+    waitForConnections: true,
+    connectionLimit: 10, // Nombre maximum de connexions simultanées
+    queueLimit: 0
+});
+
+// Petit test de connexion au démarrage
+pool.getConnection()
+    .then(async connection => {
+        console.log('✅ Connecté à la base de données MySQL (gestion_marche_publique)');
+        
+        // Vérifier si la colonne est_actif existe, sinon la créer
+        try {
+            await connection.query(`ALTER TABLE utilisateur ADD COLUMN est_actif TINYINT(1) DEFAULT 1`);
+            console.log('✅ Colonne est_actif ajoutée à la table utilisateur');
+        } catch (err) {
+            if (err.code !== 'ER_DUP_FIELDNAME') {
+                // Ignorer si la colonne existe déjà
+                console.log('ℹ️ Colonne est_actif déjà existante');
+            }
+        }
+        
+        connection.release(); // On libère la connexion après le test
+    })
+    .catch(err => {
+        console.error('❌ Erreur de connexion à la base de données :', err.message);
+    });
+
+module.exports = pool;
