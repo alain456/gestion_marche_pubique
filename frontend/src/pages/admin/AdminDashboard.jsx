@@ -61,7 +61,7 @@ const AdminDashboard = () => {
           </div>
           <div>
             <p className="text-sm font-medium text-gray-500">Statut Système</p>
-            <p className="text-2xl font-semibold text-gray-900">En ligne</p>
+            <p className="text-2xl font-semibold text-gray-900">En ligne1</p>
           </div>
         </div>
       </div>
