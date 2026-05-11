@@ -10,7 +10,8 @@ import {
   Clock,
   Check,
   Package,
-  PlusCircle
+  PlusCircle,
+  MessageSquare
 } from 'lucide-react';
 import api from '../../services/api';
 import { AuthContext } from '../../contexts/AuthContext';
@@ -309,9 +310,17 @@ const RafDashboard = () => {
                             {d.statut}
                           </span>
                           {d.motif && (
-                            <p className="text-[10px] text-gray-400 italic max-w-[120px] leading-tight">
-                              {d.motif}
-                            </p>
+                            <div className={`mt-2 p-2.5 rounded-xl border text-xs shadow-sm max-w-[200px] animate-in fade-in slide-in-from-top-1 ${
+                              d.statut === 'Rejete' ? 'bg-red-50 border-red-100 text-red-800' : 'bg-blue-50 border-blue-100 text-blue-800'
+                            }`}>
+                              <div className="flex items-center gap-1.5 mb-1 text-[10px] font-black uppercase tracking-wider opacity-60">
+                                <MessageSquare className="h-3 w-3" />
+                                Motif / Note
+                              </div>
+                              <p className="font-medium leading-relaxed italic">
+                                &ldquo;{d.motif}&rdquo;
+                              </p>
+                            </div>
                           )}
                         </div>
                       </td>
@@ -598,8 +607,15 @@ const RafDashboard = () => {
 
                 {selectedDemande.motif && (
                   <div className={`p-4 rounded-2xl border ${selectedDemande.statut === 'Rejete' ? 'bg-red-50 border-red-100 text-red-700' : 'bg-emerald-50 border-emerald-100 text-emerald-700'}`}>
-                    <p className="text-[10px] font-bold uppercase mb-1 opacity-60">Note / Motif du RAF</p>
-                    <p className="text-sm font-medium italic">&ldquo;{selectedDemande.motif}&rdquo;</p>
+                    <p className="text-sm font-bold uppercase mb-2 flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4" />
+                      Note / Motif du RAF
+                    </p>
+                    <div className="bg-white/50 p-3 rounded-xl border border-current border-opacity-10 shadow-inner">
+                      <p className="text-base font-semibold leading-relaxed italic">
+                        &ldquo;{selectedDemande.motif}&rdquo;
+                      </p>
+                    </div>
                   </div>
                 )}
 

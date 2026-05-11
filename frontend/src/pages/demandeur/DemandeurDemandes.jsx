@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
-import { PlusCircle, ArrowLeft, Search, Trash2, ListPlus, Pencil, Save, Send, Package } from 'lucide-react';
+import { PlusCircle, ArrowLeft, Search, Trash2, ListPlus, Pencil, Save, Send, Package, MessageSquare } from 'lucide-react';
 import api from '../../services/api';
 import { AuthContext } from '../../contexts/AuthContext';
 
@@ -456,9 +456,17 @@ const DemandeurDemandes = () => {
                           {demande.statut}
                         </span>
                         {demande.motif && (
-                          <p className="text-[10px] text-gray-400 italic max-w-[150px] leading-tight">
-                            {demande.motif}
-                          </p>
+                          <div className={`mt-2 p-2.5 rounded-xl border text-xs shadow-sm max-w-[220px] animate-in fade-in slide-in-from-top-1 ${
+                            demande.statut === 'Rejete' ? 'bg-red-50 border-red-100 text-red-800' : 'bg-blue-50 border-blue-100 text-blue-800'
+                          }`}>
+                            <div className="flex items-center gap-1.5 mb-1 text-[10px] font-black uppercase tracking-wider opacity-60">
+                              <MessageSquare className="h-3 w-3" />
+                              Note du RAF
+                            </div>
+                            <p className="font-medium leading-relaxed italic">
+                              &ldquo;{demande.motif}&rdquo;
+                            </p>
+                          </div>
                         )}
                       </div>
                     </td>
