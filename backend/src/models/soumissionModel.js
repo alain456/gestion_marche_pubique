@@ -37,6 +37,32 @@ const Soumission = {
         `;
         const [rows] = await db.query(query);
         return rows;
+    },
+
+    // Mettre à jour une offre
+    update: async (idOffre, data) => {
+        const { 
+            idMarche, nomSoumissionnaire, adresse, telephone, 
+            email, referenceAppelOffre, dateSoumission, montantPropose 
+        } = data;
+
+        const query = `UPDATE soumissionnaire SET 
+            idMarche = ?, nomSoumissionnaire = ?, adresse = ?, telephone = ?, 
+            email = ?, referenceAppelOffre = ?, dateSoumission = ?, montantPropose = ?
+            WHERE idOffre = ?`;
+
+        const [result] = await db.query(query, [
+            idMarche, nomSoumissionnaire, adresse, telephone, 
+            email, referenceAppelOffre, dateSoumission, montantPropose, idOffre
+        ]);
+        return result;
+    },
+
+    // Supprimer une offre
+    delete: async (idOffre) => {
+        const query = `DELETE FROM soumissionnaire WHERE idOffre = ?`;
+        const [result] = await db.query(query, [idOffre]);
+        return result;
     }
 };
 

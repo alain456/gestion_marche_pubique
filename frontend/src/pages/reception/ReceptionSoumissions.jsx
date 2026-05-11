@@ -14,13 +14,18 @@ import {
   Hash,
   Users,
   Info,
-  Printer
+  Printer,
+  Edit2,
+  Trash2,
+  X
 } from 'lucide-react';
 
 const ReceptionSoumissions = () => {
   const [marches, setMarches] = useState([]);
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editId, setEditId] = useState(null);
   
   const [form, setForm] = useState({
     idMarche: '',
@@ -57,6 +62,21 @@ const ReceptionSoumissions = () => {
     fetchData();
   }, []);
 
+  const resetForm = () => {
+    setForm({
+      idMarche: '',
+      nomSoumissionnaire: '',
+      adresse: '',
+      telephone: '',
+      email: '',
+      referenceAppelOffre: '',
+      dateSoumission: new Date().toISOString().split('T')[0],
+      montantPropose: ''
+    });
+    setIsEditing(false);
+    setEditId(null);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.idMarche) {
@@ -69,24 +89,49 @@ const ReceptionSoumissions = () => {
     setIsSubmitting(true);
 
     try {
-      await api.post('/soumissions', form);
-      setMessage('Offre enregistrée avec succès.');
-      setForm({
-        idMarche: '',
-        nomSoumissionnaire: '',
-        adresse: '',
-        telephone: '',
-        email: '',
-        referenceAppelOffre: '',
-        dateSoumission: new Date().toISOString().split('T')[0],
-        montantPropose: ''
-      });
+      if (isEditing) {
+        await api.put(`/soumissions/${editId}`, form);
+        setMessage('Offre mise à jour avec succès.');
+      } else {
+        await api.post('/soumissions', form);
+        setMessage('Offre enregistrée avec succès.');
+      }
+      resetForm();
       fetchData();
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.message || "Erreur lors de l'enregistrement de l'offre.");
+      setError(err.response?.data?.message || "Erreur lors de l'opération.");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleEdit = (offer) => {
+    setForm({
+      idMarche: offer.idMarche,
+      nomSoumissionnaire: offer.nomSoumissionnaire,
+      adresse: offer.adresse,
+      telephone: offer.telephone,
+      email: offer.email,
+      referenceAppelOffre: offer.referenceAppelOffre,
+      dateSoumission: new Date(offer.dateSoumission).toISOString().split('T')[0],
+      montantPropose: offer.montantPropose
+    });
+    setIsEditing(true);
+    setEditId(offer.idOffre);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDelete = async (idOffre) => {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette offre ?')) {
+      try {
+        await api.delete(`/soumissions/${idOffre}`);
+        setMessage('Offre supprimée avec succès.');
+        fetchData();
+      } catch (err) {
+        console.error(err);
+        setError('Erreur lors de la suppression.');
+      }
     }
   };
 
@@ -169,9 +214,16 @@ const ReceptionSoumissions = () => {
         {/* Colonne Formulaire */}
         <div className="lg:col-span-4 space-y-8">
           <div className="bg-white rounded-3xl border border-gray-100 shadow-xl overflow-hidden">
-            <div className="bg-primary px-8 py-5 text-white flex items-center gap-3">
-              <PlusCircle className="h-6 w-6" />
-              <h2 className="text-xl font-bold">Nouveau Dépôt d&apos;Offre</h2>
+            <div className={`${isEditing ? 'bg-amber-500' : 'bg-primary'} px-8 py-5 text-white flex items-center justify-between`}>
+              <div className="flex items-center gap-3">
+                {isEditing ? <Edit2 className="h-6 w-6" /> : <PlusCircle className="h-6 w-6" />}
+                <h2 className="text-xl font-bold">{isEditing ? `Modifier l'Offre #${editId}` : 'Nouveau Dépôt d\'Offre'}</h2>
+              </div>
+              {isEditing && (
+                <button onClick={resetForm} className="bg-white/20 hover:bg-white/30 p-2 rounded-xl transition-colors">
+                  <X className="h-5 w-5" />
+                </button>
+              )}
             </div>
             
             <form onSubmit={handleSubmit} className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -306,21 +358,30 @@ const ReceptionSoumissions = () => {
               </div>
 
               {/* Bouton de Soumission */}
-              <div className="md:col-span-2 pt-4">
+              <div className="md:col-span-2 pt-4 flex gap-4">
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full py-5 bg-primary text-white rounded-2xl font-bold text-lg hover:bg-blue-800 transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-3 disabled:opacity-70"
+                  className={`flex-1 py-5 ${isEditing ? 'bg-amber-500 hover:bg-amber-600' : 'bg-primary hover:bg-blue-800'} text-white rounded-2xl font-bold text-lg transition-all shadow-lg flex items-center justify-center gap-3 disabled:opacity-70`}
                 >
                   {isSubmitting ? (
                     <div className="h-6 w-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   ) : (
                     <>
                       <CheckCircle className="h-6 w-6" />
-                      Enregistrer l&apos;Offre Officiellement
+                      {isEditing ? 'Mettre à jour l\'Offre' : 'Enregistrer l\'Offre Officiellement'}
                     </>
                   )}
                 </button>
+                {isEditing && (
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="px-8 py-5 bg-gray-100 text-gray-600 rounded-2xl font-bold hover:bg-gray-200 transition-all"
+                  >
+                    Annuler
+                  </button>
+                )}
               </div>
             </form>
           </div>
@@ -364,7 +425,7 @@ const ReceptionSoumissions = () => {
                       </td>
                       <td className="px-8 py-6 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-700">Marché #{o.idMarche}</div>
-                        <div className="text-[10px] text-gray-400 uppercase">{o.modePassation}</div>
+                        <div className="text-[10px] text-gray-400 uppercase">{o.referenceAppelOffre}</div>
                       </td>
                       <td className="px-8 py-6 whitespace-nowrap text-sm text-gray-500">
                         {new Date(o.dateSoumission).toLocaleDateString()}
@@ -373,13 +434,29 @@ const ReceptionSoumissions = () => {
                         <div className="text-sm font-bold text-primary">{Number(o.montantPropose).toLocaleString()} FBU</div>
                       </td>
                       <td className="px-8 py-6 whitespace-nowrap text-right">
-                        <button
-                          onClick={() => printReceipt(o)}
-                          className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-xs font-bold"
-                        >
-                          <Printer className="h-3.5 w-3.5" />
-                          Imprimer
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => printReceipt(o)}
+                            className="p-2 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 transition-all"
+                            title="Imprimer le récépissé"
+                          >
+                            <Printer className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleEdit(o)}
+                            className="p-2 bg-amber-50 text-amber-600 rounded-xl hover:bg-amber-100 transition-all"
+                            title="Modifier"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(o.idOffre)}
+                            className="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-all"
+                            title="Supprimer"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))

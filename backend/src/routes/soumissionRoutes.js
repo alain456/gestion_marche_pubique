@@ -6,5 +6,7 @@ const soumissionController = require('../controllers/soumissionController');
 router.post('/', soumissionController.addSoumissionnaire);
 router.get('/', soumissionController.getAllSoumissions);
 router.get('/marche/:idMarche', soumissionController.getSoumissionnairesByMarche);
+router.put('/:idOffre', soumissionController.updateSoumission);
+router.delete('/:idOffre', soumissionController.deleteSoumission);
 
 module.exports = router;

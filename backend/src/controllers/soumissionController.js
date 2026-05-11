@@ -63,3 +63,27 @@ exports.getSoumissionnairesByMarche = async (req, res) => {
         res.status(500).json({ message: "Erreur lors de la récupération des offres" });
     }
 };
+
+// Mettre à jour une offre
+exports.updateSoumission = async (req, res) => {
+    const { idOffre } = req.params;
+    try {
+        await Soumission.update(idOffre, req.body);
+        res.json({ message: "Offre mise à jour avec succès" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Erreur lors de la mise à jour de l'offre" });
+    }
+};
+
+// Supprimer une offre
+exports.deleteSoumission = async (req, res) => {
+    const { idOffre } = req.params;
+    try {
+        await Soumission.delete(idOffre);
+        res.json({ message: "Offre supprimée avec succès" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Erreur lors de la suppression de l'offre" });
+    }
+};

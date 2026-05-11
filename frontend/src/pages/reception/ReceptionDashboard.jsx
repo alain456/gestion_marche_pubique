@@ -172,7 +172,7 @@ const ReceptionDashboard = () => {
           </div>
         </div>
 
-        {/* <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:scale-110 transition-transform">
             <Building size={80} className="text-blue-600" />
           </div>
@@ -181,7 +181,7 @@ const ReceptionDashboard = () => {
             <h3 className="text-4xl font-black text-gray-900 mt-2">{stats.activeMarkets}</h3>
             <p className="text-xs text-gray-500 mt-4 font-medium italic">Prêts à recevoir des offres</p>
           </div>
-        </div> */}
+        </div>
       </div>
 
       {/* Section Résultats (si recherche active) */}
