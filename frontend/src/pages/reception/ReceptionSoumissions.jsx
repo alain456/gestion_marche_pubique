@@ -13,7 +13,8 @@ import {
   XCircle,
   Hash,
   Users,
-  Info
+  Info,
+  Printer
 } from 'lucide-react';
 
 const ReceptionSoumissions = () => {
@@ -59,7 +60,7 @@ const ReceptionSoumissions = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.idMarche) {
-      setError('Veuillez entrer l\'ID du marché.');
+      setError('Veuillez sélectionner un marché.');
       return;
     }
 
@@ -87,6 +88,53 @@ const ReceptionSoumissions = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const printReceipt = (offer) => {
+    const printWindow = window.open('', '_blank');
+    const content = `
+      <html>
+        <head>
+          <title>Récépissé de Dépôt d'Offre #${offer.idOffre}</title>
+          <style>
+            body { font-family: sans-serif; padding: 40px; line-height: 1.6; }
+            .header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #000; padding-bottom: 20px; }
+            .content { margin-bottom: 40px; }
+            .row { display: flex; justify-content: space-between; margin-bottom: 10px; }
+            .label { font-weight: bold; }
+            .footer { margin-top: 60px; display: flex; justify-content: space-between; }
+            .signature-box { border: 1px solid #000; width: 200px; height: 100px; margin-top: 10px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>RÉCÉPISSÉ DE DÉPÔT D'OFFRE</h1>
+            <p>SETIC - Gestion des Marchés Publics</p>
+          </div>
+          <div class="content">
+            <div class="row"><span class="label">Référence Offre :</span> <span>#${offer.idOffre}</span></div>
+            <div class="row"><span class="label">Marché concerné :</span> <span>Marché #${offer.idMarche}</span></div>
+            <div class="row"><span class="label">Soumissionnaire :</span> <span>${offer.nomSoumissionnaire}</span></div>
+            <div class="row"><span class="label">Date de dépôt :</span> <span>${new Date(offer.dateSoumission).toLocaleDateString()}</span></div>
+            <div class="row"><span class="label">Montant Proposé :</span> <span>${Number(offer.montantPropose).toLocaleString()} FBU</span></div>
+            <div class="row"><span class="label">Référence Appel d'Offre :</span> <span>${offer.referenceAppelOffre}</span></div>
+          </div>
+          <div class="footer">
+            <div>
+              <p>Le Réceptionniste</p>
+              <div class="signature-box"></div>
+            </div>
+            <div>
+              <p>Le Déposant</p>
+              <div class="signature-box"></div>
+            </div>
+          </div>
+          <script>window.print();</script>
+        </body>
+      </html>
+    `;
+    printWindow.document.write(content);
+    printWindow.document.close();
   };
 
   if (loading) return <div className="p-8 text-center animate-pulse text-gray-500 font-medium">Chargement des données...</div>;
@@ -118,8 +166,8 @@ const ReceptionSoumissions = () => {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Colonne Formulaire (Gros) */}
-        <div className="lg:col-span-3 space-y-8">
+        {/* Colonne Formulaire */}
+        <div className="lg:col-span-4 space-y-8">
           <div className="bg-white rounded-3xl border border-gray-100 shadow-xl overflow-hidden">
             <div className="bg-primary px-8 py-5 text-white flex items-center gap-3">
               <PlusCircle className="h-6 w-6" />
@@ -127,19 +175,24 @@ const ReceptionSoumissions = () => {
             </div>
             
             <form onSubmit={handleSubmit} className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* ID du Marché (Saisie directe) */}
+              {/* Sélection du Marché */}
               <div className="md:col-span-2 space-y-2">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">ID du Marché Concerné</label>
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Marché Concerné</label>
                 <div className="relative">
                   <Hash className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <input
-                    type="number"
+                  <select
                     required
-                    placeholder="Entrez l'ID du marché (voir liste à droite)"
-                    className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all font-bold text-gray-800"
+                    className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all font-bold text-gray-800 appearance-none"
                     value={form.idMarche}
                     onChange={(e) => setForm({...form, idMarche: e.target.value})}
-                  />
+                  >
+                    <option value="">Sélectionnez le marché...</option>
+                    {marches.map(m => (
+                      <option key={m.idMarche} value={m.idMarche}>
+                        ID: {m.idMarche} - {m.modePassation} (Demande #{m.idDemande})
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
@@ -272,29 +325,6 @@ const ReceptionSoumissions = () => {
             </form>
           </div>
         </div>
-
-        {/* Colonne Référence Marchés (Petite) */}
-        <div className="space-y-6">
-          <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-            <h3 className="font-bold text-gray-900 flex items-center gap-2 mb-4">
-              <Info className="text-primary h-5 w-5" />
-              Référence Marchés
-            </h3>
-            <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
-              {marches.map(m => (
-                <div key={m.idMarche} className="p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-primary transition-colors">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="bg-primary text-white px-2 py-0.5 rounded-lg text-xs font-bold">ID: {m.idMarche}</span>
-                    <span className="text-[10px] font-bold text-gray-400 uppercase">{m.statut}</span>
-                  </div>
-                  <p className="text-sm font-semibold text-gray-700 leading-tight">{m.modePassation}</p>
-                  <p className="text-[10px] text-gray-400 mt-1">Demande #{m.idDemande}</p>
-                </div>
-              ))}
-              {marches.length === 0 && <p className="text-sm text-gray-400 italic">Aucun marché trouvé.</p>}
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Historique des Dépôts */}
@@ -314,12 +344,13 @@ const ReceptionSoumissions = () => {
                   <th className="px-8 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Marché</th>
                   <th className="px-8 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Date</th>
                   <th className="px-8 py-5 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Montant</th>
+                  <th className="px-8 py-5 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {offers.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="px-8 py-12 text-center text-gray-400 font-medium italic">
+                    <td colSpan="6" className="px-8 py-12 text-center text-gray-400 font-medium italic">
                       Aucune offre enregistrée pour le moment.
                     </td>
                   </tr>
@@ -340,6 +371,15 @@ const ReceptionSoumissions = () => {
                       </td>
                       <td className="px-8 py-6 whitespace-nowrap text-right">
                         <div className="text-sm font-bold text-primary">{Number(o.montantPropose).toLocaleString()} FBU</div>
+                      </td>
+                      <td className="px-8 py-6 whitespace-nowrap text-right">
+                        <button
+                          onClick={() => printReceipt(o)}
+                          className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-xs font-bold"
+                        >
+                          <Printer className="h-3.5 w-3.5" />
+                          Imprimer
+                        </button>
                       </td>
                     </tr>
                   ))
