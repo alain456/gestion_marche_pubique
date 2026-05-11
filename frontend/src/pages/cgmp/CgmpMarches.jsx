@@ -12,13 +12,15 @@ import {
   Calendar,
   User,
   MessageSquare,
-  ArrowRight,
-  AlertCircle
+  LayoutGrid,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 const CgmpMarches = () => {
   const [marches, setMarches] = useState([]);
-  const [validatedDemands, setValidatedDemands] = useState([]);
+  const [groupedDemands, setGroupedDemands] = useState([]); // Nouveau nom pour plus de clarté
+  const [expandedBudgets, setExpandedBudgets] = useState({}); // Pour déplier/replier les containers
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [selectedDemand, setSelectedDemand] = useState(null);
@@ -56,10 +58,27 @@ const CgmpMarches = () => {
         api.get('/demandes')
       ]);
       setMarches(marchesRes.data);
-      // On filtre les demandes validées (statut === 'Valide') qui n'ont pas encore de marché
-      // Pour l'instant on se base sur le statut 'Valide'
       const pending = demandsRes.data.filter(d => d.statut === 'Valide' && !marchesRes.data.find(m => m.idDemande === d.idDemande));
-      setValidatedDemands(pending);
+      
+      // Groupement par Budget (Container)
+      const grouped = pending.reduce((acc, d) => {
+        const bid = d.idBudget;
+        if (!acc[bid]) {
+          acc[bid] = {
+            idBudget: bid,
+            numeroBudget: d.numeroBudget,
+            typeMarche: d.typeMarche,
+            exerciceBudgetaire: d.exerciceBudgetaire,
+            totalMontant: 0,
+            demands: []
+          };
+        }
+        acc[bid].demands.push(d);
+        acc[bid].totalMontant += Number(d.montantEstime || 0);
+        return acc;
+      }, {});
+
+      setGroupedDemands(Object.values(grouped));
     } catch (err) {
       console.error(err);
       setError('Erreur lors du chargement des données.');
@@ -72,12 +91,17 @@ const CgmpMarches = () => {
     fetchData();
   }, []);
 
-  const handleCreateMarket = (demand) => {
-    setSelectedDemand(demand);
+  const toggleBudget = (idBudget) => {
+    setExpandedBudgets(prev => ({ ...prev, [idBudget]: !prev[idBudget] }));
+  };
+
+  const handleCreateMarketForGroup = (group) => {
+    setSelectedDemand(group.demands[0]); // Pour l'affichage dans le header
+    const allIds = group.demands.map(d => d.idDemande).join(',');
     setForm(prev => ({ 
       ...prev, 
-      idDemande: demand.idDemande,
-      montantEstime: demand.montantEstimeBudget || '' 
+      idDemande: allIds,
+      montantEstime: group.totalMontant || '' 
     }));
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -187,6 +211,9 @@ const CgmpMarches = () => {
                   Note RAF: {selectedDemand.motif}
                 </div>
               )}
+              <div className="mt-2 text-[10px] text-blue-100 uppercase font-bold">
+                ID(s) Demande: {form.idDemande}
+              </div>
 
             </div>
             <button onClick={() => setShowForm(false)} className="hover:bg-white/10 p-2 rounded-full transition-colors">
@@ -546,64 +573,126 @@ const CgmpMarches = () => {
         </div>
       )}
 
-      {/* Liste des demandes validées en attente */}
+      {/* Liste des demandes validées groupées par Budget (Containers) */}
       <section className="space-y-4">
         <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-          <AlertCircle className="text-amber-500" />
-          Demandes Validées (En attente de Marché)
+          <LayoutGrid className="text-primary h-6 w-6" />
+          Demandes Validées par Container Budgétaire
         </h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {validatedDemands.length === 0 ? (
+          {groupedDemands.length === 0 ? (
             <div className="col-span-full p-12 bg-white rounded-3xl border border-dashed border-gray-200 text-center text-gray-400">
                Aucune demande validée en attente de traitement.
             </div>
           ) : (
-            validatedDemands.map(d => (
-              <div key={d.idDemande} className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all group">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="h-12 w-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xl">
-                    {d.idDemande}
-                  </div>
-                  <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-wider">
-                    Budget Validé
-                  </span>
-                </div>
-                <h3 className="font-bold text-gray-900 text-lg mb-1">
-                  {d.nomService || d.roleDemandeur || 'Direction Générale'}
-                </h3>
-                <p className="text-xs font-medium text-gray-600 mb-2 flex items-center gap-1">
-                  <User className="h-3 w-3 text-gray-400" />
-                  {d.nomDemandeur || 'Demandeur inconnu'}
-                </p>
-                <p className="text-sm text-gray-500 mb-2">{d.typeMarche}</p>
-                
-                <div className="space-y-1 bg-gray-50 p-3 rounded-xl border border-gray-100">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-gray-400">Exercice :</span>
-                    <span className="font-bold text-gray-700">{d.exerciceBudgetaire || 'N/A'}</span>
-                  </div>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-gray-400">Budget estimé :</span>
-                    <span className="font-bold text-primary">{d.montantEstimeBudget ? Number(d.montantEstimeBudget).toLocaleString() : 0} FBU</span>
-                  </div>
-                  {d.motif && (
-                    <div className="mt-2 pt-2 border-t border-gray-100 italic text-[10px] text-emerald-600 leading-tight">
-                      Note RAF: {d.motif}
+            groupedDemands.map(group => (
+              <div key={group.idBudget} className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-all group">
+                <div className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="h-12 w-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
+                      <LayoutGrid className="h-6 w-6" />
                     </div>
-                  )}
+                    <div className="flex flex-col items-end">
+                      <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-wider">
+                        {group.demands.length} Demande{group.demands.length > 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <h3 className="text-lg font-bold text-gray-900 mb-1 group-hover:text-primary transition-colors">
+                    {group.numeroBudget || 'Budget Inconnu'}
+                  </h3>
+                  
+                  <div className={`inline-block px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase mb-4 ${
+                    group.typeMarche === 'fourniture' ? 'bg-blue-100 text-blue-800' :
+                    group.typeMarche === 'travaux' ? 'bg-amber-100 text-amber-800' :
+                    'bg-emerald-100 text-emerald-800'
+                  }`}>
+                    {group.typeMarche}
+                  </div>
+
+                  <div className="p-3 bg-primary/5 rounded-2xl border border-primary/10 mb-4">
+                    <p className="text-[10px] text-gray-400 uppercase font-bold mb-1">Montant Total Estimé</p>
+                    <p className="text-xl font-black text-primary">{Number(group.totalMontant).toLocaleString()} FBU</p>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-gray-400 border-t border-gray-50 pt-4">
+                    <span>Exercice {group.exerciceBudgetaire || '2026'}</span>
+                    <div className="flex gap-3">
+                      <button 
+                        onClick={() => handleCreateMarketForGroup(group)}
+                        className="flex items-center gap-1 text-emerald-600 font-bold hover:underline text-[10px]"
+                      >
+                        <PlusCircle className="h-4 w-4" /> GÉRER LE MARCHÉ
+                      </button>
+                      <button 
+                        onClick={() => toggleBudget(group.idBudget)}
+                        className="flex items-center gap-1 text-primary font-bold hover:underline"
+                      >
+                        {expandedBudgets[group.idBudget] ? 'Cacher' : 'Voir'}
+                        {expandedBudgets[group.idBudget] ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-50">
-                  <span className="text-xs text-gray-400">Le {new Date(d.dateDemande).toLocaleDateString()}</span>
-                  <button 
-                    onClick={() => handleCreateMarket(d)}
-                    className="flex items-center gap-2 text-primary font-bold text-sm group-hover:gap-3 transition-all"
-                  >
-                    Gérer le marché
-                    <ArrowRight className="h-4 w-4" />
-                  </button>
-                </div>
+                {/* Détails des demandes acceptées */}
+                {expandedBudgets[group.idBudget] && (
+                  <div className="bg-gray-50 border-t border-gray-100 animate-in slide-in-from-top-2">
+                    {group.demands.map(d => (
+                      <div key={d.idDemande} className="p-4 border-b border-gray-100 last:border-0 hover:bg-white transition-colors">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">ID Demande:</span>
+                            <span className="ml-1 text-sm font-mono font-bold">#{d.idDemande}</span>
+                          </div>
+                          <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
+                            VALIDE
+                          </span>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-y-2 text-[11px]">
+                          <div>
+                            <p className="text-gray-400 uppercase font-bold text-[9px]">Montant Estimé</p>
+                            <p className="font-bold text-primary">{Number(d.montantEstime || 0).toLocaleString()} FBU</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-gray-400 uppercase font-bold text-[9px]">Validé le</p>
+                            <p className="font-semibold text-gray-700">{d.dateValidation ? new Date(d.dateValidation).toLocaleDateString() : new Date(d.dateDemande).toLocaleDateString()}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-400 uppercase font-bold text-[9px]">Resp. Financier</p>
+                            <p className="font-semibold text-gray-700">{d.responsableFinancier || 'RAF'}</p>
+                          </div>
+                        </div>
+
+                        {/* Liste des articles avec descriptions */}
+                        <div className="mt-3 space-y-2">
+                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider border-b border-gray-100 pb-1">Articles & Spécifications</p>
+                          {d.articles && d.articles.map((art, idx) => (
+                            <div key={idx} className="bg-white p-2 rounded-lg border border-gray-50 shadow-sm">
+                              <div className="flex justify-between items-center mb-1">
+                                <span className="text-xs font-bold text-gray-700">{art.nomArticle} (x{art.quantite})</span>
+                                <span className="text-[10px] font-bold text-primary">{Number(art.prixUnitaire * art.quantite).toLocaleString()} FBU</span>
+                              </div>
+                              {art.description && (
+                                <p className="text-[10px] text-gray-500 italic leading-tight">
+                                  Spec: {art.description}
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        {d.motif && (
+                          <div className="mt-2 p-2 bg-white rounded-lg border border-gray-100 text-[10px] text-gray-500 italic">
+                            Note RAF: {d.motif}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))
           )}

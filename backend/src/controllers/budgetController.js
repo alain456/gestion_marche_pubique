@@ -59,3 +59,14 @@ exports.rejeterBudget = async (req, res) => {
         res.status(500).json({ message: "Erreur lors du rejet" });
     }
 };
+
+exports.toggleBudgetStatus = async (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+    try {
+        await Budget.updateStatus(id, status);
+        res.json({ message: `Budget mis en statut ${status}` });
+    } catch (error) {
+        res.status(500).json({ message: "Erreur lors de la mise à jour du statut" });
+    }
+};

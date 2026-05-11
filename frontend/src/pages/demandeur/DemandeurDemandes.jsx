@@ -139,7 +139,7 @@ const DemandeurDemandes = () => {
     setForm({
       ...form,
       idBudget: idBudget,
-      typeMarche: budget ? budget.typeBudget : ''
+      typeMarche: budget ? budget.typeBudget.toLowerCase() : ''
     });
     // Si on change de budget, on vide le panier car les types peuvent être différents
     if (selectedItems.length > 0) {
@@ -157,15 +157,27 @@ const DemandeurDemandes = () => {
       return;
     }
     
-    const articleData = articles.find(a => a.idArticle === parseInt(currentItem.idArticle));
-    setSelectedItems([...selectedItems, { ...currentItem, nomArticle: articleData?.nomArticle }]);
+    const articleIdNum = parseInt(currentItem.idArticle);
+    const articleData = articles.find(a => a.idArticle === articleIdNum);
+    
+    if (!articleData) {
+      alert("Erreur: L'article sélectionné est introuvable.");
+      return;
+    }
+    
+    setSelectedItems([...selectedItems, { 
+      idArticle: articleIdNum, 
+      nomArticle: articleData.nomArticle,
+      quantite: parseInt(currentItem.quantite),
+      description: currentItem.description
+    }]);
     setCurrentItem({ idArticle: '', quantite: '', description: '' });
   };
 
   const editArticleInList = (index) => {
     const item = selectedItems[index];
     setCurrentItem({
-      idArticle: item.idArticle.toString(),
+      idArticle: item.idArticle?.toString() || '',
       quantite: item.quantite,
       description: item.description || '',
     });
@@ -179,9 +191,9 @@ const DemandeurDemandes = () => {
   const reprendreDemande = (demande) => {
     setEditingId(demande.idDemande);
     setForm({
-      idService: demande.idService,
-      idBudget: demande.idBudget,
-      typeMarche: demande.typeMarche,
+      idService: demande.idService || '',
+      idBudget: demande.idBudget || '',
+      typeMarche: demande.typeMarche ? demande.typeMarche.toLowerCase() : '',
     });
     setSelectedItems(demande.articles.map(art => ({
       idArticle: art.idArticle,
@@ -189,6 +201,7 @@ const DemandeurDemandes = () => {
       quantite: art.quantite,
       description: art.description || ''
     })));
+    setCurrentItem({ idArticle: '', quantite: '', description: '' });
     
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -314,7 +327,12 @@ const DemandeurDemandes = () => {
                 >
                   <option value="">{form.idBudget ? 'Choisir un article...' : 'Sélectionnez d\'abord un budget'}</option>
                   {articles
-                    .filter(a => !form.idBudget || a.typeArticle === form.typeMarche)
+                    .filter(a => {
+                      if (!form.idBudget) return false;
+                      const typeA = a.typeArticle?.toLowerCase();
+                      const typeM = form.typeMarche?.toLowerCase();
+                      return typeA === typeM;
+                    })
                     .map((a) => <option key={a.idArticle} value={a.idArticle}>{a.nomArticle}</option>)}
                 </select>
               </div>

@@ -8,7 +8,8 @@ import {
   XCircle, 
   LayoutGrid, 
   Calendar,
-  ArrowLeft
+  ArrowLeft,
+  Power
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -36,6 +37,16 @@ const CgmpBudgets = () => {
     } catch (err) {
       console.error(err);
       setError('Impossible de charger les budgets.');
+    }
+  };
+
+  const toggleStatus = async (id, currentStatus) => {
+    const nextStatus = currentStatus === 'Ouvert' ? 'Ferme' : 'Ouvert';
+    try {
+      await api.patch(`/budgets/${id}/status`, { status: nextStatus });
+      loadBudgets();
+    } catch (err) {
+      setError('Erreur lors du changement de statut.');
     }
   };
 
@@ -162,7 +173,7 @@ const CgmpBudgets = () => {
                 onChange={(e) => setForm({...form, exerciceBudgetaire: e.target.value})}
               />
             </div>
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Source</label>
               <select
                 required
@@ -174,7 +185,7 @@ const CgmpBudgets = () => {
                 <option value="Propre">Fonds Propres</option>
                 <option value="Don">Don / Prêt</option>
               </select>
-            </div>
+            </div> */}
             
             <div className="md:col-span-2 flex justify-end gap-4 pt-4">
               <button type="button" onClick={resetForm} className="px-6 py-3 text-gray-500 font-bold hover:bg-gray-50 rounded-2xl transition-all">
@@ -213,9 +224,22 @@ const CgmpBudgets = () => {
                 <div className="h-12 w-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
                   <LayoutGrid className="h-6 w-6" />
                 </div>
-                <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${b.statusValidation === 'Ouvert' ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
-                  {b.statusValidation}
-                </span>
+                <div className="flex flex-col items-end gap-2">
+                  <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${b.statusValidation === 'Ouvert' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                    {b.statusValidation === 'Ouvert' ? 'ACTIF' : 'INACTIF'}
+                  </span>
+                  <button 
+                    onClick={() => toggleStatus(b.idBudget, b.statusValidation)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase transition-all shadow-sm ${
+                      b.statusValidation === 'Ouvert' 
+                      ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-100' 
+                      : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-100'
+                    }`}
+                  >
+                    <Power className="h-3 w-3" />
+                    {b.statusValidation === 'Ouvert' ? 'Désactiver' : 'Activer'}
+                  </button>
+                </div>
               </div>
               
               <h3 className="text-lg font-bold text-gray-900 mb-1 group-hover:text-primary transition-colors">{b.numeroBudget}</h3>
