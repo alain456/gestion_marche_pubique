@@ -45,7 +45,11 @@ const Login = () => {
             </div>
           )}
           
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5" autoComplete="off">
+            {/* Fake fields to catch autofill */}
+            <input type="text" name="fake_email" style={{ display: 'none' }} tabIndex="-1" aria-hidden="true" />
+            <input type="password" name="fake_password" style={{ display: 'none' }} tabIndex="-1" aria-hidden="true" />
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="email">
                 Email
@@ -54,15 +58,18 @@ const Login = () => {
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Mail className="h-5 w-5 text-gray-400" />
                 </div>
-                <input
-                  id="email"
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary text-gray-900 placeholder-gray-400"
-                  placeholder="votre@email.com"
-                />
+                  <input
+                    id="email"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="one-time-code"
+                    onFocus={(e) => e.target.removeAttribute('readonly')}
+                    readOnly
+                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary text-gray-900 placeholder-gray-400"
+                    placeholder="votre@email.com"
+                  />
               </div>
             </div>
             
@@ -74,15 +81,18 @@ const Login = () => {
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Lock className="h-5 w-5 text-gray-400" />
                 </div>
-                <input
-                  id="password"
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary text-gray-900 placeholder-gray-400"
-                  placeholder="••••••••"
-                />
+                  <input
+                    id="password"
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoComplete="one-time-code"
+                    onFocus={(e) => e.target.removeAttribute('readonly')}
+                    readOnly
+                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary text-gray-900 placeholder-gray-400"
+                    placeholder="••••••••"
+                  />
               </div>
             </div>
             

@@ -338,7 +338,11 @@ const AdminUsers = () => {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-5" autoComplete="off">
+              {/* Fake fields to prevent browser autofill */}
+              <input type="text" name="fake_email_prevent_autofill" style={{ display: 'none' }} />
+              <input type="password" name="fake_password_prevent_autofill" style={{ display: 'none' }} />
+
               <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">Nom complet</label>
                 <div className="relative">
@@ -361,6 +365,10 @@ const AdminUsers = () => {
                     placeholder="jean.dupont@setic.gov.bi"
                     value={form.email}
                     onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
+                    autoComplete="one-time-code"
+                    onFocus={(e) => e.target.removeAttribute('readonly')}
+                    readOnly
+                    name="user_email_no_fill"
                     className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm"
                   />
                 </div>
@@ -377,6 +385,10 @@ const AdminUsers = () => {
                     placeholder={form.idUser ? "••••••••" : "Mot de passe sécurisé"}
                     value={form.password}
                     onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
+                    autoComplete="one-time-code"
+                    onFocus={(e) => e.target.removeAttribute('readonly')}
+                    readOnly
+                    name="user_password_new"
                     className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm"
                   />
                 </div>
