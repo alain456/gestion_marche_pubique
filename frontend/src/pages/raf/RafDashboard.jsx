@@ -10,7 +10,8 @@ import {
   Clock,
   Check,
   Package,
-  PlusCircle
+  PlusCircle,
+  MessageSquare
 } from 'lucide-react';
 import api from '../../services/api';
 import { AuthContext } from '../../contexts/AuthContext';
@@ -309,9 +310,17 @@ const RafDashboard = () => {
                             {d.statut}
                           </span>
                           {d.motif && (
-                            <p className="text-[10px] text-gray-400 italic max-w-[120px] leading-tight">
-                              {d.motif}
-                            </p>
+                            <div className={`mt-2 p-2.5 rounded-xl border text-xs shadow-sm max-w-[200px] animate-in fade-in slide-in-from-top-1 ${
+                              d.statut === 'Rejete' ? 'bg-red-50 border-red-100 text-red-800' : 'bg-blue-50 border-blue-100 text-blue-800'
+                            }`}>
+                              <div className="flex items-center gap-1.5 mb-1 text-[10px] font-black uppercase tracking-wider opacity-60">
+                                <MessageSquare className="h-3 w-3" />
+                                Motif / Note
+                              </div>
+                              <p className="font-medium leading-relaxed italic">
+                                &ldquo;{d.motif}&rdquo;
+                              </p>
+                            </div>
                           )}
                         </div>
                       </td>
@@ -450,6 +459,11 @@ const RafDashboard = () => {
                         <span className="text-sm font-bold text-gray-700">{art.nomArticle}</span>
                         <span className="text-[10px] bg-gray-100 px-2 py-0.5 rounded-full text-gray-500">Qté: {art.quantite}</span>
                       </div>
+                      {art.description && (
+                        <p className="text-[10px] text-gray-500 bg-gray-50 p-2 rounded-lg italic">
+                          Description: {art.description}
+                        </p>
+                      )}
                       <div className="flex items-center gap-2">
                         <div className="relative flex-1">
                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">P.U</span>
@@ -598,8 +612,15 @@ const RafDashboard = () => {
 
                 {selectedDemande.motif && (
                   <div className={`p-4 rounded-2xl border ${selectedDemande.statut === 'Rejete' ? 'bg-red-50 border-red-100 text-red-700' : 'bg-emerald-50 border-emerald-100 text-emerald-700'}`}>
-                    <p className="text-[10px] font-bold uppercase mb-1 opacity-60">Note / Motif du RAF</p>
-                    <p className="text-sm font-medium italic">&ldquo;{selectedDemande.motif}&rdquo;</p>
+                    <p className="text-sm font-bold uppercase mb-2 flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4" />
+                      Note / Motif du RAF
+                    </p>
+                    <div className="bg-white/50 p-3 rounded-xl border border-current border-opacity-10 shadow-inner">
+                      <p className="text-base font-semibold leading-relaxed italic">
+                        &ldquo;{selectedDemande.motif}&rdquo;
+                      </p>
+                    </div>
                   </div>
                 )}
 
@@ -610,6 +631,7 @@ const RafDashboard = () => {
                       <tr>
                         <th className="px-4 py-2 text-left text-[10px] font-bold text-gray-400 uppercase">Article</th>
                         <th className="px-4 py-2 text-left text-[10px] font-bold text-gray-400 uppercase">Qté</th>
+                        <th className="px-4 py-2 text-left text-[10px] font-bold text-gray-400 uppercase">Description</th>
                         <th className="px-4 py-2 text-left text-[10px] font-bold text-gray-400 uppercase">P.U (FBU)</th>
                         <th className="px-4 py-2 text-right text-[10px] font-bold text-gray-400 uppercase">Total</th>
                       </tr>
@@ -619,6 +641,7 @@ const RafDashboard = () => {
                         <tr key={i} className="hover:bg-gray-50">
                           <td className="px-4 py-3 text-sm font-medium text-gray-800">{a.nomArticle}</td>
                           <td className="px-4 py-3 text-sm text-gray-600 font-mono">{a.quantite}</td>
+                          <td className="px-4 py-3 text-xs text-gray-500 italic max-w-[200px] truncate" title={a.description}>{a.description || '—'}</td>
                           <td className="px-4 py-3 text-sm text-gray-500">{Number(a.prixUnitaire || 0).toLocaleString()}</td>
                           <td className="px-4 py-3 text-sm font-bold text-primary text-right">
                             {( (a.prixUnitaire || 0) * a.quantite ).toLocaleString()}
@@ -628,7 +651,7 @@ const RafDashboard = () => {
                     </tbody>
                     <tfoot className="bg-gray-50 font-bold border-t-2 border-gray-200">
                       <tr>
-                        <td colSpan="3" className="px-4 py-2 text-right text-xs text-gray-500 uppercase">Total Estimé :</td>
+                        <td colSpan="4" className="px-4 py-2 text-right text-xs text-gray-500 uppercase">Total Estimé :</td>
                         <td className="px-4 py-2 text-right text-sm text-primary">
                           {selectedDemande.articles.reduce((acc, a) => acc + ( (a.prixUnitaire || 0) * a.quantite ), 0).toLocaleString()} FBU
                         </td>

@@ -13,25 +13,31 @@ const CgmpDashboard = () => {
   const [stats, setStats] = useState({
     pendingMarkets: 0,
     activeMarkets: 0,
-    totalDemands: 0,
-    activeOffers: 0
+    totalMarches: 0,
+    totalArticles: 0
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [marches, demands] = await Promise.all([
+        const [marches, demands, articles] = await Promise.all([
           api.get('/marches'),
-          api.get('/demandes')
+          api.get('/demandes'),
+          api.get('/articles')
         ]);
         
-        // Simuler des stats basées sur les données réelles
+        // Calcul des stats réelles
+        const pending = demands.data.filter(d => 
+          d.statut === 'Valide' && 
+          !marches.data.find(m => String(m.idDemande).includes(String(d.idDemande)))
+        ).length;
+
         setStats({
-          pendingMarkets: demands.data.filter(d => d.statut === 'Valide').length,
-          activeMarkets: marches.data.filter(m => m.statut === 'en attente').length,
-          totalDemands: demands.data.length,
-          activeOffers: 0 // À implémenter quand les offres seront là
+          pendingMarkets: pending,
+          activeMarkets: marches.data.filter(m => m.statut === 'publie').length,
+          totalMarches: marches.data.length,
+          totalArticles: articles.data.length
         });
       } catch (err) {
         console.error(err);
@@ -61,7 +67,7 @@ const CgmpDashboard = () => {
     },
     { 
       title: 'Total des Marchés', 
-      value: stats.totalDemands, 
+      value: stats.totalMarches, 
       icon: FileText, 
       color: 'text-emerald-600', 
       bg: 'bg-emerald-100',
@@ -69,7 +75,7 @@ const CgmpDashboard = () => {
     },
     { 
       title: 'Articles au Catalogue', 
-      value: '24', 
+      value: stats.totalArticles, 
       icon: Package, 
       color: 'text-purple-600', 
       bg: 'bg-purple-100',
