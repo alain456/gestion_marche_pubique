@@ -17,6 +17,19 @@ const Budget = {
         return rows;
     },
 
+    // Trouver le dernier numéro pour un exercice et un type donné
+    findLastNumber: async (exercice, type) => {
+        const prefixMap = { 'fourniture': 'F', 'travaux': 'T', 'service': 'S' };
+        const prefix = prefixMap[type] || 'X';
+        const pattern = `BUDGET-${exercice}-${prefix}%`;
+        
+        const [rows] = await db.query(
+            "SELECT numeroBudget FROM budget WHERE numeroBudget LIKE ? ORDER BY numeroBudget DESC LIMIT 1",
+            [pattern]
+        );
+        return rows.length > 0 ? rows[0].numeroBudget : null;
+    },
+
     // Lister les budgets ouverts pour les demandeurs
     getOuverts: async () => {
         const [rows] = await db.query("SELECT * FROM budget WHERE statusValidation = 'Ouvert' OR statusValidation = 'Valide' ORDER BY numeroBudget ASC");

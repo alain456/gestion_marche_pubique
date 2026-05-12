@@ -60,6 +60,21 @@ const CgmpBudgets = () => {
     init();
   }, []);
 
+  // Génération automatique du numéro de budget
+  useEffect(() => {
+    if (showForm) {
+      const fetchNextNumber = async () => {
+        try {
+          const res = await api.get(`/budgets/next-number/${form.exerciceBudgetaire}/${form.typeBudget}`);
+          setForm(prev => ({ ...prev, numeroBudget: res.data.nextNumber }));
+        } catch (err) {
+          console.error('Erreur lors de la génération du numéro:', err);
+        }
+      };
+      fetchNextNumber();
+    }
+  }, [form.typeBudget, form.exerciceBudgetaire, showForm]);
+
   const resetForm = () => {
     setForm({ numeroBudget: '', typeBudget: 'fourniture', exerciceBudgetaire: new Date().getFullYear(), montantEstime: '', sourceFinancier: 'Etat' });
     setShowForm(false);
@@ -145,10 +160,10 @@ const CgmpBudgets = () => {
               <input
                 type="text"
                 required
-                placeholder="Ex: BUDGET-2026-F001"
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all font-bold"
+                readOnly
+                placeholder="Génération automatique..."
+                className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-2xl outline-none transition-all font-bold text-primary cursor-not-allowed"
                 value={form.numeroBudget}
-                onChange={(e) => setForm({...form, numeroBudget: e.target.value})}
               />
             </div>
             <div className="space-y-2">
@@ -169,9 +184,9 @@ const CgmpBudgets = () => {
               <input
                 type="number"
                 required
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20"
+                readOnly
+                className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-2xl outline-none transition-all font-bold cursor-not-allowed"
                 value={form.exerciceBudgetaire}
-                onChange={(e) => setForm({...form, exerciceBudgetaire: e.target.value})}
               />
             </div>
             {/* <div className="space-y-2">

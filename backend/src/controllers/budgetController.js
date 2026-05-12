@@ -9,6 +9,32 @@ exports.getBudgets = async (req, res) => {
     }
 };
 
+exports.getNextBudgetNumber = async (req, res) => {
+    const { exercice, type } = req.params;
+    try {
+        const lastNumber = await Budget.findLastNumber(exercice, type);
+        const prefixMap = { 'fourniture': 'F', 'travaux': 'T', 'service': 'S' };
+        const prefix = prefixMap[type] || 'X';
+        
+        let nextSequence = 1;
+        if (lastNumber) {
+            // Extraire la séquence numérique à la fin (ex: F001 -> 1)
+            const match = lastNumber.match(/([FTS])(\d+)$/);
+            if (match && match[2]) {
+                nextSequence = parseInt(match[2], 10) + 1;
+            }
+        }
+        
+        const formattedSequence = String(nextSequence).padStart(3, '0');
+        const nextNumber = `BUDGET-${exercice}-${prefix}${formattedSequence}`;
+        
+        res.json({ nextNumber });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Erreur lors du calcul du prochain numéro" });
+    }
+};
+
 exports.getBudgetsOuverts = async (req, res) => {
     try {
         const budgets = await Budget.getOuverts();
