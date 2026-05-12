@@ -176,35 +176,43 @@ const ReceptionDashboard = () => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group">
+        {/* <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group">
           <div className="relative z-10">
             <p className="text-sm font-bold text-gray-400 uppercase tracking-wider">Marchés Publiés</p>
             <h3 className="text-4xl font-black text-gray-900 mt-2">{stats.activeMarkets}</h3>
             <p className="text-xs text-gray-500 mt-4 font-medium italic">En cours</p>
           </div>
-        </div>
+        </div> */}
       </div>
 
-      {(searchQuery || selectedMarketId !== 'all' || period !== 'all') && (
-        <div className="space-y-4 animate-in slide-in-from-bottom-4 duration-500">
-          <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-            <Search className="h-5 w-5 text-primary" />
-            Résultats ({filteredSoumissions.length})
-          </h2>
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-100">
-                <thead>
-                  <tr className="bg-gray-50/50">
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Soumissionnaire</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Marché</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Téléphone</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Date</th>
-                    <th className="px-6 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Montant</th>
+      <div className="space-y-4 animate-in slide-in-from-bottom-4 duration-500">
+        <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+          <FileText className="h-5 w-5 text-primary" />
+          {searchQuery || selectedMarketId !== 'all' || period !== 'all' 
+            ? `Résultats de recherche (${filteredSoumissions.length})` 
+            : `Toutes les offres (${filteredSoumissions.length})`}
+        </h2>
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-100">
+              <thead>
+                <tr className="bg-gray-50/50">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Soumissionnaire</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Marché</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Téléphone</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Date</th>
+                  <th className="px-6 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Montant</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {filteredSoumissions.length === 0 ? (
+                  <tr>
+                    <td colSpan="5" className="px-6 py-8 text-center text-gray-400 italic">
+                      Aucune offre trouvée.
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {filteredSoumissions.map(s => (
+                ) : (
+                  filteredSoumissions.map(s => (
                     <tr key={s.idOffre} className="hover:bg-gray-50/50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="font-bold text-gray-900">{s.nomSoumissionnaire}</div>
@@ -224,13 +232,13 @@ const ReceptionDashboard = () => {
                         {Number(s.montantPropose).toLocaleString()} FBU
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };
