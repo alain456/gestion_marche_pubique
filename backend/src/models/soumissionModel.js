@@ -5,17 +5,20 @@ const Soumission = {
     create: async (data) => {
         const { 
             idMarche, nomSoumissionnaire, adresse, telephone, 
-            email, referenceAppelOffre, dateSoumission, montantPropose 
+            email, referenceAppelOffre, dateSoumission, montantPropose,
+            statut, motif
         } = data;
 
         const query = `INSERT INTO soumissionnaire (
             idMarche, nomSoumissionnaire, adresse, telephone, 
-            email, referenceAppelOffre, dateSoumission, montantPropose
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+            email, referenceAppelOffre, dateSoumission, montantPropose,
+            statut, motif
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
         const [result] = await db.query(query, [
             idMarche, nomSoumissionnaire, adresse, telephone, 
-            email, referenceAppelOffre, dateSoumission, montantPropose
+            email, referenceAppelOffre, dateSoumission, montantPropose,
+            statut || 'en attente', motif || null
         ]);
         return result;
     },
@@ -43,17 +46,20 @@ const Soumission = {
     update: async (idOffre, data) => {
         const { 
             idMarche, nomSoumissionnaire, adresse, telephone, 
-            email, referenceAppelOffre, dateSoumission, montantPropose 
+            email, referenceAppelOffre, dateSoumission, montantPropose,
+            statut, motif 
         } = data;
 
         const query = `UPDATE soumissionnaire SET 
             idMarche = ?, nomSoumissionnaire = ?, adresse = ?, telephone = ?, 
-            email = ?, referenceAppelOffre = ?, dateSoumission = ?, montantPropose = ?
+            email = ?, referenceAppelOffre = ?, dateSoumission = ?, montantPropose = ?,
+            statut = ?, motif = ?
             WHERE idOffre = ?`;
 
         const [result] = await db.query(query, [
             idMarche, nomSoumissionnaire, adresse, telephone, 
-            email, referenceAppelOffre, dateSoumission, montantPropose, idOffre
+            email, referenceAppelOffre, dateSoumission, montantPropose,
+            statut, motif, idOffre
         ]);
         return result;
     },
