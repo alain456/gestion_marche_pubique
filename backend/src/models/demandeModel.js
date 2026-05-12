@@ -15,8 +15,8 @@ const Demande = {
 
             // 2. Créer les lignes
             if (articles && articles.length > 0) {
-                const lineQuery = `INSERT INTO ligne_demande (idDemande, idArticle, quantite, description) VALUES ?`;
-                const lineValues = articles.map(art => [idDemande, art.idArticle, art.quantite, art.description]);
+                const lineQuery = `INSERT INTO ligne_demande (idDemande, idArticle, quantite, description, montant) VALUES ?`;
+                const lineValues = articles.map(art => [idDemande, art.idArticle, art.quantite, art.description, art.montant || null]);
                 await connection.query(lineQuery, [lineValues]);
             }
 
@@ -50,6 +50,7 @@ const Demande = {
                         'nomArticle', a.nomArticle,
                         'quantite', l.quantite,
                         'prixUnitaire', l.prixUnitaire,
+                        'montant', l.montant,
                         'description', l.description
                     )
                 ) as articles
@@ -91,6 +92,7 @@ const Demande = {
                         'nomArticle', a.nomArticle,
                         'quantite', l.quantite,
                         'prixUnitaire', l.prixUnitaire,
+                        'montant', l.montant,
                         'description', l.description
                     )
                 ) as articles
@@ -120,8 +122,8 @@ const Demande = {
 
             // 2. Insérer les nouvelles lignes
             if (articles && articles.length > 0) {
-                const lineQuery = `INSERT INTO ligne_demande (idDemande, idArticle, quantite, description) VALUES ?`;
-                const lineValues = articles.map(art => [idDemande, art.idArticle, art.quantite, art.description]);
+                const lineQuery = `INSERT INTO ligne_demande (idDemande, idArticle, quantite, description, montant) VALUES ?`;
+                const lineValues = articles.map(art => [idDemande, art.idArticle, art.quantite, art.description, art.montant || null]);
                 await connection.query(lineQuery, [lineValues]);
             }
 

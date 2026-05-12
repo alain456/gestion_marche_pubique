@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
-import { PlusCircle, ArrowLeft, Search, Trash2, ListPlus, Pencil, Save, Send, Package, MessageSquare } from 'lucide-react';
+import { PlusCircle, ArrowLeft, Search, Trash2, ListPlus, Pencil, Save, Send, Package, MessageSquare, Eye } from 'lucide-react';
 import api from '../../services/api';
 import { AuthContext } from '../../contexts/AuthContext';
 
@@ -17,6 +17,9 @@ const DemandeurDemandes = () => {
   
   // ID de la demande en cours de modification (null si nouvelle)
   const [editingId, setEditingId] = useState(null);
+  
+  // Demande sélectionnée pour la visualisation
+  const [viewingDemande, setViewingDemande] = useState(null);
 
   const { user } = useContext(AuthContext);
 
@@ -28,6 +31,7 @@ const DemandeurDemandes = () => {
     idArticle: '',
     quantite: '',
     description: '',
+    montant: ''
   });
 
   const [form, setForm] = useState({
@@ -74,7 +78,7 @@ const DemandeurDemandes = () => {
   const resetForm = () => {
     setForm({ idService: user?.idService || '', typeMarche: '', idBudget: '' });
     setSelectedItems([]);
-    setCurrentItem({ idArticle: '', quantite: '', description: '' });
+    setCurrentItem({ idArticle: '', quantite: '', description: '', montant: '' });
     setEditingId(null);
     setError('');
     setMessage('');
@@ -97,7 +101,8 @@ const DemandeurDemandes = () => {
         idArticle: parseInt(currentItem.idArticle),
         nomArticle: article?.nomArticle,
         quantite: parseInt(currentItem.quantite),
-        description: currentItem.description
+        description: currentItem.description,
+        montant: currentItem.montant ? parseInt(currentItem.montant) : null
       });
     }
 
@@ -169,9 +174,10 @@ const DemandeurDemandes = () => {
       idArticle: articleIdNum, 
       nomArticle: articleData.nomArticle,
       quantite: parseInt(currentItem.quantite),
-      description: currentItem.description
+      description: currentItem.description,
+      montant: currentItem.montant ? parseInt(currentItem.montant) : null
     }]);
-    setCurrentItem({ idArticle: '', quantite: '', description: '' });
+    setCurrentItem({ idArticle: '', quantite: '', description: '', montant: '' });
   };
 
   const editArticleInList = (index) => {
@@ -180,6 +186,7 @@ const DemandeurDemandes = () => {
       idArticle: item.idArticle?.toString() || '',
       quantite: item.quantite,
       description: item.description || '',
+      montant: item.montant?.toString() || ''
     });
     removeArticleFromList(index);
   };
@@ -199,9 +206,10 @@ const DemandeurDemandes = () => {
       idArticle: art.idArticle,
       nomArticle: art.nomArticle,
       quantite: art.quantite,
-      description: art.description || ''
+      description: art.description || '',
+      montant: art.montant || null
     })));
-    setCurrentItem({ idArticle: '', quantite: '', description: '' });
+    setCurrentItem({ idArticle: '', quantite: '', description: '', montant: '' });
     
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -340,6 +348,10 @@ const DemandeurDemandes = () => {
                 <label className="block text-xs text-gray-500 mb-1">Quantité</label>
                 <input type="number" min="1" value={currentItem.quantite} onChange={(e) => setCurrentItem({...currentItem, quantite: e.target.value})} className="w-full rounded-lg border-gray-300 py-2 text-sm" placeholder="Ex: 10" />
               </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Montant (Optionnel)</label>
+                <input type="number" min="0" value={currentItem.montant} onChange={(e) => setCurrentItem({...currentItem, montant: e.target.value})} className="w-full rounded-lg border-gray-300 py-2 text-sm" placeholder="Ex: 50000" />
+              </div>
               <div className="md:col-span-1 flex items-end">
                 <button 
                   type="button"
@@ -349,7 +361,7 @@ const DemandeurDemandes = () => {
                   <PlusCircle className="h-4 w-4" /> Ajouter
                 </button>
               </div>
-              <div className="md:col-span-3">
+              <div className="md:col-span-4">
                 <input type="text" value={currentItem.description} onChange={(e) => setCurrentItem({...currentItem, description: e.target.value})} className="w-full rounded-lg border-gray-300 py-2 text-sm" placeholder="Description / Spécifications (optionnel)" />
               </div>
             </div>
@@ -358,13 +370,14 @@ const DemandeurDemandes = () => {
               <div className="mt-4 overflow-hidden rounded-lg border border-gray-200 bg-white">
                 <table className="min-w-full divide-y divide-gray-200 text-sm">
                   <thead className="bg-gray-100">
-                    <tr><th className="px-3 py-2 text-left">Article</th><th className="px-3 py-2 text-left">Qté</th><th className="px-3 py-2 text-left">Description</th><th className="px-3 py-2 text-right">Action</th></tr>
+                    <tr><th className="px-3 py-2 text-left">Article</th><th className="px-3 py-2 text-left">Qté</th><th className="px-3 py-2 text-left">Montant</th><th className="px-3 py-2 text-left">Description</th><th className="px-3 py-2 text-right">Action</th></tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {selectedItems.map((item, idx) => (
                       <tr key={idx}>
                         <td className="px-3 py-2 font-medium">{item.nomArticle}</td>
                         <td className="px-3 py-2">{item.quantite}</td>
+                        <td className="px-3 py-2 font-semibold text-primary">{item.montant ? item.montant.toLocaleString() + ' FBU' : '—'}</td>
                         <td className="px-3 py-2 text-gray-500 italic">{item.description || '—'}</td>
                         <td className="px-3 py-2 text-right space-x-2">
                           <button onClick={() => editArticleInList(idx)} className="text-blue-500"><Pencil className="h-4 w-4" /></button>
@@ -426,6 +439,7 @@ const DemandeurDemandes = () => {
                 <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase"># ID</th>
                 <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Budget</th>
                 <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Articles</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Montant Total</th>
                 {!isChef && (
                   <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Type</th>
                 )}
@@ -464,6 +478,9 @@ const DemandeurDemandes = () => {
                         )}
                       </div>
                     </td>
+                    <td className="px-4 py-4 font-bold text-sm text-gray-800">
+                      {demande.articles.reduce((acc, art) => acc + (art.montant || 0), 0).toLocaleString()} FBU
+                    </td>
                     {!isChef && (
                       <td className="px-4 py-4 text-sm capitalize">{demande.typeMarche}</td>
                     )}
@@ -489,6 +506,7 @@ const DemandeurDemandes = () => {
                       </div>
                     </td>
                     <td className="px-4 py-4 text-right space-x-3">
+                      <button onClick={() => setViewingDemande(demande)} className="text-blue-500 hover:text-blue-700" title="Visualiser"><Eye className="h-4 w-4 inline" /></button>
                       {demande.statut === 'Brouillon' && (
                         <>
                           <button onClick={() => reprendreDemande(demande)} className="text-blue-600 hover:underline font-semibold text-sm">Reprendre</button>
@@ -510,6 +528,54 @@ const DemandeurDemandes = () => {
           </table>
         </div>
       </section>
+
+      {/* Modal Visualisation */}
+      {viewingDemande && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-bold">Détails de la commande #{viewingDemande.idDemande}</h3>
+                <p className="text-sm text-gray-500">Service: {viewingDemande.nomService} | Budget: {viewingDemande.numeroBudget}</p>
+              </div>
+              <button onClick={() => setViewingDemande(null)} className="text-gray-400 hover:text-gray-600">×</button>
+            </div>
+            <div className="p-6 overflow-y-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-xs font-bold text-gray-500">Article</th>
+                    <th className="px-4 py-2 text-left text-xs font-bold text-gray-500">Quantité</th>
+                    <th className="px-4 py-2 text-left text-xs font-bold text-gray-500">Montant</th>
+                    <th className="px-4 py-2 text-left text-xs font-bold text-gray-500">Description</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {viewingDemande.articles.map((art, idx) => (
+                    <tr key={idx}>
+                      <td className="px-4 py-3 text-sm font-medium">{art.nomArticle}</td>
+                      <td className="px-4 py-3 text-sm">{art.quantite}</td>
+                      <td className="px-4 py-3 text-sm font-bold text-primary">{art.montant ? art.montant.toLocaleString() + ' FBU' : '—'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-500 italic">{art.description || '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot className="bg-gray-50 font-bold">
+                  <tr>
+                    <td colSpan="2" className="px-4 py-3 text-right">Total:</td>
+                    <td colSpan="2" className="px-4 py-3 text-primary">
+                      {viewingDemande.articles.reduce((acc, art) => acc + (art.montant || 0), 0).toLocaleString()} FBU
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+            <div className="p-4 border-t border-gray-100 text-right bg-gray-50 rounded-b-xl">
+              <button onClick={() => setViewingDemande(null)} className="px-5 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">Fermer</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
