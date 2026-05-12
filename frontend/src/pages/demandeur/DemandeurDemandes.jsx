@@ -507,17 +507,14 @@ const DemandeurDemandes = () => {
                     </td>
                     <td className="px-4 py-4 text-right space-x-3">
                       <button onClick={() => setViewingDemande(demande)} className="text-blue-500 hover:text-blue-700" title="Visualiser"><Eye className="h-4 w-4 inline" /></button>
-                      {demande.statut === 'Brouillon' && (
-                        <>
-                          <button onClick={() => reprendreDemande(demande)} className="text-blue-600 hover:underline font-semibold text-sm">Reprendre</button>
-                          <button onClick={() => finaliserDemande(demande.idDemande)} className="text-primary hover:underline font-semibold text-sm">Soumettre</button>
-                        </>
+                      {(demande.statut === 'Brouillon' || demande.statut === 'En attente' || demande.statut === 'Rejete') && (
+                        <button onClick={() => reprendreDemande(demande)} className="text-amber-500 hover:text-amber-700" title="Modifier"><Pencil className="h-4 w-4 inline" /></button>
                       )}
-                      {demande.statut === 'Rejete' && (
-                        <button onClick={() => reprendreDemande(demande)} className="text-amber-600 hover:underline font-semibold text-sm">Corriger & Renvoyer</button>
+                      {demande.statut === 'Brouillon' && (
+                        <button onClick={() => finaliserDemande(demande.idDemande)} className="text-primary hover:underline font-semibold text-sm">Soumettre</button>
                       )}
                       {(demande.statut === 'Brouillon' || demande.statut === 'En attente' || demande.statut === 'Rejete') && (
-                        <button onClick={() => handleDeleteDemande(demande.idDemande)} className="text-red-500 hover:text-red-700" title="Supprimer"><Trash2 className="h-4 w-4" /></button>
+                        <button onClick={() => handleDeleteDemande(demande.idDemande)} className="text-red-500 hover:text-red-700" title="Supprimer"><Trash2 className="h-4 w-4 inline" /></button>
                       )}
 
                     </td>
