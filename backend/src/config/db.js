@@ -23,8 +23,17 @@ pool.getConnection()
             console.log('✅ Colonne est_actif ajoutée à la table utilisateur');
         } catch (err) {
             if (err.code !== 'ER_DUP_FIELDNAME') {
-                // Ignorer si la colonne existe déjà
                 console.log('ℹ️ Colonne est_actif déjà existante');
+            }
+        }
+
+        // Vérifier si la colonne modifieParCgmp existe dans demande, sinon la créer
+        try {
+            await connection.query(`ALTER TABLE demande ADD COLUMN modifieParCgmp TINYINT(1) DEFAULT 0`);
+            console.log('✅ Colonne modifieParCgmp ajoutée à la table demande');
+        } catch (err) {
+            if (err.code !== 'ER_DUP_FIELDNAME') {
+                console.log('ℹ️ Colonne modifieParCgmp déjà existante');
             }
         }
         

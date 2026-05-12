@@ -77,6 +77,28 @@ exports.updateDemande = async (req, res) => {
     }
 };
 
+exports.updateDemandeByCgmp = async (req, res) => {
+    const { id } = req.params;
+    const { articles } = req.body;
+
+    if (!articles || !Array.isArray(articles)) {
+        return res.status(400).json({ message: "Articles requis pour la mise à jour." });
+    }
+
+    try {
+        // Recalculer le montant total estimé
+        const nouveauMontantTotal = articles.reduce((sum, art) => {
+            return sum + (Number(art.quantite || 0) * Number(art.prixUnitaire || 0));
+        }, 0);
+
+        await Demande.updateByCgmp(id, articles, nouveauMontantTotal);
+        res.json({ message: "Demande mise à jour et marquée comme ajustée par la CGMP.", montantTotal: nouveauMontantTotal });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Erreur lors de la mise à jour par la CGMP." });
+    }
+};
+
 exports.updateStatut = async (req, res) => {
     const { id } = req.params;
     const { statut } = req.body;

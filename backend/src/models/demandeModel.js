@@ -109,7 +109,7 @@ const Demande = {
         }));
     },
 
-    // Mettre à jour les articles d'une demande (pour modification)
+    // Mettre à jour les articles d'une demande (pour modification par le demandeur ou CGMP)
     updateArticles: async (idDemande, articles) => {
         const connection = await db.getConnection();
         try {
@@ -118,14 +118,44 @@ const Demande = {
             // 1. Supprimer les anciennes lignes
             await connection.query('DELETE FROM ligne_demande WHERE idDemande = ?', [idDemande]);
 
-            // 2. Insérer les nouvelles lignes
+            // 2. Insérer les nouvelles lignes (incluant prixUnitaire s'il existe)
             if (articles && articles.length > 0) {
-                const lineQuery = `INSERT INTO ligne_demande (idDemande, idArticle, quantite, description) VALUES ?`;
-                const lineValues = articles.map(art => [idDemande, art.idArticle, art.quantite, art.description]);
+                const lineQuery = `INSERT INTO ligne_demande (idDemande, idArticle, quantite, prixUnitaire, description) VALUES ?`;
+                const lineValues = articles.map(art => [idDemande, art.idArticle, art.quantite, art.prixUnitaire || 0, art.description || '']);
                 await connection.query(lineQuery, [lineValues]);
             }
 
             await connection.commit();
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
+    },
+
+    // Mise à jour spécifique par la CGMP (avec flag de modification)
+    updateByCgmp: async (idDemande, articles, montantEstime) => {
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+
+            // 1. Mettre à jour les articles
+            await connection.query('DELETE FROM ligne_demande WHERE idDemande = ?', [idDemande]);
+            if (articles && articles.length > 0) {
+                const lineQuery = `INSERT INTO ligne_demande (idDemande, idArticle, quantite, prixUnitaire, description) VALUES ?`;
+                const lineValues = articles.map(art => [idDemande, art.idArticle, art.quantite, art.prixUnitaire || 0, art.description || '']);
+                await connection.query(lineQuery, [lineValues]);
+            }
+
+            // 2. Marquer comme modifié par CGMP et mettre à jour le montant total
+            await connection.query(
+                'UPDATE demande SET modifieParCgmp = 1, montantEstime = ? WHERE idDemande = ?',
+                [montantEstime, idDemande]
+            );
+
+            await connection.commit();
+            return true;
         } catch (error) {
             await connection.rollback();
             throw error;

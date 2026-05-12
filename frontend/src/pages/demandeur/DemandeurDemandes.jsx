@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
-import { PlusCircle, ArrowLeft, Search, Trash2, ListPlus, Pencil, Save, Send, Package, MessageSquare } from 'lucide-react';
+import { PlusCircle, ArrowLeft, Search, Trash2, ListPlus, Pencil, Save, Send, Package, MessageSquare, Info } from 'lucide-react';
 import api from '../../services/api';
 import { AuthContext } from '../../contexts/AuthContext';
 
@@ -473,6 +473,11 @@ const DemandeurDemandes = () => {
                         <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase w-fit ${getStatutBadge(demande.statut)}`}>
                           {demande.statut}
                         </span>
+                        {demande.modifieParCgmp === 1 && (
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase w-fit bg-purple-50 text-purple-600 border border-purple-100 flex items-center gap-1">
+                            <Info className="h-3 w-3" /> Ajusté par CGMP
+                          </span>
+                        )}
                         {demande.motif && (
                           <div className={`mt-2 p-2.5 rounded-xl border text-xs shadow-sm max-w-[220px] animate-in fade-in slide-in-from-top-1 ${
                             demande.statut === 'Rejete' ? 'bg-red-50 border-red-100 text-red-800' : 'bg-blue-50 border-blue-100 text-blue-800'

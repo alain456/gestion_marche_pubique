@@ -9,7 +9,9 @@ import {
   User,
   Building,
   Package,
-  ChevronRight
+  ChevronRight,
+  CheckCircle,
+  Clock
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';

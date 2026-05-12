@@ -10,6 +10,7 @@ router.post('/', demandeController.createDemande);
 router.get('/', demandeController.getAllDemandes);
 router.get('/service/:idService', demandeController.getDemandesByService);
 router.put('/:id', demandeController.updateDemande);
+router.put('/:id/cgmp-update', demandeController.updateDemandeByCgmp);
 router.put('/:id/statut', demandeController.updateStatut);
 router.delete('/:id', demandeController.deleteDemande);
 

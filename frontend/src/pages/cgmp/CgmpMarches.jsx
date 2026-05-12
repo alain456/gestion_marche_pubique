@@ -14,7 +14,9 @@ import {
   MessageSquare,
   LayoutGrid,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Edit,
+  Save
 } from 'lucide-react';
 
 const CgmpMarches = () => {
@@ -24,6 +26,8 @@ const CgmpMarches = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [selectedDemand, setSelectedDemand] = useState(null);
+  const [editingDemand, setEditingDemand] = useState(null);
+  const [editingArticles, setEditingArticles] = useState([]);
   
   const [form, setForm] = useState({
     idDemande: '',
@@ -105,6 +109,29 @@ const CgmpMarches = () => {
     }));
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleStartEditArticles = (demand) => {
+    setEditingDemand(demand);
+    setEditingArticles(demand.articles.map(art => ({ ...art })));
+  };
+
+  const handleUpdateArticleField = (index, field, value) => {
+    const newArticles = [...editingArticles];
+    newArticles[index][field] = value;
+    setEditingArticles(newArticles);
+  };
+
+  const handleSaveArticles = async () => {
+    try {
+      await api.put(`/demandes/${editingDemand.idDemande}/cgmp-update`, { articles: editingArticles });
+      setMessage('Les articles ont été modifiés. Le service demandeur en sera informé.');
+      setEditingDemand(null);
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      setError('Erreur lors de la mise à jour des articles.');
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -647,9 +674,18 @@ const CgmpMarches = () => {
                             <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">ID Demande:</span>
                             <span className="ml-1 text-sm font-mono font-bold">#{d.idDemande}</span>
                           </div>
-                          <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
-                            VALIDE
-                          </span>
+                          <div className="flex gap-2">
+                            <button 
+                              onClick={() => handleStartEditArticles(d)}
+                              className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-blue-100"
+                              title="Modifier les quantités ou prix"
+                            >
+                              <Edit className="h-3 w-3" />
+                            </button>
+                            <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
+                              VALIDE
+                            </span>
+                          </div>
                         </div>
                         
                         <div className="grid grid-cols-2 gap-y-2 text-[11px]">
@@ -767,6 +803,79 @@ const CgmpMarches = () => {
           </table>
         </div>
       </section>
+      {/* Modal de modification des articles par la CGMP */}
+      {editingDemand && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="bg-primary px-8 py-5 text-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Edit className="h-6 w-6" />
+                <div>
+                  <h2 className="text-xl font-bold">Ajustement des Articles</h2>
+                  <p className="text-xs text-white/70">Demande #{editingDemand.idDemande} - {editingDemand.nomService}</p>
+                </div>
+              </div>
+              <button onClick={() => setEditingDemand(null)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                <XCircle className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="p-8 max-h-[60vh] overflow-y-auto">
+              <div className="bg-amber-50 border border-amber-100 p-4 rounded-2xl mb-6 flex gap-3 items-start">
+                <Info className="h-5 w-5 text-amber-600 mt-0.5" />
+                <p className="text-xs text-amber-800 leading-relaxed">
+                  <strong>Note:</strong> Toute modification de la quantité ou du prix sera notifiée au service demandeur. Les montants totaux seront recalculés automatiquement.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                {editingArticles.map((art, idx) => (
+                  <div key={idx} className="p-4 bg-gray-50 rounded-2xl border border-gray-100 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                    <div className="md:col-span-1">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">{art.nomArticle}</p>
+                      <p className="text-xs text-gray-500 italic">{art.description || 'Pas de description'}</p>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Quantité</label>
+                      <input 
+                        type="number"
+                        className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none"
+                        value={art.quantite}
+                        onChange={(e) => handleUpdateArticleField(idx, 'quantite', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Prix Unitaire (FBU)</label>
+                      <input 
+                        type="number"
+                        className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none"
+                        value={art.prixUnitaire}
+                        onChange={(e) => handleUpdateArticleField(idx, 'prixUnitaire', e.target.value)}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="p-8 bg-gray-50 flex justify-end gap-4 border-t border-gray-100">
+              <button 
+                onClick={() => setEditingDemand(null)}
+                className="px-6 py-2.5 text-gray-500 font-bold hover:bg-gray-200 rounded-xl transition-colors"
+              >
+                Annuler
+              </button>
+              <button 
+                onClick={handleSaveArticles}
+                className="px-8 py-2.5 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:bg-blue-800 transition-all flex items-center gap-2"
+              >
+                <Save className="h-5 w-5" />
+                Enregistrer les Modifications
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
