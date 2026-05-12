@@ -32,15 +32,14 @@ const Sidebar = ({ user }) => {
       case 'RAF':
         return [
           { name: 'Dashboard', path: '/raf', icon: Home },
-          { name: 'Validation Budget', path: '/raf/budget', icon: CheckSquare },
+          { name: 'Validation Budget', path: '/raf/budgets', icon: CheckSquare },
           { name: 'Paiements', path: '/raf/paiements', icon: CreditCard },
         ];
       case 'CGMP':
         return [
           { name: 'Dashboard', path: '/cgmp', icon: Home },
-          { name: 'Budgets', path: '/cgmp/budgets', icon: Building2 },
+          { name: 'Lignes Budgétaires', path: '/cgmp/budgets', icon: CreditCard },
           { name: 'Marchés', path: '/cgmp/marches', icon: FileText },
-          { name: 'Soumissionnaires', path: '/cgmp/soumissionnaires', icon: Users },
         ];
       case 'RECEPTIONISTE':
       case 'RECEPTIONNISTE':

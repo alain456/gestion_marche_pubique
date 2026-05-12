@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
+import { useNavigate } from 'react-router-dom';
 import { 
   FileText, 
   CheckSquare, 
@@ -7,7 +8,7 @@ import {
   Clock, 
   TrendingUp,
   Package
-} from 'lucide-react';
+} from 'lucide-react'
 
 const CgmpDashboard = () => {
   const [stats, setStats] = useState({
@@ -17,6 +18,7 @@ const CgmpDashboard = () => {
     totalArticles: 0
   });
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -126,7 +128,10 @@ const CgmpDashboard = () => {
             Actions Prioritaires
           </h2>
           <div className="space-y-4">
-            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-between group hover:bg-primary/5 transition-colors cursor-pointer">
+            <div 
+              onClick={() => navigate('/cgmp/marches')}
+              className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-between group hover:bg-primary/5 transition-colors cursor-pointer"
+            >
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center font-bold">1</div>
                 <div>
@@ -136,7 +141,10 @@ const CgmpDashboard = () => {
               </div>
               <TrendingUp className="text-gray-300 group-hover:text-primary" size={20} />
             </div>
-            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-between group hover:bg-primary/5 transition-colors cursor-pointer">
+            <div 
+              onClick={() => navigate('/cgmp/marches')}
+              className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-between group hover:bg-primary/5 transition-colors cursor-pointer"
+            >
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">2</div>
                 <div>
@@ -146,7 +154,10 @@ const CgmpDashboard = () => {
               </div>
               <TrendingUp className="text-gray-300 group-hover:text-primary" size={20} />
             </div>
-            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-between group hover:bg-primary/5 transition-colors cursor-pointer" onClick={() => window.location.href='/cgmp/budgets'}>
+            <div 
+              className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-between group hover:bg-primary/5 transition-colors cursor-pointer" 
+              onClick={() => navigate('/cgmp/budgets')}
+            >
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold">3</div>
                 <div>

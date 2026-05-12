@@ -46,6 +46,7 @@ const CgmpBudgets = () => {
       await api.patch(`/budgets/${id}/status`, { status: nextStatus });
       loadBudgets();
     } catch (err) {
+      console.error(err);
       setError('Erreur lors du changement de statut.');
     }
   };
