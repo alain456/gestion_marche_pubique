@@ -87,6 +87,40 @@ const Budget = {
         const query = "UPDATE budget SET statusValidation = ? WHERE idBudget = ?";
         const [result] = await db.query(query, [status, id]);
         return result;
+    },
+
+    // Mettre à jour une ligne budgétaire
+    update: async (id, data) => {
+        const { numeroBudget, typeBudget, exerciceBudgetaire, montantEstime, sourceFinancier } = data;
+        const query = `
+            UPDATE budget 
+            SET numeroBudget = ?, typeBudget = ?, exerciceBudgetaire = ?, montantEstime = ?, sourceFinancier = ?
+            WHERE idBudget = ?
+        `;
+        const [result] = await db.query(query, [numeroBudget, typeBudget, exerciceBudgetaire, montantEstime, sourceFinancier, id]);
+        return result;
+    },
+
+    // Supprimer une ligne budgétaire
+    delete: async (id) => {
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+            
+            // 1. Détacher les demandes liées (mettre idBudget à NULL)
+            await connection.query("UPDATE demande SET idBudget = NULL WHERE idBudget = ?", [id]);
+            
+            // 2. Supprimer la ligne budgétaire
+            const [result] = await connection.query("DELETE FROM budget WHERE idBudget = ?", [id]);
+            
+            await connection.commit();
+            return result;
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
     }
 };
 

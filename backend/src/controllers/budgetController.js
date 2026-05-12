@@ -96,3 +96,25 @@ exports.toggleBudgetStatus = async (req, res) => {
         res.status(500).json({ message: "Erreur lors de la mise à jour du statut" });
     }
 };
+
+exports.updateBudget = async (req, res) => {
+    const { id } = req.params;
+    try {
+        await Budget.update(id, req.body);
+        res.json({ message: "Ligne budgétaire mise à jour avec succès" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Erreur lors de la mise à jour" });
+    }
+};
+
+exports.deleteBudget = async (req, res) => {
+    const { id } = req.params;
+    try {
+        await Budget.delete(id);
+        res.json({ message: "Ligne budgétaire supprimée avec succès" });
+    } catch (error) {
+        console.error(error);
+        res.status(400).json({ message: error.message || "Erreur lors de la suppression" });
+    }
+};

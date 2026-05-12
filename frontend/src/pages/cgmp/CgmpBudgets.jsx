@@ -9,7 +9,9 @@ import {
   LayoutGrid, 
   Calendar,
   ArrowLeft,
-  Power
+  Power,
+  Edit,
+  Trash2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -18,6 +20,8 @@ const CgmpBudgets = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editId, setEditId] = useState(null);
   
   const [form, setForm] = useState({
     numeroBudget: '',
@@ -78,6 +82,10 @@ const CgmpBudgets = () => {
   const resetForm = () => {
     setForm({ numeroBudget: '', typeBudget: 'fourniture', exerciceBudgetaire: new Date().getFullYear(), montantEstime: '', sourceFinancier: 'Etat' });
     setShowForm(false);
+    setIsEditing(false);
+    setEditId(null);
+    setError('');
+    setMessage('');
   };
 
   const handleSubmit = async (e) => {
@@ -86,12 +94,46 @@ const CgmpBudgets = () => {
     setMessage('');
 
     try {
-      await api.post('/budgets', form);
-      setMessage('Nouvelle ligne budgétaire créée avec succès.');
+      if (isEditing) {
+        await api.put(`/budgets/${editId}`, form);
+        setMessage('Ligne budgétaire mise à jour avec succès.');
+      } else {
+        await api.post('/budgets', form);
+        setMessage('Nouvelle ligne budgétaire créée avec succès.');
+      }
       resetForm();
       loadBudgets();
     } catch (err) {
       setError(err.response?.data?.message || 'Une erreur est survenue.');
+    }
+  };
+
+  const handleEdit = (budget) => {
+    setError('');
+    setMessage('');
+    setForm({
+      numeroBudget: budget.numeroBudget,
+      typeBudget: budget.typeBudget,
+      exerciceBudgetaire: budget.exerciceBudgetaire,
+      montantEstime: budget.montantEstime,
+      sourceFinancier: budget.sourceFinancier || 'Etat'
+    });
+    setEditId(budget.idBudget);
+    setIsEditing(true);
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Êtes-vous sûr de vouloir supprimer cette ligne budgétaire ?")) return;
+    setError('');
+    setMessage('');
+    try {
+      await api.delete(`/budgets/${id}`);
+      setMessage('Ligne budgétaire supprimée avec succès.');
+      loadBudgets();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Erreur lors de la suppression.');
     }
   };
 
@@ -129,7 +171,7 @@ const CgmpBudgets = () => {
             className="px-6 py-3 bg-primary text-white rounded-2xl hover:bg-blue-800 transition-all font-bold shadow-lg shadow-primary/20 flex items-center gap-2"
           >
             <PlusCircle className="h-5 w-5" />
-            {showForm ? 'Annuler' : 'Créer une Ligne'}
+            {showForm ? 'Annuler' : isEditing ? 'Modifier la Ligne' : 'Créer une Ligne'}
           </button>
         </div>
       </div>
@@ -152,7 +194,7 @@ const CgmpBudgets = () => {
         <section className="bg-white rounded-3xl border border-gray-100 shadow-xl overflow-hidden animate-in slide-in-from-top-4">
           <div className="bg-primary px-8 py-5 text-white flex items-center gap-3">
             <PlusCircle className="h-6 w-6" />
-            <h2 className="text-xl font-bold">Nouveau Numéro Budgétaire</h2>
+            <h2 className="text-xl font-bold">{isEditing ? 'Modifier la Ligne Budgétaire' : 'Nouveau Numéro Budgétaire'}</h2>
           </div>
           <form onSubmit={handleSubmit} className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
@@ -208,7 +250,7 @@ const CgmpBudgets = () => {
                 Annuler
               </button>
               <button type="submit" className="px-10 py-3 bg-primary text-white rounded-2xl hover:bg-blue-800 transition-all font-bold shadow-lg shadow-primary/20">
-                Créer la Ligne
+                {isEditing ? 'Mettre à jour' : 'Créer la Ligne'}
               </button>
             </div>
           </form>
@@ -257,8 +299,18 @@ const CgmpBudgets = () => {
                   </button>
                 </div>
               </div>
-              
-              <h3 className="text-lg font-bold text-gray-900 mb-1 group-hover:text-primary transition-colors">{b.numeroBudget}</h3>
+
+              <div className="flex justify-between items-center mb-1">
+                <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors">{b.numeroBudget}</h3>
+                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                   <button onClick={() => handleEdit(b)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Modifier">
+                     <Edit className="h-4 w-4" />
+                   </button>
+                   <button onClick={() => handleDelete(b.idBudget)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Supprimer">
+                     <Trash2 className="h-4 w-4" />
+                   </button>
+                </div>
+              </div>
               <div className={`inline-block px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase mb-4 ${getTypeColor(b.typeBudget)}`}>
                 {b.typeBudget}
               </div>

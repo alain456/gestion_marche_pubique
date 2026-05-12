@@ -12,6 +12,8 @@ router.get('/ouverts', budgetController.getBudgetsOuverts);
 router.get('/', authorizeRoles('RAF', 'ADMIN', 'CGMP'), budgetController.getBudgets);
 router.get('/next-number/:exercice/:type', authorizeRoles('RAF', 'ADMIN', 'CGMP'), budgetController.getNextBudgetNumber);
 router.post('/', authorizeRoles('RAF', 'ADMIN', 'CGMP'), budgetController.createBudget);
+router.put('/:id', authorizeRoles('RAF', 'ADMIN', 'CGMP'), budgetController.updateBudget);
+router.delete('/:id', authorizeRoles('RAF', 'ADMIN', 'CGMP'), budgetController.deleteBudget);
 router.patch('/:id/status', authorizeRoles('RAF', 'ADMIN', 'CGMP'), budgetController.toggleBudgetStatus);
 
 // Validation spécifique à une demande
