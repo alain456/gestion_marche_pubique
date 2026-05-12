@@ -19,6 +19,7 @@ import CgmpMarches from './pages/cgmp/CgmpMarches';
 import CgmpBudgets from './pages/cgmp/CgmpBudgets';
 import ReceptionDashboard from './pages/reception/ReceptionDashboard';
 import ReceptionSoumissions from './pages/reception/ReceptionSoumissions';
+import CgmpSoumissions from './pages/cgmp/CgmpSoumissions';
 const Unauthorized = () => <div className="p-8 text-red-600 font-bold">Accès non autorisé</div>;
 
 // Composant pour rediriger l'utilisateur vers son dashboard par défaut
@@ -82,6 +83,7 @@ const App = () => {
             <Route path="/cgmp" element={<CgmpDashboard />} />
             <Route path="/cgmp/marches" element={<CgmpMarches />} />
             <Route path="/cgmp/budgets" element={<CgmpBudgets />} />
+            <Route path="/cgmp/soumissionnaires" element={<CgmpSoumissions />} />
           </Route>
 
           <Route element={<ProtectedRoute allowedRoles={['RECEPTIONISTE', 'RECEPTIONNISTE']} />}>
