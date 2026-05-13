@@ -147,3 +147,14 @@ exports.deleteBudget = async (req, res) => {
         res.status(400).json({ message: error.message || "Erreur lors de la suppression" });
     }
 };
+
+exports.getBudgetStatus = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const status = await Budget.getBudgetStatus(id);
+        res.json(status);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Erreur lors de la récupération de l'état du budget" });
+    }
+};

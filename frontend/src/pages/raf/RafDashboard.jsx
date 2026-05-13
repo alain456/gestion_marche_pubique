@@ -27,6 +27,7 @@ const RafDashboard = () => {
   const [receptions, setReceptions] = useState([]);
   const [paiements, setPaiements] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [budgetStatus, setBudgetStatus] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
   // États pour les modals/formulaires
@@ -75,7 +76,7 @@ const RafDashboard = () => {
     fetchData();
   }, []);
 
-  const openBudgetModal = (demande) => {
+  const openBudgetModal = async (demande) => {
     setSelectedDemande(demande);
     setTempArticles(demande.articles.map(a => ({ ...a, prixUnitaire: a.prixUnitaire || 0 })));
     const total = demande.articles.reduce((acc, a) => acc + ((a.prixUnitaire || 0) * a.quantite), 0);
@@ -83,6 +84,16 @@ const RafDashboard = () => {
       ...budgetForm,
       montantEstime: total || ''
     });
+
+    setBudgetStatus(null);
+    if (demande.idBudget) {
+      try {
+        const res = await api.get(`/budgets/status/${demande.idBudget}`);
+        setBudgetStatus(res.data);
+      } catch (err) {
+        console.error('Erreur budget status:', err);
+      }
+    }
     setShowBudgetModal(true);
   };
 
@@ -500,6 +511,38 @@ const RafDashboard = () => {
                 <p className="text-xs text-gray-400 uppercase font-bold">Demande sélectionnée</p>
                 <p className="text-sm font-bold text-gray-800">#{selectedDemande.idDemande} — {selectedDemande.nomService}</p>
               </div>
+
+              {/* Infos Budget Real-time */}
+              {budgetStatus && (
+                <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-2xl space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Enveloppe Budgétaire</span>
+                    <span className="text-xs font-mono font-bold text-indigo-700">{budgetStatus.numeroBudget}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-[9px] text-indigo-400 font-bold uppercase">Alloué</p>
+                      <p className="text-xs font-bold text-indigo-900">{Number(budgetStatus.montantAlloue).toLocaleString()} FBU</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] text-indigo-400 font-bold uppercase">Consommé</p>
+                      <p className="text-xs font-bold text-indigo-900">{Number(budgetStatus.montantConsomme).toLocaleString()} FBU</p>
+                    </div>
+                  </div>
+                  <div className="pt-2 border-t border-indigo-100 flex justify-between items-end">
+                    <div>
+                      <p className="text-[9px] text-indigo-600 font-black uppercase">Solde Restant</p>
+                      <p className={`text-sm font-black ${budgetStatus.montantAlloue - budgetStatus.montantConsomme < budgetForm.montantEstime ? 'text-red-600' : 'text-emerald-600'}`}>
+                        {(budgetStatus.montantAlloue - budgetStatus.montantConsomme).toLocaleString()} FBU
+                      </p>
+                    </div>
+                    {budgetStatus.montantAlloue - budgetStatus.montantConsomme < budgetForm.montantEstime && (
+                      <span className="px-2 py-0.5 bg-red-100 text-red-600 rounded text-[10px] font-bold animate-pulse">Solde insuffisant</span>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Exercice Budgétaire</label>
                 <input 

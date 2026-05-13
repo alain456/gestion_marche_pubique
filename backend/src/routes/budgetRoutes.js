@@ -15,6 +15,7 @@ router.post('/', authorizeRoles('RAF', 'ADMIN', 'CGMP'), budgetController.create
 router.put('/:id', authorizeRoles('RAF', 'ADMIN', 'CGMP'), budgetController.updateBudget);
 router.delete('/:id', authorizeRoles('RAF', 'ADMIN', 'CGMP'), budgetController.deleteBudget);
 router.patch('/:id/status', authorizeRoles('RAF', 'ADMIN', 'CGMP'), budgetController.toggleBudgetStatus);
+router.get('/status/:id', authorizeRoles('RAF', 'ADMIN', 'CGMP'), budgetController.getBudgetStatus);
 
 // Validation spécifique à une demande
 router.post('/valider', authorizeRoles('RAF', 'ADMIN'), budgetController.validerBudget);

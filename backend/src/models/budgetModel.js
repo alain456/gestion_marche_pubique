@@ -121,6 +121,23 @@ const Budget = {
         } finally {
             connection.release();
         }
+    },
+
+    // Obtenir l'état d'un budget (total alloué vs total consommé)
+    getBudgetStatus: async (idBudget) => {
+        const query = `
+            SELECT 
+                b.idBudget,
+                b.numeroBudget,
+                b.montantEstime as montantAlloue,
+                COALESCE(SUM(d.montantEstime), 0) as montantConsomme
+            FROM budget b
+            LEFT JOIN demande d ON b.idBudget = d.idBudget AND d.statut IN ('Valide', 'Inclus dans Marché')
+            WHERE b.idBudget = ?
+            GROUP BY b.idBudget
+        `;
+        const [rows] = await db.query(query, [idBudget]);
+        return rows[0];
     }
 };
 
