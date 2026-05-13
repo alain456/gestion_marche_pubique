@@ -16,7 +16,8 @@ import {
   ChevronDown,
   ChevronUp,
   Edit,
-  Save
+  Save,
+  History
 } from 'lucide-react';
 
 const CgmpMarches = () => {
@@ -54,6 +55,10 @@ const CgmpMarches = () => {
     cloturePar: '',
     commentaire: ''
   });
+
+  const [showHistory, setShowHistory] = useState(false);
+  const [historyData, setHistoryData] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -95,6 +100,31 @@ const CgmpMarches = () => {
     fetchData();
   }, []);
 
+  const fetchHistory = async (idDemande) => {
+    setHistoryLoading(true);
+    setHistoryData([]);
+    setShowHistory(true);
+    try {
+      const res = await api.get(`/demandes/${idDemande}/history`);
+      setHistoryData(res.data);
+    } catch (err) {
+      console.error('Erreur chargement historique:', err);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const getStatutBadge = (statut) => {
+    const styles = {
+      'Brouillon': 'bg-gray-100 text-gray-600 border border-gray-300',
+      'Soumis': 'bg-blue-100 text-blue-800',
+      'En attente': 'bg-amber-100 text-amber-800',
+      'Valide': 'bg-green-100 text-green-800',
+      'Rejete': 'bg-red-100 text-red-800',
+    };
+    return styles[statut] || 'bg-gray-100 text-gray-800';
+  };
+
   const toggleBudget = (idBudget) => {
     setExpandedBudgets(prev => ({ ...prev, [idBudget]: !prev[idBudget] }));
   };
@@ -120,6 +150,28 @@ const CgmpMarches = () => {
     const newArticles = [...editingArticles];
     newArticles[index][field] = value;
     setEditingArticles(newArticles);
+  };
+
+  const handleRejectDemand = async (demand) => {
+    const motif = window.prompt("Motif du rejet (obligatoire pour le demandeur et le RAF) :");
+    if (!motif || motif.trim() === "") {
+      alert("Le motif est obligatoire pour rejeter une demande.");
+      return;
+    }
+
+    if (window.confirm(`Êtes-vous sûr de vouloir rejeter la demande #${demand.idDemande} ?`)) {
+      try {
+        await api.put(`/demandes/${demand.idDemande}/statut`, { 
+          statut: 'Rejete',
+          motif: `[REJET CGMP] ${motif}`
+        });
+        setMessage('Demande rejetée. Le service demandeur et le RAF pourront consulter le motif.');
+        fetchData();
+      } catch (err) {
+        console.error(err);
+        setError('Erreur lors du rejet de la demande.');
+      }
+    }
   };
 
   const handleSaveArticles = async () => {
@@ -334,7 +386,7 @@ const CgmpMarches = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Validateur / Responsable</label>
+              <label className="text-xs font-black text-gray-500 uppercase tracking-widest ml-1">Responsable de Publication</label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
@@ -348,7 +400,7 @@ const CgmpMarches = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Statut Initial</label>
+              <label className="text-xs font-black text-gray-500 uppercase tracking-widest ml-1">État du Marché</label>
               <div className="relative">
                 <Info className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <select
@@ -367,7 +419,7 @@ const CgmpMarches = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Clôturé Par (Optionnel)</label>
+              <label className="text-xs font-black text-gray-500 uppercase tracking-widest ml-1">Responsable de Clôture</label>
               <div className="relative">
                 <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
@@ -392,7 +444,7 @@ const CgmpMarches = () => {
             </div>
 
             <div className="md:col-span-2 lg:col-span-3 space-y-2">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Commentaire additionnel</label>
+              <label className="text-xs font-black text-gray-500 uppercase tracking-widest ml-1">Notes Additionnelles</label>
               <div className="relative">
                 <MessageSquare className="absolute left-4 top-4 h-4 w-4 text-gray-400" />
                 <textarea
@@ -676,12 +728,31 @@ const CgmpMarches = () => {
                           </div>
                           <div className="flex gap-2">
                             <button 
+                              onClick={() => fetchHistory(d.idDemande)}
+                              className="p-1.5 text-gray-500 hover:bg-gray-50 rounded-lg transition-colors border border-gray-100"
+                              title="Historique"
+                            >
+                              <History className="h-3 w-3" />
+                            </button>
+                            <button 
                               onClick={() => handleStartEditArticles(d)}
                               className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-blue-100"
                               title="Modifier les quantités ou prix"
                             >
                               <Edit className="h-3 w-3" />
                             </button>
+                            <button 
+                              onClick={() => handleRejectDemand(d)}
+                              className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-red-100"
+                              title="Rejeter pour correction"
+                            >
+                              <XCircle className="h-3 w-3" />
+                            </button>
+                            {d.renvoyee === 1 && (
+                              <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-100 flex items-center gap-1">
+                                <Clock className="h-3 w-3" /> RENVOYÉE
+                              </span>
+                            )}
                             <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
                               VALIDE
                             </span>
@@ -713,16 +784,37 @@ const CgmpMarches = () => {
                                 <span className="text-[10px] font-bold text-primary">{Number(art.prixUnitaire * art.quantite).toLocaleString()} FBU</span>
                               </div>
                               {art.description && (
-                                <p className="text-[10px] text-gray-500 italic leading-tight">
+                                <p className="text-[10px] text-gray-500 italic leading-tight mb-1">
                                   Spec: {art.description}
+                                </p>
+                              )}
+                              {art.montant > 0 && (
+                                <p className="text-[9px] text-amber-600 font-bold bg-amber-50/50 px-1.5 py-0.5 rounded border border-amber-100/50 w-fit">
+                                  Proposé: {Number(art.montant).toLocaleString()} FBU
                                 </p>
                               )}
                             </div>
                           ))}
                         </div>
+                        {/* Totaux récapitulatifs */}
+                        <div className="mt-3 flex justify-between items-center bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
+                          <div className="text-center">
+                            <p className="text-[9px] text-amber-600 font-black uppercase tracking-wider">Total proposé</p>
+                            <p className="text-xs font-bold text-amber-700">
+                              {d.articles.reduce((acc, a) => acc + (Number(a.montant) || 0), 0).toLocaleString()} FBU
+                            </p>
+                          </div>
+                          <div className="h-8 w-px bg-gray-200"></div>
+                          <div className="text-center">
+                            <p className="text-[9px] text-primary font-black uppercase tracking-wider">Total validé RAF</p>
+                            <p className="text-xs font-bold text-primary">
+                              {d.articles.reduce((acc, a) => acc + ((a.prixUnitaire || 0) * a.quantite), 0).toLocaleString()} FBU
+                            </p>
+                          </div>
+                        </div>
                         {d.motif && (
-                          <div className="mt-2 p-2 bg-white rounded-lg border border-gray-100 text-[10px] text-gray-500 italic">
-                            Note RAF: {d.motif}
+                          <div className="mt-2 p-2 bg-blue-50 rounded-lg border border-blue-100 text-[10px] text-blue-700 italic">
+                            <span className="font-bold not-italic">Note RAF :</span> {d.motif}
                           </div>
                         )}
                       </div>
@@ -871,6 +963,107 @@ const CgmpMarches = () => {
               >
                 <Save className="h-5 w-5" />
                 Enregistrer les Modifications
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Historique */}
+      {showHistory && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-0 max-w-xl w-full shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden flex flex-col max-h-[85vh]">
+            <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-6 text-white flex justify-between items-center shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/10 rounded-xl">
+                  <History className="h-6 w-6 text-blue-400" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black uppercase tracking-widest">Historique Complet</h3>
+                  <p className="text-blue-200 text-xs font-bold opacity-80 uppercase tracking-tighter">Audit Trail & Timeline</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowHistory(false)} 
+                className="p-2 hover:bg-white/10 rounded-full transition-colors"
+              >
+                <XCircle className="h-7 w-7" />
+              </button>
+            </div>
+
+            <div className="p-8 overflow-y-auto flex-1 bg-gray-50/50">
+              {historyLoading ? (
+                <div className="flex flex-col items-center justify-center py-12 gap-4">
+                  <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
+                  <p className="text-gray-500 font-bold animate-pulse uppercase text-xs tracking-widest">Récupération des données...</p>
+                </div>
+              ) : historyData.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="inline-flex p-4 bg-gray-100 rounded-full mb-4">
+                    <Info className="h-8 w-8 text-gray-400" />
+                  </div>
+                  <p className="text-gray-500 font-bold uppercase text-xs tracking-widest">Aucun historique disponible pour cette demande.</p>
+                </div>
+              ) : (
+                <div className="relative border-l-2 border-gray-200 ml-3 space-y-8 pl-8">
+                  {historyData.map((item, idx) => (
+                    <div key={idx} className="relative group">
+                      {/* Point sur la ligne */}
+                      <div className={`absolute -left-[41px] top-0 w-6 h-6 rounded-full border-4 border-white shadow-sm transition-all duration-300 group-hover:scale-125 ${
+                        item.action.includes('Validation') || item.nouveauStatut === 'Valide' ? 'bg-emerald-500 shadow-emerald-200' :
+                        item.action.includes('Rejet') || item.nouveauStatut === 'Rejete' ? 'bg-red-500 shadow-red-200' :
+                        'bg-blue-500 shadow-blue-200'
+                      }`} />
+                      
+                      <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
+                        <div className="flex justify-between items-start mb-3">
+                          <h4 className="text-sm font-black text-gray-800 uppercase tracking-tight">{item.action}</h4>
+                          <span className="text-[10px] font-mono bg-gray-100 text-gray-500 px-2 py-1 rounded-lg border border-gray-200">
+                            {new Date(item.dateAction).toLocaleString('fr-FR', {
+                              day: '2-digit', month: '2-digit', year: 'numeric',
+                              hour: '2-digit', minute: '2-digit'
+                            })}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="h-8 w-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 border border-gray-200">
+                            <User className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-black text-gray-700">{item.nomUtilisateur}</p>
+                            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{item.roleUtilisateur}</p>
+                          </div>
+                        </div>
+
+                        {item.nouveauStatut && (
+                          <div className="mb-3 flex items-center gap-2">
+                            <span className="text-[9px] font-black text-gray-400 uppercase">Nouveau Statut :</span>
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase border ${getStatutBadge(item.nouveauStatut)}`}>
+                              {item.nouveauStatut}
+                            </span>
+                          </div>
+                        )}
+
+                        {item.motif && (
+                          <div className="bg-amber-50/50 border border-amber-100 p-3 rounded-xl italic text-xs text-amber-800 relative">
+                            <MessageSquare className="h-3 w-3 absolute -top-1.5 -left-1.5 bg-amber-100 rounded-full p-0.5 text-amber-600 border border-amber-200" />
+                            &ldquo;{item.motif}&rdquo;
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 bg-white border-t border-gray-100 text-right shrink-0">
+              <button 
+                onClick={() => setShowHistory(false)} 
+                className="px-8 py-3 bg-gray-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-black transition-all shadow-lg shadow-gray-200"
+              >
+                Fermer l&apos;Historique
               </button>
             </div>
           </div>

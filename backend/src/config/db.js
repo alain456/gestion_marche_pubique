@@ -32,9 +32,29 @@ pool.getConnection()
             await connection.query(`ALTER TABLE demande ADD COLUMN modifieParCgmp TINYINT(1) DEFAULT 0`);
             console.log('✅ Colonne modifieParCgmp ajoutée à la table demande');
         } catch (err) {
-            if (err.code !== 'ER_DUP_FIELDNAME') {
-                console.log('ℹ️ Colonne modifieParCgmp déjà existante');
-            }
+            // console.log('ℹ️ Colonne modifieParCgmp déjà existante');
+        }
+
+        // Créer la table historique_demande si elle n'existe pas
+        try {
+            await connection.query(`
+                CREATE TABLE IF NOT EXISTS historique_demande (
+                    idHistorique INT AUTO_INCREMENT PRIMARY KEY,
+                    idDemande INT NOT NULL,
+                    action VARCHAR(255) NOT NULL,
+                    statutPrecedent VARCHAR(50),
+                    nouveauStatut VARCHAR(50),
+                    idUtilisateur INT,
+                    nomUtilisateur VARCHAR(255),
+                    roleUtilisateur VARCHAR(50),
+                    motif TEXT,
+                    dateAction TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (idDemande) REFERENCES demande(idDemande) ON DELETE CASCADE
+                )
+            `);
+            console.log('✅ Table historique_demande vérifiée/créée');
+        } catch (err) {
+            console.error('❌ Erreur lors de la création de la table historique_demande:', err.message);
         }
         
         connection.release(); // On libère la connexion après le test

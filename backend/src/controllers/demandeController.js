@@ -44,6 +44,16 @@ exports.createDemande = async (req, res) => {
             idBudget
         });
         
+        // --- Enregistrer l'historique ---
+        await Demande.addHistory(null, {
+            idDemande: result.idDemande,
+            action: statutFinal === 'Brouillon' ? "Création du brouillon" : "Soumission de la demande",
+            nouveauStatut: statutFinal,
+            idUtilisateur: req.user.idUser,
+            nomUtilisateur: req.user.nom,
+            roleUtilisateur: req.user.role
+        });
+
         res.status(201).json({ 
             message: statutFinal === 'Brouillon' ? "Brouillon enregistré avec succès" : "Demande d'achat créée avec succès", 
             idDemande: result.idDemande 
@@ -63,11 +73,30 @@ exports.updateDemande = async (req, res) => {
         // Si on met à jour les articles
         if (articles && Array.isArray(articles)) {
             await Demande.updateArticles(id, articles);
+            // Historique modification articles
+            await Demande.addHistory(null, {
+                idDemande: id,
+                action: "Modification des articles / quantités",
+                idUtilisateur: req.user.idUser,
+                nomUtilisateur: req.user.nom,
+                roleUtilisateur: req.user.role,
+                motif: "Mise à jour par le demandeur"
+            });
         }
 
         // Si on met à jour le statut
         if (statut && STATUTS_VALIDES.includes(statut)) {
             await Demande.updateStatut(id, statut, motif);
+            // Historique changement statut
+            await Demande.addHistory(null, {
+                idDemande: id,
+                action: "Changement de statut",
+                nouveauStatut: statut,
+                idUtilisateur: req.user.idUser,
+                nomUtilisateur: req.user.nom,
+                roleUtilisateur: req.user.role,
+                motif: motif
+            });
         }
 
         res.json({ message: "Demande mise à jour avec succès." });
@@ -92,6 +121,17 @@ exports.updateDemandeByCgmp = async (req, res) => {
         }, 0);
 
         await Demande.updateByCgmp(id, articles, nouveauMontantTotal);
+
+        // Historique modification CGMP
+        await Demande.addHistory(null, {
+            idDemande: id,
+            action: "Ajustement technique par la CGMP",
+            idUtilisateur: req.user.idUser,
+            nomUtilisateur: req.user.nom,
+            roleUtilisateur: req.user.role,
+            motif: "Modification des prix/quantités avant marché"
+        });
+
         res.json({ message: "Demande mise à jour et marquée comme ajustée par la CGMP.", montantTotal: nouveauMontantTotal });
     } catch (error) {
         console.error(error);
@@ -101,14 +141,27 @@ exports.updateDemandeByCgmp = async (req, res) => {
 
 exports.updateStatut = async (req, res) => {
     const { id } = req.params;
-    const { statut } = req.body;
+    const { statut, motif } = req.body;
+    const STATUTS_VALIDES = ['Brouillon', 'Soumis', 'En attente', 'Valide', 'Rejete'];
 
     if (!statut || !STATUTS_VALIDES.includes(statut)) {
         return res.status(400).json({ message: "Statut invalide." });
     }
 
     try {
-        await Demande.updateStatut(id, statut);
+        await Demande.updateStatut(id, statut, motif);
+
+        // Historique validation/rejet
+        await Demande.addHistory(null, {
+            idDemande: id,
+            action: statut === 'Valide' ? "Validation budgétaire" : statut === 'Rejete' ? "Rejet de la demande" : "Mise à jour du statut",
+            nouveauStatut: statut,
+            idUtilisateur: req.user.idUser,
+            nomUtilisateur: req.user.nom,
+            roleUtilisateur: req.user.role,
+            motif: motif
+        });
+
         res.json({ message: "Statut mis à jour avec succès." });
     } catch (error) {
         console.error(error);
@@ -146,6 +199,17 @@ exports.getDemandesByService = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Erreur lors de la récupération." });
+    }
+};
+
+exports.getDemandeHistory = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const rows = await Demande.getHistory(id);
+        res.json(rows);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Erreur lors de la récupération de l'historique." });
     }
 };
 

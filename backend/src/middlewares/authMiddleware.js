@@ -31,7 +31,7 @@ exports.verifyToken = async (req, res, next) => {
 
         // Vérifier si l'utilisateur existe et récupérer ses infos (rôle, service, activité)
         const query = `
-            SELECT u.est_actif, u.idService, r.nomRole as role
+            SELECT u.nom, u.est_actif, u.idService, r.nomRole as role
             FROM utilisateur u
             JOIN role r ON u.idRole = r.idRole
             WHERE u.idUser = ?
@@ -46,10 +46,11 @@ exports.verifyToken = async (req, res, next) => {
         // Normalisation du rôle pour correspondre aux vérifications (RAF, ADMIN, CHEF_SERVICE, etc.)
         const normalizedRole = rows[0].role.trim().toUpperCase().replace(/\s+/g, '_');
         
-        console.log(`[AUTH] User: ${userId}, DB Role: "${rows[0].role}", Normalized: "${normalizedRole}"`);
+        console.log(`[AUTH] User: ${userId}, Name: ${rows[0].nom}, DB Role: "${rows[0].role}", Normalized: "${normalizedRole}"`);
 
         req.user = {
             idUser: userId,
+            nom: rows[0].nom,
             role: normalizedRole,
             idService: rows[0].idService
         };

@@ -1,4 +1,5 @@
 const Marche = require('../models/marcheModel');
+const Demande = require('../models/demandeModel');
 
 // Liste des statuts autorisés
 const STATUTS_VALIDES = ['en attente', 'publie', 'attribution', 'suspendu', 'cloture'];
@@ -44,6 +45,19 @@ exports.createMarche = async (req, res) => {
 
         const result = await Marche.create(sanitizedData);
         
+        // --- Enregistrer l'historique sur la demande ---
+        if (idDemande) {
+            await Demande.addHistory(null, {
+                idDemande: idDemande,
+                action: "Création du Marché Public",
+                nouveauStatut: "Valide", // Le statut de la demande reste valide, mais on marque l'action
+                idUtilisateur: req.user.idUser,
+                nomUtilisateur: req.user.nom,
+                roleUtilisateur: req.user.role,
+                motif: `Mode de passation : ${modePassation}`
+            });
+        }
+
         res.status(201).json({ 
             message: "Marché créé avec succès", 
             idMarche: result.insertId 

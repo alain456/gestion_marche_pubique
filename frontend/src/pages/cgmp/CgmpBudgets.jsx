@@ -158,9 +158,9 @@ const CgmpBudgets = () => {
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
             <CreditCard className="text-primary h-8 w-8" />
-            Lignes Budgétaires (Containers)
+            Gestion des Enveloppes Budgétaires
           </h1>
-          <p className="text-gray-500 mt-2">Créez les conteneurs budgétaires avant les demandes d&apos;achat.</p>
+          <p className="text-gray-500 mt-2">Configurez les enveloppes budgétaires annuelles par catégorie avant l&apos;ouverture des demandes.</p>
         </div>
         <div className="flex gap-3">
           <Link to="/cgmp" className="inline-flex items-center gap-2 px-4 py-2 bg-white text-gray-700 rounded-xl hover:bg-gray-50 border border-gray-200 transition-all font-medium shadow-sm">
@@ -198,7 +198,7 @@ const CgmpBudgets = () => {
           </div>
           <form onSubmit={handleSubmit} className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Numéro Budget</label>
+              <label className="text-xs font-black text-gray-500 uppercase tracking-widest ml-1">Référence Budgétaire</label>
               <input
                 type="text"
                 required
@@ -222,7 +222,7 @@ const CgmpBudgets = () => {
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Exercice</label>
+              <label className="text-xs font-black text-gray-500 uppercase tracking-widest ml-1">Année d&apos;Exercice</label>
               <input
                 type="number"
                 required
@@ -322,7 +322,7 @@ const CgmpBudgets = () => {
                 </div>
               </div>
               <div className="text-sm font-bold text-gray-700">
-                Source: {b.sourceFinancier || '—'}
+                Origine: {b.sourceFinancier || '—'}
               </div>
             </div>
           ))

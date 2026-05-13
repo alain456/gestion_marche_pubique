@@ -12,6 +12,7 @@ router.get('/service/:idService', demandeController.getDemandesByService);
 router.put('/:id', demandeController.updateDemande);
 router.put('/:id/cgmp-update', demandeController.updateDemandeByCgmp);
 router.put('/:id/statut', demandeController.updateStatut);
+router.get('/:id/history', demandeController.getDemandeHistory);
 router.delete('/:id', demandeController.deleteDemande);
 
 module.exports = router;

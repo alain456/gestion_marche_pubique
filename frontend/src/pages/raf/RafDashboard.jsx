@@ -11,7 +11,10 @@ import {
   Check,
   Package,
   PlusCircle,
-  MessageSquare
+  MessageSquare,
+  History,
+  Info,
+  User
 } from 'lucide-react';
 import api from '../../services/api';
 import { AuthContext } from '../../contexts/AuthContext';
@@ -32,6 +35,9 @@ const RafDashboard = () => {
   const [selectedDemande, setSelectedDemande] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedReception, setSelectedReception] = useState(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const [historyData, setHistoryData] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   const [budgetForm, setBudgetForm] = useState({
     exerciceBudgetaire: new Date().getFullYear(),
@@ -87,6 +93,31 @@ const RafDashboard = () => {
     setTempArticles(updated);
     const total = updated.reduce((acc, a) => acc + (a.prixUnitaire * a.quantite), 0);
     setBudgetForm({ ...budgetForm, montantEstime: total });
+  };
+
+  const fetchHistory = async (idDemande) => {
+    setHistoryLoading(true);
+    setHistoryData([]);
+    setShowHistory(true);
+    try {
+      const res = await api.get(`/demandes/${idDemande}/history`);
+      setHistoryData(res.data);
+    } catch (err) {
+      console.error('Erreur chargement historique:', err);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const getStatutBadge = (statut) => {
+    const styles = {
+      'Brouillon': 'bg-gray-100 text-gray-600 border border-gray-300',
+      'Soumis': 'bg-blue-100 text-blue-800',
+      'En attente': 'bg-amber-100 text-amber-800',
+      'Valide': 'bg-green-100 text-green-800',
+      'Rejete': 'bg-red-100 text-red-800',
+    };
+    return styles[statut] || 'bg-gray-100 text-gray-800';
   };
 
   const handleBudgetSubmit = async (status) => {
@@ -266,85 +297,112 @@ const RafDashboard = () => {
           <div className="p-6 border-b border-gray-50">
             <h2 className="font-bold text-gray-800">Demandes en attente de budget</h2>
           </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase"># ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase">Service</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase">Articles</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase">Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase">Statut</th>
-                  <th className="px-6 py-3 text-right text-xs font-bold text-gray-400 uppercase">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filteredDemandes.length === 0 ? (
-                  <tr>
-                    <td colSpan="6" className="px-6 py-12 text-center text-gray-500">Aucune demande trouvée.</td>
-                  </tr>
-                ) : (
-                  filteredDemandes.map((d) => (
-                    <tr key={d.idDemande} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 text-sm font-mono">#{d.idDemande}</td>
-                      <td className="px-6 py-4 text-sm font-semibold">{d.nomService || 'RAF'}</td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-col gap-1">
-                          {d.articles.slice(0, 1).map((a, i) => (
-                            <div key={i} className="text-xs text-gray-600 flex items-center gap-1">
-                              <Package className="h-3 w-3" /> {a.nomArticle} (x{a.quantite})
-                            </div>
-                          ))}
-                          {d.articles.length > 1 && <span className="text-[10px] text-primary font-bold">+{d.articles.length - 1} autres articles</span>}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">{new Date(d.dateDemande).toLocaleDateString('fr-FR')}</td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-col gap-1.5">
-                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase w-fit ${
-                            d.statut === 'Valide' ? 'bg-green-100 text-green-700' : 
-                            d.statut === 'Rejete' ? 'bg-red-100 text-red-700' : 
+          <div className="p-4 space-y-2">
+            {filteredDemandes.length === 0 ? (
+              <div className="py-12 text-center text-gray-400">Aucune demande trouvée.</div>
+            ) : (
+              filteredDemandes.map((d) => {
+                const borderColor =
+                  d.statut === 'Valide' ? 'border-l-emerald-400' :
+                  d.statut === 'Rejete' ? 'border-l-red-400' :
+                  d.statut === 'En attente' ? 'border-l-amber-400' :
+                  'border-l-gray-200';
+                return (
+                  <div key={d.idDemande} className={`border border-gray-100 border-l-4 ${borderColor} rounded-xl bg-white p-4 hover:shadow-sm transition-shadow`}>
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                    {/* Info principale */}
+                    <div className="flex items-start gap-3 min-w-0 flex-1">
+                      <div className="text-xs font-mono text-gray-400 bg-gray-100 px-2 py-1 rounded-lg shrink-0">
+                        #{d.idDemande}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                          <span className="font-bold text-sm text-gray-800">{d.nomService || 'RAF'}</span>
+                          <span className="text-xs text-gray-400">{new Date(d.dateDemande).toLocaleDateString('fr-FR')}</span>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                            d.statut === 'Valide' ? 'bg-green-100 text-green-700' :
+                            d.statut === 'Rejete' ? 'bg-red-100 text-red-700' :
                             d.statut === 'En attente' ? 'bg-amber-100 text-amber-700' :
                             'bg-gray-100 text-gray-700'
-                          }`}>
-                            {d.statut}
-                          </span>
-                          {d.motif && (
-                            <div className={`mt-2 p-2.5 rounded-xl border text-xs shadow-sm max-w-[200px] animate-in fade-in slide-in-from-top-1 ${
-                              d.statut === 'Rejete' ? 'bg-red-50 border-red-100 text-red-800' : 'bg-blue-50 border-blue-100 text-blue-800'
-                            }`}>
-                              <div className="flex items-center gap-1.5 mb-1 text-[10px] font-black uppercase tracking-wider opacity-60">
-                                <MessageSquare className="h-3 w-3" />
-                                Motif / Note
-                              </div>
-                              <p className="font-medium leading-relaxed italic">
-                                &ldquo;{d.motif}&rdquo;
-                              </p>
+                          }`}>{d.statut}</span>
+                        </div>
+                        {/* Articles + montants */}
+                        <div className="flex flex-wrap gap-2">
+                          {d.articles.slice(0, 2).map((a, i) => (
+                            <div key={i} className="text-xs text-gray-600 flex items-center gap-1 bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
+                              <Package className="h-3 w-3 text-gray-400" />
+                              <span>{a.nomArticle}</span>
+                              <span className="text-gray-400 font-mono">×{a.quantite}</span>
                             </div>
+                          ))}
+                          {d.articles.length > 2 && (
+                            <span className="text-[10px] text-primary font-bold bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
+                              +{d.articles.length - 2} autres
+                            </span>
                           )}
                         </div>
-                      </td>
-                      <td className="px-6 py-4 text-right flex justify-end gap-2">
-                        <button 
+                        {/* Motif si présent */}
+                        {d.motif && (
+                          <div className={`mt-2 p-2 rounded-lg border text-xs max-w-lg ${
+                            d.statut === 'Rejete' ? 'bg-red-50 border-red-100 text-red-700' : 'bg-blue-50 border-blue-100 text-blue-700'
+                          }`}>
+                            <MessageSquare className="h-3 w-3 inline mr-1" />
+                            <span className="font-bold">Note : </span>
+                            <span className="italic">{d.motif}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Montants + Actions */}
+                    <div className="flex flex-col items-end gap-2 shrink-0">
+                      <div className="flex gap-3 text-right">
+                        {d.articles.reduce((acc, a) => acc + (Number(a.montant) || 0), 0) > 0 && (
+                          <div>
+                            <p className="text-[9px] text-amber-500 font-bold uppercase">Proposé</p>
+                            <p className="text-sm font-bold text-amber-600">
+                              {d.articles.reduce((acc, a) => acc + (Number(a.montant) || 0), 0).toLocaleString()} FBU
+                            </p>
+                          </div>
+                        )}
+                        {d.montantEstime > 0 && (
+                          <div>
+                            <p className="text-[9px] text-primary font-bold uppercase">Validé</p>
+                            <p className="text-sm font-bold text-primary">
+                              {Number(d.montantEstime).toLocaleString()} FBU
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => fetchHistory(d.idDemande)}
+                          className="p-1.5 text-gray-500 hover:bg-gray-50 rounded-lg border border-gray-100 transition"
+                          title="Historique"
+                        >
+                          <History className="h-4 w-4" />
+                        </button>
+                        <button
                           onClick={() => handleOpenDetails(d)}
                           className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-200 transition"
                         >
                           DÉTAILS
                         </button>
                         {d.statut === 'En attente' && (
-                          <button 
+                          <button
                             onClick={() => openBudgetModal(d)}
                             className="px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-blue-800 transition shadow-sm"
                           >
                             GÉRER
                           </button>
                         )}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
           </div>
         </div>
       )}
@@ -451,7 +509,7 @@ const RafDashboard = () => {
                 />
               </div>
               <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-3">Détails des Articles & Prix</label>
+                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3">Analyse Comparative des Prix</label>
                 <div className="space-y-3">
                   {tempArticles.map((art) => (
                     <div key={art.idLigne} className="flex flex-col gap-2 p-3 bg-white rounded-xl border border-gray-100">
@@ -464,15 +522,21 @@ const RafDashboard = () => {
                           Description: {art.description}
                         </p>
                       )}
+                      {art.montant > 0 && (
+                        <div className="flex justify-between items-center px-1">
+                          <span className="text-[10px] text-amber-600 font-black uppercase tracking-tighter">Prix proposé par le Service :</span>
+                          <span className="text-[10px] font-mono bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded border border-amber-100">{Number(art.montant).toLocaleString()} FBU</span>
+                        </div>
+                      )}
                       <div className="flex items-center gap-2">
                         <div className="relative flex-1">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">P.U</span>
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[10px] font-bold uppercase">P.U Validé</span>
                           <input 
                             type="number"
                             value={art.prixUnitaire}
                             onChange={(e) => updateArticlePrice(art.idLigne, e.target.value)}
                             className="w-full pl-10 pr-3 py-1.5 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary/20"
-                            placeholder="0"
+                            placeholder="Saisir le prix validé"
                           />
                         </div>
                         <div className="text-right min-w-[80px]">
@@ -497,7 +561,7 @@ const RafDashboard = () => {
 
               <div>
                 <label className="flex text-xs font-bold text-gray-400 uppercase mb-1 justify-between">
-                  Motif ou Note <span className="text-red-500 font-bold">* Obligatoire</span>
+                  Justification Budgétaire <span className="text-red-500 font-bold">* Obligatoire</span>
                 </label>
                 <textarea 
                   rows="2"
@@ -632,8 +696,9 @@ const RafDashboard = () => {
                         <th className="px-4 py-2 text-left text-[10px] font-bold text-gray-400 uppercase">Article</th>
                         <th className="px-4 py-2 text-left text-[10px] font-bold text-gray-400 uppercase">Qté</th>
                         <th className="px-4 py-2 text-left text-[10px] font-bold text-gray-400 uppercase">Description</th>
-                        <th className="px-4 py-2 text-left text-[10px] font-bold text-gray-400 uppercase">P.U (FBU)</th>
-                        <th className="px-4 py-2 text-right text-[10px] font-bold text-gray-400 uppercase">Total</th>
+                        <th className="px-4 py-2 text-left text-[10px] font-bold text-amber-600 uppercase">Proposé / unité</th>
+                        <th className="px-4 py-2 text-left text-[10px] font-bold text-gray-400 uppercase">P.U validé</th>
+                        <th className="px-4 py-2 text-right text-[10px] font-bold text-gray-400 uppercase">Total validé</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 bg-white">
@@ -641,7 +706,10 @@ const RafDashboard = () => {
                         <tr key={i} className="hover:bg-gray-50">
                           <td className="px-4 py-3 text-sm font-medium text-gray-800">{a.nomArticle}</td>
                           <td className="px-4 py-3 text-sm text-gray-600 font-mono">{a.quantite}</td>
-                          <td className="px-4 py-3 text-xs text-gray-500 italic max-w-[200px] truncate" title={a.description}>{a.description || '—'}</td>
+                          <td className="px-4 py-3 text-xs text-gray-500 italic max-w-[150px] truncate" title={a.description}>{a.description || '—'}</td>
+                          <td className="px-4 py-3 text-sm font-bold text-amber-600">
+                            {a.montant > 0 ? Number(a.montant).toLocaleString() : '—'}
+                          </td>
                           <td className="px-4 py-3 text-sm text-gray-500">{Number(a.prixUnitaire || 0).toLocaleString()}</td>
                           <td className="px-4 py-3 text-sm font-bold text-primary text-right">
                             {( (a.prixUnitaire || 0) * a.quantite ).toLocaleString()}
@@ -651,7 +719,11 @@ const RafDashboard = () => {
                     </tbody>
                     <tfoot className="bg-gray-50 font-bold border-t-2 border-gray-200">
                       <tr>
-                        <td colSpan="4" className="px-4 py-2 text-right text-xs text-gray-500 uppercase">Total Estimé :</td>
+                        <td colSpan="3" className="px-4 py-2 text-right text-xs text-gray-500 uppercase">Total proposé :</td>
+                        <td colSpan="1" className="px-4 py-2 text-left text-sm text-amber-600 font-bold">
+                          {selectedDemande.articles.reduce((acc, a) => acc + (Number(a.montant) || 0), 0).toLocaleString()} FBU
+                        </td>
+                        <td className="px-4 py-2 text-right text-xs text-gray-500 uppercase">Total validé :</td>
                         <td className="px-4 py-2 text-right text-sm text-primary">
                           {selectedDemande.articles.reduce((acc, a) => acc + ( (a.prixUnitaire || 0) * a.quantite ), 0).toLocaleString()} FBU
                         </td>
@@ -721,6 +793,107 @@ const RafDashboard = () => {
                   </button>
                 </>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Historique */}
+      {showHistory && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-0 max-w-xl w-full shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden flex flex-col max-h-[85vh]">
+            <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-6 text-white flex justify-between items-center shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/10 rounded-xl">
+                  <History className="h-6 w-6 text-blue-400" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black uppercase tracking-widest">Historique Complet</h3>
+                  <p className="text-blue-200 text-xs font-bold opacity-80 uppercase tracking-tighter">Audit Trail & Timeline</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowHistory(false)} 
+                className="p-2 hover:bg-white/10 rounded-full transition-colors"
+              >
+                <XCircle className="h-7 w-7" />
+              </button>
+            </div>
+
+            <div className="p-8 overflow-y-auto flex-1 bg-gray-50/50">
+              {historyLoading ? (
+                <div className="flex flex-col items-center justify-center py-12 gap-4">
+                  <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
+                  <p className="text-gray-500 font-bold animate-pulse uppercase text-xs tracking-widest">Récupération des données...</p>
+                </div>
+              ) : historyData.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="inline-flex p-4 bg-gray-100 rounded-full mb-4">
+                    <Info className="h-8 w-8 text-gray-400" />
+                  </div>
+                  <p className="text-gray-500 font-bold uppercase text-xs tracking-widest">Aucun historique disponible pour cette demande.</p>
+                </div>
+              ) : (
+                <div className="relative border-l-2 border-gray-200 ml-3 space-y-8 pl-8">
+                  {historyData.map((item, idx) => (
+                    <div key={idx} className="relative group">
+                      {/* Point sur la ligne */}
+                      <div className={`absolute -left-[41px] top-0 w-6 h-6 rounded-full border-4 border-white shadow-sm transition-all duration-300 group-hover:scale-125 ${
+                        item.action.includes('Validation') || item.nouveauStatut === 'Valide' ? 'bg-emerald-500 shadow-emerald-200' :
+                        item.action.includes('Rejet') || item.nouveauStatut === 'Rejete' ? 'bg-red-500 shadow-red-200' :
+                        'bg-blue-500 shadow-blue-200'
+                      }`} />
+                      
+                      <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
+                        <div className="flex justify-between items-start mb-3">
+                          <h4 className="text-sm font-black text-gray-800 uppercase tracking-tight">{item.action}</h4>
+                          <span className="text-[10px] font-mono bg-gray-100 text-gray-500 px-2 py-1 rounded-lg border border-gray-200">
+                            {new Date(item.dateAction).toLocaleString('fr-FR', {
+                              day: '2-digit', month: '2-digit', year: 'numeric',
+                              hour: '2-digit', minute: '2-digit'
+                            })}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="h-8 w-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 border border-gray-200">
+                            <User className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-black text-gray-700">{item.nomUtilisateur}</p>
+                            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{item.roleUtilisateur}</p>
+                          </div>
+                        </div>
+
+                        {item.nouveauStatut && (
+                          <div className="mb-3 flex items-center gap-2">
+                            <span className="text-[9px] font-black text-gray-400 uppercase">Nouveau Statut :</span>
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase border ${getStatutBadge(item.nouveauStatut)}`}>
+                              {item.nouveauStatut}
+                            </span>
+                          </div>
+                        )}
+
+                        {item.motif && (
+                          <div className="bg-amber-50/50 border border-amber-100 p-3 rounded-xl italic text-xs text-amber-800 relative">
+                            <MessageSquare className="h-3 w-3 absolute -top-1.5 -left-1.5 bg-amber-100 rounded-full p-0.5 text-amber-600 border border-amber-200" />
+                            &ldquo;{item.motif}&rdquo;
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 bg-white border-t border-gray-100 text-right shrink-0">
+              <button 
+                onClick={() => setShowHistory(false)} 
+                className="px-8 py-3 bg-gray-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-black transition-all shadow-lg shadow-gray-200"
+              >
+                Fermer l&apos;Historique
+              </button>
             </div>
           </div>
         </div>

@@ -200,6 +200,11 @@ const DemandeurDashboard = () => {
                         }`}>
                           {demande.statut}
                         </span>
+                        {demande.renvoyee === 1 && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-100 flex items-center gap-1">
+                            <Clock className="h-3 w-3" /> Renvoyée
+                          </span>
+                        )}
                         
 
                       </div>

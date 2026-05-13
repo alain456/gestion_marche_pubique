@@ -77,7 +77,7 @@ const Budget = {
 
     createRejection: async (data) => {
         const { idDemande, motif } = data;
-        const queryUpdateDemande = "UPDATE demande SET statut = 'Rejete', motif = ? WHERE idDemande = ?";
+        const queryUpdateDemande = "UPDATE demande SET statut = 'Rejete', motif = ?, renvoyee = 1 WHERE idDemande = ?";
         await db.query(queryUpdateDemande, [motif, idDemande]);
         return true;
     },

@@ -1,4 +1,5 @@
 const Budget = require('../models/budgetModel');
+const Demande = require('../models/demandeModel');
 
 exports.getBudgets = async (req, res) => {
     try {
@@ -69,19 +70,47 @@ exports.createBudget = async (req, res) => {
 };
 
 exports.validerBudget = async (req, res) => {
+    const { idDemande, motif } = req.body;
     try {
         await Budget.createValidation(req.body);
+
+        // --- Enregistrer l'historique ---
+        await Demande.addHistory(null, {
+            idDemande: idDemande,
+            action: "Validation Budgétaire (RAF)",
+            nouveauStatut: "Valide",
+            idUtilisateur: req.user.idUser,
+            nomUtilisateur: req.user.nom,
+            roleUtilisateur: req.user.role,
+            motif: motif
+        });
+
         res.json({ message: "Demande validée budgétairement" });
     } catch (error) {
+        console.error(error);
         res.status(500).json({ message: "Erreur lors de la validation" });
     }
 };
 
 exports.rejeterBudget = async (req, res) => {
+    const { idDemande, motif } = req.body;
     try {
         await Budget.createRejection(req.body);
+
+        // --- Enregistrer l'historique ---
+        await Demande.addHistory(null, {
+            idDemande: idDemande,
+            action: "Rejet Budgétaire (RAF)",
+            nouveauStatut: "Rejete",
+            idUtilisateur: req.user.idUser,
+            nomUtilisateur: req.user.nom,
+            roleUtilisateur: req.user.role,
+            motif: motif
+        });
+
         res.json({ message: "Demande rejetée budgétairement" });
     } catch (error) {
+        console.error(error);
         res.status(500).json({ message: "Erreur lors du rejet" });
     }
 };

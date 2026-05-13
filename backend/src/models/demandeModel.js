@@ -122,13 +122,8 @@ const Demande = {
 
             // 2. Insérer les nouvelles lignes (incluant prixUnitaire s'il existe)
             if (articles && articles.length > 0) {
-<<<<<<< HEAD
-                const lineQuery = `INSERT INTO ligne_demande (idDemande, idArticle, quantite, prixUnitaire, description) VALUES ?`;
-                const lineValues = articles.map(art => [idDemande, art.idArticle, art.quantite, art.prixUnitaire || 0, art.description || '']);
-=======
-                const lineQuery = `INSERT INTO ligne_demande (idDemande, idArticle, quantite, description, montant) VALUES ?`;
-                const lineValues = articles.map(art => [idDemande, art.idArticle, art.quantite, art.description, art.montant || null]);
->>>>>>> 870c7f539b8d7633463a99bdb9e7538dbc2552b9
+                const lineQuery = `INSERT INTO ligne_demande (idDemande, idArticle, quantite, prixUnitaire, description, montant) VALUES ?`;
+                const lineValues = articles.map(art => [idDemande, art.idArticle, art.quantite, art.prixUnitaire || 0, art.description || '', art.montant || null]);
                 await connection.query(lineQuery, [lineValues]);
             }
 
@@ -172,10 +167,18 @@ const Demande = {
     },
 
     updateStatut: async (id, statut, motif = undefined) => {
-        if (motif !== undefined) {
-            await db.query('UPDATE demande SET statut = ?, motif = ? WHERE idDemande = ?', [statut, motif, id]);
+        if (statut === 'Rejete') {
+            if (motif !== undefined) {
+                await db.query('UPDATE demande SET statut = ?, motif = ?, renvoyee = 1 WHERE idDemande = ?', [statut, motif, id]);
+            } else {
+                await db.query('UPDATE demande SET statut = ?, renvoyee = 1 WHERE idDemande = ?', [statut, id]);
+            }
         } else {
-            await db.query('UPDATE demande SET statut = ? WHERE idDemande = ?', [statut, id]);
+            if (motif !== undefined) {
+                await db.query('UPDATE demande SET statut = ?, motif = ? WHERE idDemande = ?', [statut, motif, id]);
+            } else {
+                await db.query('UPDATE demande SET statut = ? WHERE idDemande = ?', [statut, id]);
+            }
         }
         return true;
     },
@@ -184,6 +187,33 @@ const Demande = {
         // La suppression des lignes est gérée par ON DELETE CASCADE
         await db.query('DELETE FROM demande WHERE idDemande = ?', [id]);
         return true;
+    },
+
+    // --- HISTORIQUE ---
+    addHistory: async (connection, data) => {
+        const { idDemande, action, statutPrecedent, nouveauStatut, idUtilisateur, nomUtilisateur, roleUtilisateur, motif } = data;
+        const query = `
+            INSERT INTO historique_demande 
+            (idDemande, action, statutPrecedent, nouveauStatut, idUtilisateur, nomUtilisateur, roleUtilisateur, motif) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+        const values = [idDemande, action, statutPrecedent, nouveauStatut, idUtilisateur, nomUtilisateur, roleUtilisateur, motif || null];
+        
+        if (connection) {
+            await connection.query(query, values);
+        } else {
+            await db.query(query, values);
+        }
+    },
+
+    getHistory: async (idDemande) => {
+        const query = `
+            SELECT * FROM historique_demande 
+            WHERE idDemande = ? 
+            ORDER BY dateAction DESC
+        `;
+        const [rows] = await db.query(query, [idDemande]);
+        return rows;
     }
 };
 
