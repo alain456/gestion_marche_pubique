@@ -67,7 +67,7 @@ const CgmpMarches = () => {
         api.get('/demandes')
       ]);
       setMarches(marchesRes.data);
-      const pending = demandsRes.data.filter(d => d.statut === 'Valide' && !marchesRes.data.find(m => m.idDemande === d.idDemande));
+      const pending = demandsRes.data.filter(d => d.statut === 'Valide');
       
       // Groupement par Budget (Container)
       const grouped = pending.reduce((acc, d) => {
@@ -121,6 +121,7 @@ const CgmpMarches = () => {
       'En attente': 'bg-amber-100 text-amber-800',
       'Valide': 'bg-green-100 text-green-800',
       'Rejete': 'bg-red-100 text-red-800',
+      'Inclus dans Marché': 'bg-indigo-100 text-indigo-800 border border-indigo-200',
     };
     return styles[statut] || 'bg-gray-100 text-gray-800';
   };
@@ -1006,6 +1007,7 @@ const CgmpMarches = () => {
                       {/* Point sur la ligne */}
                       <div className={`absolute -left-[41px] top-0 w-6 h-6 rounded-full border-4 border-white shadow-sm transition-all duration-300 group-hover:scale-125 ${
                         item.action.includes('Validation') || item.nouveauStatut === 'Valide' ? 'bg-emerald-500 shadow-emerald-200' :
+                        item.nouveauStatut === 'Inclus dans Marché' ? 'bg-indigo-500 shadow-indigo-200' :
                         item.action.includes('Rejet') || item.nouveauStatut === 'Rejete' ? 'bg-red-500 shadow-red-200' :
                         'bg-blue-500 shadow-blue-200'
                       }`} />

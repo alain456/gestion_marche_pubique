@@ -7,7 +7,8 @@ const STATUTS_VALIDES = [
     'Soumis',
     'En attente', 
     'Valide', 
-    'Rejete'
+    'Rejete',
+    'Inclus dans Marché'
 ];
 
 // Créer une nouvelle demande d'achat avec plusieurs articles

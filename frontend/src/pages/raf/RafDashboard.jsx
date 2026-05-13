@@ -116,6 +116,7 @@ const RafDashboard = () => {
       'En attente': 'bg-amber-100 text-amber-800',
       'Valide': 'bg-green-100 text-green-800',
       'Rejete': 'bg-red-100 text-red-800',
+      'Inclus dans Marché': 'bg-indigo-100 text-indigo-800 border border-indigo-200',
     };
     return styles[statut] || 'bg-gray-100 text-gray-800';
   };
@@ -169,7 +170,7 @@ const RafDashboard = () => {
   };
 
   const filteredDemandes = demandes.filter(d => 
-    (d.statut === 'En attente' || d.statut === 'Valide' || d.statut === 'Rejete') && 
+    (d.statut === 'En attente' || d.statut === 'Valide' || d.statut === 'Rejete' || d.statut === 'Inclus dans Marché') && 
     (d.nomService?.toLowerCase().includes(searchTerm.toLowerCase()) || 
      d.idDemande.toString().includes(searchTerm))
   );
@@ -243,7 +244,7 @@ const RafDashboard = () => {
           </div>
           <div>
             <p className="text-xs font-bold text-emerald-400 uppercase">Validées</p>
-            <p className="text-xl font-bold text-emerald-700">{demandes.filter(d => d.statut === 'Valide').length}</p>
+            <p className="text-xl font-bold text-emerald-700">{demandes.filter(d => d.statut === 'Valide' || d.statut === 'Inclus dans Marché').length}</p>
           </div>
         </div>
         <div className="bg-white p-5 rounded-2xl border border-red-100 shadow-sm flex items-center gap-4">
@@ -840,6 +841,7 @@ const RafDashboard = () => {
                       {/* Point sur la ligne */}
                       <div className={`absolute -left-[41px] top-0 w-6 h-6 rounded-full border-4 border-white shadow-sm transition-all duration-300 group-hover:scale-125 ${
                         item.action.includes('Validation') || item.nouveauStatut === 'Valide' ? 'bg-emerald-500 shadow-emerald-200' :
+                        item.nouveauStatut === 'Inclus dans Marché' ? 'bg-indigo-500 shadow-indigo-200' :
                         item.action.includes('Rejet') || item.nouveauStatut === 'Rejete' ? 'bg-red-500 shadow-red-200' :
                         'bg-blue-500 shadow-blue-200'
                       }`} />

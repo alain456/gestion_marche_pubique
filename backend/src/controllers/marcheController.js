@@ -45,17 +45,27 @@ exports.createMarche = async (req, res) => {
 
         const result = await Marche.create(sanitizedData);
         
-        // --- Enregistrer l'historique sur la demande ---
+        // --- Mettre à jour le statut des demandes et enregistrer l'historique ---
         if (idDemande) {
-            await Demande.addHistory(null, {
-                idDemande: idDemande,
-                action: "Création du Marché Public",
-                nouveauStatut: "Valide", // Le statut de la demande reste valide, mais on marque l'action
-                idUtilisateur: req.user.idUser,
-                nomUtilisateur: req.user.nom,
-                roleUtilisateur: req.user.role,
-                motif: `Mode de passation : ${modePassation}`
-            });
+            const ids = idDemande.toString().split(',');
+            for (const idD of ids) {
+                const trimmedId = idD.trim();
+                if (!trimmedId) continue;
+
+                // Mise à jour du statut de la demande
+                await Demande.updateStatut(trimmedId, "Inclus dans Marché", `Inclus dans le Marché Public #${result.insertId}`);
+
+                // Ajout à l'historique
+                await Demande.addHistory(null, {
+                    idDemande: trimmedId,
+                    action: "Création du Marché Public",
+                    nouveauStatut: "Inclus dans Marché",
+                    idUtilisateur: req.user.idUser,
+                    nomUtilisateur: req.user.nom,
+                    roleUtilisateur: req.user.role,
+                    motif: `Inclus dans le marché #${result.insertId} (Mode: ${modePassation})`
+                });
+            }
         }
 
         res.status(201).json({ 
