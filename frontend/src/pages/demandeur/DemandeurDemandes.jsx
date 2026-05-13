@@ -1,10 +1,8 @@
 import { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
-<<<<<<< HEAD
-import { PlusCircle, ArrowLeft, Search, Trash2, ListPlus, Pencil, Save, Send, Package, MessageSquare, Info } from 'lucide-react';
-=======
-import { PlusCircle, ArrowLeft, Search, Trash2, ListPlus, Pencil, Save, Send, Package, MessageSquare, Eye } from 'lucide-react';
->>>>>>> 870c7f539b8d7633463a99bdb9e7538dbc2552b9
+
+import { PlusCircle, ArrowLeft, Search, Trash2, ListPlus, Pencil, Save, Send, Package, MessageSquare, Info, Eye } from 'lucide-react';
+
 import api from '../../services/api';
 import { AuthContext } from '../../contexts/AuthContext';
 
