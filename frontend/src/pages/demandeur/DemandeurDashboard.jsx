@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
-import { FileText, Clock, CheckCircle, XCircle, PlusCircle, Package } from 'lucide-react';
+import { FileText, Clock, CheckCircle, XCircle, PlusCircle, Package, Info } from 'lucide-react';
 import { AuthContext } from '../../contexts/AuthContext';
 import api from '../../services/api';
 
@@ -67,6 +67,45 @@ const DemandeurDashboard = () => {
           Nouvelle demande
         </Link>
       </div>
+
+      {/* Alertes & Notifications */}
+      {(demandes.some(d => d.modifieParCgmp === 1 || (d.statut === 'Rejete' && d.renvoyee === 1))) && (
+        <div className="space-y-3">
+          <h2 className="text-sm font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+            <Clock className="h-4 w-4" /> Alertes récentes
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {demandes.filter(d => d.modifieParCgmp === 1).slice(0, 2).map(d => (
+              <div key={`adj-${d.idDemande}`} className="bg-purple-50 border border-purple-100 p-4 rounded-2xl flex items-start gap-3 animate-in fade-in slide-in-from-left-2">
+                <div className="p-2 bg-purple-100 text-purple-600 rounded-xl">
+                  <Info className="h-5 w-5" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-purple-900">Ajustement technique CGMP</p>
+                  <p className="text-xs text-purple-700 mt-0.5 leading-relaxed">
+                    La demande <span className="font-bold">#{d.idDemande}</span> a été ajustée (quantités/prix) par la CGMP pour être incluse dans un marché.
+                  </p>
+                  <Link to="/demandeur/demandes" className="text-[10px] font-black uppercase text-purple-600 mt-2 inline-block hover:underline">Consulter les modifications</Link>
+                </div>
+              </div>
+            ))}
+            {demandes.filter(d => d.statut === 'Rejete' && d.renvoyee === 1).slice(0, 2).map(d => (
+              <div key={`rej-${d.idDemande}`} className="bg-red-50 border border-red-100 p-4 rounded-2xl flex items-start gap-3 animate-in fade-in slide-in-from-right-2">
+                <div className="p-2 bg-red-100 text-red-600 rounded-xl">
+                  <XCircle className="h-5 w-5" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-red-900">Demande à corriger</p>
+                  <p className="text-xs text-red-700 mt-0.5 leading-relaxed">
+                    La demande <span className="font-bold">#{d.idDemande}</span> a été rejetée. Veuillez consulter le motif et la soumettre à nouveau.
+                  </p>
+                  <Link to="/demandeur/demandes" className="text-[10px] font-black uppercase text-red-600 mt-2 inline-block hover:underline">Corriger maintenant</Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Cartes de statistiques */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -203,6 +242,11 @@ const DemandeurDashboard = () => {
                         {demande.renvoyee === 1 && (
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-100 flex items-center gap-1">
                             <Clock className="h-3 w-3" /> Renvoyée
+                          </span>
+                        )}
+                        {demande.modifieParCgmp === 1 && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-600 border border-purple-100 flex items-center gap-1">
+                            <Info className="h-3 w-3" /> Ajusté CGMP
                           </span>
                         )}
                         

@@ -29,6 +29,7 @@ const CgmpMarches = () => {
   const [selectedDemand, setSelectedDemand] = useState(null);
   const [editingDemand, setEditingDemand] = useState(null);
   const [editingArticles, setEditingArticles] = useState([]);
+  const [adjustmentMotif, setAdjustmentMotif] = useState('');
   
   const [form, setForm] = useState({
     idDemande: '',
@@ -144,7 +145,9 @@ const CgmpMarches = () => {
 
   const handleStartEditArticles = (demand) => {
     setEditingDemand(demand);
-    setEditingArticles(demand.articles.map(art => ({ ...art })));
+    setEditingArticles(demand.articles.map(a => ({ ...a })));
+    setAdjustmentMotif('');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleUpdateArticleField = (index, field, value) => {
@@ -177,7 +180,10 @@ const CgmpMarches = () => {
 
   const handleSaveArticles = async () => {
     try {
-      await api.put(`/demandes/${editingDemand.idDemande}/cgmp-update`, { articles: editingArticles });
+      await api.put(`/demandes/${editingDemand.idDemande}/cgmp-update`, { 
+        articles: editingArticles,
+        motif: adjustmentMotif 
+      });
       setMessage('Les articles ont été modifiés. Le service demandeur en sera informé.');
       setEditingDemand(null);
       fetchData();
@@ -943,6 +949,20 @@ const CgmpMarches = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+
+              <div className="mt-6 space-y-2">
+                <label className="text-[11px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4 text-purple-600" /> Note d&apos;ajustement technique (Optionnel)
+                </label>
+                <textarea
+                  rows="3"
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-2xl text-sm focus:ring-2 focus:ring-purple-500/20 outline-none transition-all italic"
+                  placeholder="Expliquez pourquoi ces modifications ont été apportées (ex: Standardisation, budget insuffisant...)"
+                  value={adjustmentMotif}
+                  onChange={(e) => setAdjustmentMotif(e.target.value)}
+                ></textarea>
+                <p className="text-[10px] text-gray-400">Cette note sera visible par le service demandeur sur son tableau de bord.</p>
               </div>
             </div>
 

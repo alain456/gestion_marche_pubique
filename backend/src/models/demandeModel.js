@@ -137,7 +137,7 @@ const Demande = {
     },
 
     // Mise à jour spécifique par la CGMP (avec flag de modification)
-    updateByCgmp: async (idDemande, articles, montantEstime) => {
+    updateByCgmp: async (idDemande, articles, montantEstime, motif) => {
         const connection = await db.getConnection();
         try {
             await connection.beginTransaction();
@@ -150,10 +150,10 @@ const Demande = {
                 await connection.query(lineQuery, [lineValues]);
             }
 
-            // 2. Marquer comme modifié par CGMP et mettre à jour le montant total
+            // 2. Marquer comme modifié par CGMP, mettre à jour le montant et ajouter le motif
             await connection.query(
-                'UPDATE demande SET modifieParCgmp = 1, montantEstime = ? WHERE idDemande = ?',
-                [montantEstime, idDemande]
+                'UPDATE demande SET modifieParCgmp = 1, montantEstime = ?, motif = ? WHERE idDemande = ?',
+                [montantEstime, motif || 'Ajustement technique CGMP', idDemande]
             );
 
             await connection.commit();

@@ -109,7 +109,7 @@ exports.updateDemande = async (req, res) => {
 
 exports.updateDemandeByCgmp = async (req, res) => {
     const { id } = req.params;
-    const { articles } = req.body;
+    const { articles, motif } = req.body;
 
     if (!articles || !Array.isArray(articles)) {
         return res.status(400).json({ message: "Articles requis pour la mise à jour." });
@@ -121,7 +121,7 @@ exports.updateDemandeByCgmp = async (req, res) => {
             return sum + (Number(art.quantite || 0) * Number(art.prixUnitaire || 0));
         }, 0);
 
-        await Demande.updateByCgmp(id, articles, nouveauMontantTotal);
+        await Demande.updateByCgmp(id, articles, nouveauMontantTotal, motif);
 
         // Historique modification CGMP
         await Demande.addHistory(null, {
@@ -130,7 +130,7 @@ exports.updateDemandeByCgmp = async (req, res) => {
             idUtilisateur: req.user.idUser,
             nomUtilisateur: req.user.nom,
             roleUtilisateur: req.user.role,
-            motif: "Modification des prix/quantités avant marché"
+            motif: motif || "Modification des prix/quantités avant marché"
         });
 
         res.json({ message: "Demande mise à jour et marquée comme ajustée par la CGMP.", montantTotal: nouveauMontantTotal });
