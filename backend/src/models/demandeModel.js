@@ -150,9 +150,9 @@ const Demande = {
                 await connection.query(lineQuery, [lineValues]);
             }
 
-            // 2. Marquer comme modifié par CGMP, mettre à jour le montant et ajouter le motif
+            // 2. Marquer comme modifié par CGMP, mettre à jour le montant, ajouter le motif et réinitialiser l'alerte
             await connection.query(
-                'UPDATE demande SET modifieParCgmp = 1, montantEstime = ?, motif = ? WHERE idDemande = ?',
+                'UPDATE demande SET modifieParCgmp = 1, montantEstime = ?, motif = ?, alerteVue = 0 WHERE idDemande = ?',
                 [montantEstime, motif || 'Ajustement technique CGMP', idDemande]
             );
 
@@ -169,17 +169,22 @@ const Demande = {
     updateStatut: async (id, statut, motif = undefined) => {
         if (statut === 'Rejete') {
             if (motif !== undefined) {
-                await db.query('UPDATE demande SET statut = ?, motif = ?, renvoyee = 1 WHERE idDemande = ?', [statut, motif, id]);
+                await db.query('UPDATE demande SET statut = ?, motif = ?, renvoyee = 1, alerteVue = 0 WHERE idDemande = ?', [statut, motif, id]);
             } else {
-                await db.query('UPDATE demande SET statut = ?, renvoyee = 1 WHERE idDemande = ?', [statut, id]);
+                await db.query('UPDATE demande SET statut = ?, renvoyee = 1, alerteVue = 0 WHERE idDemande = ?', [statut, id]);
             }
         } else {
             if (motif !== undefined) {
-                await db.query('UPDATE demande SET statut = ?, motif = ? WHERE idDemande = ?', [statut, motif, id]);
+                await db.query('UPDATE demande SET statut = ?, motif = ?, alerteVue = 0 WHERE idDemande = ?', [statut, motif, id]);
             } else {
-                await db.query('UPDATE demande SET statut = ? WHERE idDemande = ?', [statut, id]);
+                await db.query('UPDATE demande SET statut = ?, alerteVue = 0 WHERE idDemande = ?', [statut, id]);
             }
         }
+        return true;
+    },
+
+    markAlerteAsVue: async (id) => {
+        await db.query('UPDATE demande SET alerteVue = 1 WHERE idDemande = ?', [id]);
         return true;
     },
 

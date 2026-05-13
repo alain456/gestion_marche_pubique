@@ -35,6 +35,14 @@ pool.getConnection()
             // console.log('ℹ️ Colonne modifieParCgmp déjà existante');
         }
 
+        // Vérifier si la colonne alerteVue existe dans demande, sinon la créer
+        try {
+            await connection.query(`ALTER TABLE demande ADD COLUMN alerteVue TINYINT(1) DEFAULT 0`);
+            console.log('✅ Colonne alerteVue ajoutée à la table demande');
+        } catch (err) {
+            // console.log('ℹ️ Colonne alerteVue déjà existante');
+        }
+
         // Créer la table historique_demande si elle n'existe pas
         try {
             await connection.query(`

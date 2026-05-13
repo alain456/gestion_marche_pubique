@@ -214,6 +214,17 @@ exports.getDemandeHistory = async (req, res) => {
     }
 };
 
+exports.markAlerteAsVue = async (req, res) => {
+    const { id } = req.params;
+    try {
+        await Demande.markAlerteAsVue(id);
+        res.json({ message: "Alerte marquée comme vue." });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Erreur lors de la mise à jour." });
+    }
+};
+
 exports.deleteDemande = async (req, res) => {
     const { id } = req.params;
     try {
