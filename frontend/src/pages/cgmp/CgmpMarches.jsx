@@ -666,7 +666,7 @@ const CgmpMarches = () => {
             </div>
           ) : (
             groupedDemands.map(group => (
-              <div key={group.idBudget} className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-all group">
+              <div key={group.idBudget} className={`bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-all group ${expandedBudgets[group.idBudget] ? 'lg:col-span-3 md:col-span-2 col-span-1' : ''}`}>
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-4">
                     <div className="h-12 w-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
@@ -718,107 +718,102 @@ const CgmpMarches = () => {
 
                 {/* Détails des demandes acceptées */}
                 {expandedBudgets[group.idBudget] && (
-                  <div className="bg-gray-50 border-t border-gray-100 animate-in slide-in-from-top-2">
-                    {group.demands.map(d => (
-                      <div key={d.idDemande} className="p-4 border-b border-gray-100 last:border-0 hover:bg-white transition-colors">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">ID Demande:</span>
-                            <span className="ml-1 text-sm font-mono font-bold">#{d.idDemande}</span>
-                          </div>
-                          <div className="flex gap-2">
-                            <button 
-                              onClick={() => fetchHistory(d.idDemande)}
-                              className="p-1.5 text-gray-500 hover:bg-gray-50 rounded-lg transition-colors border border-gray-100"
-                              title="Historique"
-                            >
-                              <History className="h-3 w-3" />
-                            </button>
-                            <button 
-                              onClick={() => handleStartEditArticles(d)}
-                              className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-blue-100"
-                              title="Modifier les quantités ou prix"
-                            >
-                              <Edit className="h-3 w-3" />
-                            </button>
-                            <button 
-                              onClick={() => handleRejectDemand(d)}
-                              className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-red-100"
-                              title="Rejeter pour correction"
-                            >
-                              <XCircle className="h-3 w-3" />
-                            </button>
-                            {d.renvoyee === 1 && (
-                              <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-100 flex items-center gap-1">
-                                <Clock className="h-3 w-3" /> RENVOYÉE
-                              </span>
-                            )}
-                            <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
-                              VALIDE
-                            </span>
-                          </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-y-2 text-[11px]">
-                          <div>
-                            <p className="text-gray-400 uppercase font-bold text-[9px]">Montant Estimé</p>
-                            <p className="font-bold text-primary">{Number(d.montantEstime || 0).toLocaleString()} FBU</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-gray-400 uppercase font-bold text-[9px]">Validé le</p>
-                            <p className="font-semibold text-gray-700">{d.dateValidation ? new Date(d.dateValidation).toLocaleDateString() : new Date(d.dateDemande).toLocaleDateString()}</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-400 uppercase font-bold text-[9px]">Resp. Financier</p>
-                            <p className="font-semibold text-gray-700">{d.responsableFinancier || 'RAF'}</p>
-                          </div>
-                        </div>
-
-                        {/* Liste des articles avec descriptions */}
-                        <div className="mt-3 space-y-2">
-                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider border-b border-gray-100 pb-1">Articles & Spécifications</p>
-                          {d.articles && d.articles.map((art, idx) => (
-                            <div key={idx} className="bg-white p-2 rounded-lg border border-gray-50 shadow-sm">
-                              <div className="flex justify-between items-center mb-1">
-                                <span className="text-xs font-bold text-gray-700">{art.nomArticle} (x{art.quantite})</span>
-                                <span className="text-[10px] font-bold text-primary">{Number(art.prixUnitaire * art.quantite).toLocaleString()} FBU</span>
+                  <div className="bg-gray-50 border-t border-gray-100 animate-in slide-in-from-top-2 p-6">
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                      {group.demands.map(d => (
+                        <div key={d.idDemande} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-shadow">
+                          <div className="p-5 flex-1">
+                            <div className="flex justify-between items-start mb-4">
+                              <div>
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">ID Demande:</span>
+                                <span className="ml-1 text-sm font-mono font-bold">#{d.idDemande}</span>
                               </div>
-                              {art.description && (
-                                <p className="text-[10px] text-gray-500 italic leading-tight mb-1">
-                                  Spec: {art.description}
-                                </p>
-                              )}
-                              {art.montant > 0 && (
-                                <p className="text-[9px] text-amber-600 font-bold bg-amber-50/50 px-1.5 py-0.5 rounded border border-amber-100/50 w-fit">
-                                  Proposé: {Number(art.montant).toLocaleString()} FBU
-                                </p>
-                              )}
+                              <div className="flex gap-2">
+                                <button 
+                                  onClick={() => fetchHistory(d.idDemande)}
+                                  className="p-1.5 text-gray-500 hover:bg-gray-50 rounded-lg transition-colors border border-gray-100"
+                                  title="Historique"
+                                >
+                                  <History className="h-4 w-4" />
+                                </button>
+                                <button 
+                                  onClick={() => handleStartEditArticles(d)}
+                                  className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-blue-100"
+                                  title="Modifier les quantités ou prix"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </button>
+                                <button 
+                                  onClick={() => handleRejectDemand(d)}
+                                  className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-red-100"
+                                  title="Rejeter pour correction"
+                                >
+                                  <XCircle className="h-4 w-4" />
+                                </button>
+                              </div>
                             </div>
-                          ))}
+                            
+                            <div className="grid grid-cols-2 gap-4 text-xs mb-4">
+                              <div className="p-3 bg-gray-50 rounded-xl">
+                                <p className="text-gray-400 uppercase font-bold text-[9px] mb-1">Montant Estimé</p>
+                                <p className="font-bold text-primary text-sm">{Number(d.montantEstime || 0).toLocaleString()} FBU</p>
+                              </div>
+                              <div className="p-3 bg-gray-50 rounded-xl">
+                                <p className="text-gray-400 uppercase font-bold text-[9px] mb-1">Responsable Financier</p>
+                                <p className="font-semibold text-gray-700 text-sm">{d.responsableFinancier || 'RAF'}</p>
+                              </div>
+                            </div>
+
+                            {/* Liste des articles avec descriptions */}
+                            <div className="space-y-2">
+                              <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider border-b border-gray-100 pb-1 flex items-center gap-2">
+                                <LayoutGrid className="h-3 w-3" /> Articles & Spécifications
+                              </p>
+                              <div className="grid grid-cols-1 gap-2">
+                                {d.articles && d.articles.map((art, idx) => (
+                                  <div key={idx} className="bg-gray-50/50 p-3 rounded-xl border border-gray-50">
+                                    <div className="flex justify-between items-center mb-1">
+                                      <span className="text-xs font-bold text-gray-700">{art.nomArticle} (x{art.quantite})</span>
+                                      <span className="text-[10px] font-bold text-primary">{Number(art.prixUnitaire * art.quantite).toLocaleString()} FBU</span>
+                                    </div>
+                                    {art.description && (
+                                      <p className="text-[10px] text-gray-500 italic leading-tight mb-1">
+                                        Spec: {art.description}
+                                      </p>
+                                    )}
+                                    {art.montant > 0 && (
+                                      <p className="text-[9px] text-amber-600 font-bold bg-amber-50/50 px-1.5 py-0.5 rounded border border-amber-100/50 w-fit">
+                                        Proposé: {Number(art.montant).toLocaleString()} FBU
+                                      </p>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="px-5 py-3 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
+                             <div className="flex items-center gap-2">
+                               <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${
+                                 d.renvoyee === 1 ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
+                               }`}>
+                                 {d.renvoyee === 1 ? 'RENVOYÉE' : 'VALIDE'}
+                               </span>
+                             </div>
+                             <div className="text-[10px] text-gray-400 font-medium">
+                               Validé le {d.dateValidation ? new Date(d.dateValidation).toLocaleDateString() : new Date(d.dateDemande).toLocaleDateString()}
+                             </div>
+                          </div>
+
+                          {d.motif && (
+                            <div className="p-3 bg-blue-50 border-t border-blue-100 text-[10px] text-blue-700 italic flex gap-2">
+                              <MessageSquare className="h-4 w-4 shrink-0 text-blue-400" />
+                              <p><span className="font-bold not-italic">Note RAF :</span> {d.motif}</p>
+                            </div>
+                          )}
                         </div>
-                        {/* Totaux récapitulatifs */}
-                        <div className="mt-3 flex justify-between items-center bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
-                          <div className="text-center">
-                            <p className="text-[9px] text-amber-600 font-black uppercase tracking-wider">Total proposé</p>
-                            <p className="text-xs font-bold text-amber-700">
-                              {d.articles.reduce((acc, a) => acc + (Number(a.montant) || 0), 0).toLocaleString()} FBU
-                            </p>
-                          </div>
-                          <div className="h-8 w-px bg-gray-200"></div>
-                          <div className="text-center">
-                            <p className="text-[9px] text-primary font-black uppercase tracking-wider">Total validé RAF</p>
-                            <p className="text-xs font-bold text-primary">
-                              {d.articles.reduce((acc, a) => acc + ((a.prixUnitaire || 0) * a.quantite), 0).toLocaleString()} FBU
-                            </p>
-                          </div>
-                        </div>
-                        {d.motif && (
-                          <div className="mt-2 p-2 bg-blue-50 rounded-lg border border-blue-100 text-[10px] text-blue-700 italic">
-                            <span className="font-bold not-italic">Note RAF :</span> {d.motif}
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
