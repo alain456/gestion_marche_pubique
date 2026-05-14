@@ -38,7 +38,18 @@ exports.addSoumissionnaire = async (req, res) => {
         if (email) {
             try {
                 const subject = "Confirmation de dépôt d'offre - SETIC";
-                const text = `Bonjour ${nomSoumissionnaire},\n\nVotre offre a été enregistrée avec succès (Offre #${idOffre}).\n\nOffre yawe yabaye enregistre.\n\nCordialement,\nL'équipe SETIC`;
+                const text = `Bonjour ${nomSoumissionnaire},\n\n` +
+                             `Nous vous confirmons que votre offre a été enregistrée avec succès par notre service de réception.\n\n` +
+                             `DÉTAILS DE L'ENREGISTREMENT :\n` +
+                             `---------------------------\n` +
+                             `N° Offre : #${idOffre}\n` +
+                             `Marché : #${idMarche}\n` +
+                             `Téléphone enregistré : ${telephone}\n` +
+                             `Montant proposé : ${Number(montantPropose).toLocaleString()} FBU\n` +
+                             `Date : ${new Date(dateSoumission).toLocaleDateString()}\n\n` +
+                             `Offre yawe yabaye enregistre neza muri SETIC.\n\n` +
+                             `Cordialement,\n` +
+                             `L'équipe SETIC - Gestion des Marchés Publics`;
                 
                 await sendEmail(email, subject, text);
             } catch (emailError) {
