@@ -213,9 +213,9 @@ const Demande = {
                 await connection.query(lineQuery, [lineValues]);
             }
 
-            // 2. Marquer comme modifié par CGMP, mettre à jour le montant, ajouter le motif et réinitialiser l'alerte
+            // 2. Marquer comme modifié par CGMP, mettre à jour le montant, ajouter le motif et réinitialiser les alertes (RAF et Chef)
             await connection.query(
-                'UPDATE demande SET modifieParCgmp = 1, montantEstime = ?, motif = ?, alerteVue = 0, alerteRaf = 0 WHERE idDemande = ?',
+                'UPDATE demande SET modifieParCgmp = 1, montantEstime = ?, motif = ?, alerteVue = 0, alerteRaf = 0, alerteChef = 0 WHERE idDemande = ?',
                 [montantEstime, motif || 'Ajustement technique CGMP', idDemande]
 
             );
@@ -262,6 +262,10 @@ const Demande = {
 
     markAlerteRafAsVue: async (id) => {
         await db.query('UPDATE demande SET alerteRaf = 1 WHERE idDemande = ?', [id]);
+        return true;
+    },
+    markAlerteChefAsVue: async (id) => {
+        await db.query('UPDATE demande SET alerteChef = 1 WHERE idDemande = ?', [id]);
         return true;
     },
 

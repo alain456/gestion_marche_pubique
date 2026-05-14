@@ -51,6 +51,14 @@ pool.getConnection()
             // console.log('ℹ️ Colonne alerteRaf déjà existante');
         }
 
+        // Vérifier si la colonne alerteChef existe dans demande, sinon la créer
+        try {
+            await connection.query(`ALTER TABLE demande ADD COLUMN alerteChef TINYINT(1) DEFAULT 1`);
+            console.log('✅ Colonne alerteChef ajoutée à la table demande');
+        } catch (err) {
+            // console.log('ℹ️ Colonne alerteChef déjà existante');
+        }
+
         // Créer la table historique_demande si elle n'existe pas
         try {
             await connection.query(`

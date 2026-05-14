@@ -178,7 +178,7 @@ exports.getAllDemandes = async (req, res) => {
 
         // Si c'est un ADMIN, RAF ou CGMP, il voit tout (sauf si mesdemandes=true)
         const userRole = role ? role.toUpperCase() : '';
-        if ((userRole === 'ADMIN' || userRole === 'RAF' || userRole === 'CGMP') && !mesDemandes) {
+        if ((userRole === 'ADMIN' || userRole === 'RAF' || userRole === 'CGMP' || userRole === 'CHEF_INSTITUTION') && !mesDemandes) {
             rows = await Demande.findAll();
         } else {
             // Sinon (DEMANDEUR, CHEF_SERVICE, ou mesdemandes=true), il ne voit que son service
@@ -214,6 +214,28 @@ exports.getDemandeHistory = async (req, res) => {
     }
 };
 
+exports.markAlerteRafAsVue = async (req, res) => {
+    try {
+        const { id } = req.params;
+        await Demande.markAlerteRafAsVue(id);
+        res.json({ message: "Alerte RAF marquée comme vue" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Erreur lors de la mise à jour de l'alerte RAF" });
+    }
+};
+
+exports.markAlerteChefAsVue = async (req, res) => {
+    try {
+        const { id } = req.params;
+        await Demande.markAlerteChefAsVue(id);
+        res.json({ message: "Alerte Chef marquée comme vue" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Erreur lors de la mise à jour de l'alerte Chef" });
+    }
+};
+
 exports.markAlerteAsVue = async (req, res) => {
     const { id } = req.params;
     try {
@@ -225,16 +247,6 @@ exports.markAlerteAsVue = async (req, res) => {
     }
 };
 
-exports.markAlerteRafAsVue = async (req, res) => {
-    const { id } = req.params;
-    try {
-        await Demande.markAlerteRafAsVue(id);
-        res.json({ message: "Notification RAF marquée comme vue." });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Erreur lors de la mise à jour." });
-    }
-};
 
 exports.deleteDemande = async (req, res) => {
     const { id } = req.params;
