@@ -405,7 +405,6 @@ const ReceptionSoumissions = () => {
                   <th className="px-8 py-5 text-center text-xs font-bold text-gray-400 uppercase tracking-wider">Statut Modif</th>
                   <th className="px-8 py-5 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Actions</th>
                 </tr>
-              
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {offers.map(o => (
@@ -443,7 +442,7 @@ const ReceptionSoumissions = () => {
                       <div className="flex items-center justify-end gap-2">
                         <button onClick={() => printReceipt(o)} className="p-2 bg-gray-100 rounded-xl" title="Imprimer"><Printer className="h-4 w-4" /></button>
                         
-                        {user?.role === 'Receptioniste' ? (
+                        {(user?.role?.toUpperCase() === 'RECEPTIONISTE' || user?.role?.toUpperCase() === 'RECEPTIONNISTE') ? (
                           // Pour le réceptionniste
                           o.autorisationModification === 1 ? (
                             <button onClick={() => handleEdit(o)} className="p-2 bg-amber-50 text-amber-600 rounded-xl" title="Modifier"><Edit2 className="h-4 w-4" /></button>

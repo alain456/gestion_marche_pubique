@@ -233,6 +233,7 @@ const Demande = {
         }
     },
 
+    // Mise à jour statut
     updateStatut: async (id, statut, motif = undefined, role = undefined) => {
         const setAlerteRaf = role === 'CGMP' ? ', alerteRaf = 0' : '';
 
