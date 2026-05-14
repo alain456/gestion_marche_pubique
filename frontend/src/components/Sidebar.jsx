@@ -6,7 +6,8 @@ import {
   Users, 
   CreditCard,
   CheckSquare,
-  Building2
+  Building2,
+  Gavel
 } from 'lucide-react';
 import PropTypes from 'prop-types';
 
@@ -24,9 +25,14 @@ const Sidebar = ({ user }) => {
           { name: 'Articles', path: '/admin/articles', icon: FileText },
         ];
       case 'CHEF_SERVICE':
-      case 'CHEF_INSTITUTION':
         return [
           { name: 'Dashboard', path: '/demandeur', icon: Home },
+          { name: 'Mes Demandes', path: '/demandeur/demandes', icon: FileText },
+        ];
+      case 'CHEF_INSTITUTION':
+        return [
+          { name: 'Dashboard', path: '/chef', icon: Home },
+          { name: 'Suivi Stratégique', path: '/chef', icon: Gavel },
           { name: 'Mes Demandes', path: '/demandeur/demandes', icon: FileText },
         ];
       case 'RAF':

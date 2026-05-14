@@ -13,7 +13,7 @@ import DemandeurDemandes from './pages/demandeur/DemandeurDemandes';
 import RafDashboard from './pages/raf/RafDashboard';
 import RafBudgets from './pages/raf/RafBudgets';
 
-const ChefDashboard = () => <div>Dashboard Chef Institution</div>;
+import ChefDashboard from './pages/chef/ChefDashboard';
 import CgmpDashboard from './pages/cgmp/CgmpDashboard';
 import CgmpMarches from './pages/cgmp/CgmpMarches';
 import CgmpBudgets from './pages/cgmp/CgmpBudgets';
@@ -37,8 +37,9 @@ const RootRedirect = () => {
     case 'DEMANDEUR':
       return <Navigate to="/demandeur" replace />;
     case 'CHEF_SERVICE':
-    case 'CHEF_INSTITUTION':
       return <Navigate to="/demandeur" replace />;
+    case 'CHEF_INSTITUTION':
+      return <Navigate to="/chef" replace />;
     case 'RAF':
       return <Navigate to="/raf" replace />;
     case 'CGMP':
