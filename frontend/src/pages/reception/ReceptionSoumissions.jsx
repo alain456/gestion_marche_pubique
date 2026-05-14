@@ -405,6 +405,7 @@ const ReceptionSoumissions = () => {
                   <th className="px-8 py-5 text-center text-xs font-bold text-gray-400 uppercase tracking-wider">Statut Modif</th>
                   <th className="px-8 py-5 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Actions</th>
                 </tr>
+              
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {offers.map(o => (
