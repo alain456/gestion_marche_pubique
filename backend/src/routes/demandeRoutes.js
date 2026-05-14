@@ -14,6 +14,7 @@ router.put('/:id/cgmp-update', demandeController.updateDemandeByCgmp);
 router.put('/:id/statut', demandeController.updateStatut);
 router.put('/:id/mark-vue', demandeController.markAlerteAsVue);
 router.put('/:id/mark-raf-vue', demandeController.markAlerteRafAsVue);
+router.put('/:id/mark-chef-vue', demandeController.markAlerteChefAsVue);
 router.get('/:id/history', demandeController.getDemandeHistory);
 router.delete('/:id', demandeController.deleteDemande);
 

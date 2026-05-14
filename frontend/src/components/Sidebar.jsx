@@ -74,7 +74,7 @@ const Sidebar = ({ user }) => {
           {links.map((link) => {
             const Icon = link.icon;
             return (
-              <li key={link.path}>
+              <li key={`${link.path}-${link.name}`}>
                 <NavLink
                   to={link.path}
                   end={link.path.split('/').length === 2}
