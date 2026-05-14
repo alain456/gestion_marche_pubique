@@ -490,7 +490,7 @@ const ReceptionSoumissions = () => {
                 Vous n&apos;avez pas le droit de modifier cette offre directement. Veuillez expliquer au RAF pourquoi une modification est nécessaire.
               </p>
               <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">motif de la modification</label>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Motif de la modification</label>
                 <textarea 
                   rows="4"
                   value={requestMotif}
