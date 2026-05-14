@@ -13,7 +13,9 @@ import {
   CheckCircle,
   XCircle,
   Key,
-  Building
+  Building,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 const AdminUsers = () => {
@@ -25,6 +27,7 @@ const AdminUsers = () => {
   const [form, setForm] = useState({ idUser: null, nom: '', email: '', password: '', idRole: '', idService: '' });
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const loadUsers = async () => {
     try {
@@ -75,6 +78,9 @@ const AdminUsers = () => {
     if (!role) return false;
     const name = role.nomRole.toLowerCase();
     // Les rôles qui nécessitent obligatoirement un service
+    // Exclure 'chef institution' qui est un rôle global
+    if (name.includes('institution')) return false;
+    
     return name.includes('chef') || name.includes('demandeur');
   };
 
@@ -381,7 +387,7 @@ const AdminUsers = () => {
                 <div className="relative">
                   <Key className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder={form.idUser ? "••••••••" : "Mot de passe sécurisé"}
                     value={form.password}
                     onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
@@ -389,8 +395,15 @@ const AdminUsers = () => {
                     onFocus={(e) => e.target.removeAttribute('readonly')}
                     readOnly
                     name="user_password_new"
-                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm"
+                    className="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
               </div>
 
