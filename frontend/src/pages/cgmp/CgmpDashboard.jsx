@@ -103,7 +103,7 @@ const CgmpDashboard = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {statCards.map((stat, idx) => (
-          <div key={idx} className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all group">
+          <div key={idx} className="bg-surface p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all group">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm font-semibold text-gray-400 uppercase tracking-wider">{stat.title}</p>
@@ -122,7 +122,7 @@ const CgmpDashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-        <section className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
+        <section className="bg-surface p-8 rounded-3xl border border-gray-100 shadow-sm">
           <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
             <CheckSquare className="text-primary" />
             Actions Prioritaires
@@ -170,7 +170,7 @@ const CgmpDashboard = () => {
           </div>
         </section>
 
-        <section className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden">
+        <section className="bg-surface p-8 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden">
            <div className="absolute top-0 right-0 p-8 opacity-5">
               <FileText size={120} />
            </div>

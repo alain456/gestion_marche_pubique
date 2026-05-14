@@ -133,7 +133,7 @@ const DemandeurDashboard = () => {
 
       {/* Cartes de statistiques */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
+        <div className="bg-surface p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
           <div className="p-3 bg-blue-50 text-primary rounded-lg">
             <FileText className="h-8 w-8" />
           </div>
@@ -143,7 +143,7 @@ const DemandeurDashboard = () => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
+        <div className="bg-surface p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
           <div className="p-3 bg-gray-100 text-gray-500 rounded-lg">
             <FileText className="h-8 w-8" />
           </div>
@@ -153,7 +153,7 @@ const DemandeurDashboard = () => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-5 hover:shadow-md transition group">
+        <div className="bg-surface p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-5 hover:shadow-md transition group">
           <div className="p-4 bg-amber-50 text-amber-600 rounded-2xl group-hover:bg-amber-600 group-hover:text-white transition-colors duration-300">
             <Clock className="h-8 w-8" />
           </div>
@@ -163,7 +163,7 @@ const DemandeurDashboard = () => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-5 hover:shadow-md transition group">
+        <div className="bg-surface p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-5 hover:shadow-md transition group">
           <div className="p-4 bg-green-50 text-green-600 rounded-2xl group-hover:bg-green-600 group-hover:text-white transition-colors duration-300">
             <CheckCircle className="h-8 w-8" />
           </div>
@@ -173,7 +173,7 @@ const DemandeurDashboard = () => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
+        <div className="bg-surface p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
           <div className="p-3 bg-red-50 text-red-600 rounded-lg">
             <XCircle className="h-8 w-8" />
           </div>
@@ -185,7 +185,7 @@ const DemandeurDashboard = () => {
       </div>
 
       {/* Dernières demandes */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <div className="bg-surface rounded-xl shadow-sm border border-gray-100 p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-800">Dernières demandes</h2>
           <Link
@@ -222,7 +222,7 @@ const DemandeurDashboard = () => {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
+              <tbody className="divide-y divide-gray-200 bg-surface">
                 {dernieresDemandes.map((demande, index) => (
                   <tr key={demande.idDemande || index} className="hover:bg-gray-50 transition">
                     <td className="px-4 py-4 text-sm text-gray-900">
@@ -286,7 +286,7 @@ const DemandeurDashboard = () => {
       </div>
 
       {/* Actions Rapides */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <div className="bg-surface rounded-xl shadow-sm border border-gray-100 p-6">
         <h2 className="text-lg font-semibold text-gray-800 mb-4">Actions Rapides</h2>
         <div className="flex flex-col gap-3 sm:flex-row">
           <Link

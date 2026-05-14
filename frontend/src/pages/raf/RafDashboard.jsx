@@ -83,6 +83,9 @@ const RafDashboard = () => {
   }, []);
 
   const openBudgetModal = async (demande) => {
+    if (demande.alerteRaf === 0) {
+      markRafAlerteAsVue(demande.idDemande);
+    }
     setSelectedDemande(demande);
     setTempArticles(demande.articles.map(a => ({ ...a, prixUnitaire: a.prixUnitaire || 0 })));
     const total = demande.articles.reduce((acc, a) => acc + ((a.prixUnitaire || 0) * a.quantite), 0);
@@ -146,6 +149,15 @@ const RafDashboard = () => {
         console.error(err);
         setError('Erreur lors de la validation groupée.');
       }
+    }
+  };
+
+  const markRafAlerteAsVue = async (idDemande) => {
+    try {
+      await api.put(`/demandes/${idDemande}/mark-raf-vue`);
+      fetchData();
+    } catch (err) {
+      console.error('Erreur lors du marquage de la notification RAF:', err);
     }
   };
 
@@ -242,6 +254,9 @@ const RafDashboard = () => {
   };
 
   const handleOpenDetails = (demande) => {
+    if (demande.alerteRaf === 0) {
+      markRafAlerteAsVue(demande.idDemande);
+    }
     setSelectedDemande(demande);
     setBudgetForm({ ...budgetForm, motif: '' }); // Reset motif for new view
     setShowDetailsModal(true);
@@ -309,7 +324,7 @@ const RafDashboard = () => {
 
       {/* Statistiques Rapides */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+        <div className="bg-surface p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
           <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
             <Clock className="h-6 w-6" />
           </div>
@@ -318,7 +333,7 @@ const RafDashboard = () => {
             <p className="text-xl font-bold text-gray-900">{demandes.filter(d => d.statut === 'En attente').length}</p>
           </div>
         </div>
-        <div className="bg-white p-5 rounded-2xl border border-emerald-100 shadow-sm flex items-center gap-4">
+        <div className="bg-surface p-5 rounded-2xl border border-emerald-100 shadow-sm flex items-center gap-4">
           <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
             <CheckCircle className="h-6 w-6" />
           </div>
@@ -327,7 +342,7 @@ const RafDashboard = () => {
             <p className="text-xl font-bold text-emerald-700">{demandes.filter(d => d.statut === 'Valide' || d.statut === 'Inclus dans Marché').length}</p>
           </div>
         </div>
-        <div className="bg-white p-5 rounded-2xl border border-red-100 shadow-sm flex items-center gap-4">
+        <div className="bg-surface p-5 rounded-2xl border border-red-100 shadow-sm flex items-center gap-4">
           <div className="p-3 bg-red-50 text-red-600 rounded-xl">
             <XCircle className="h-6 w-6" />
           </div>
@@ -336,7 +351,7 @@ const RafDashboard = () => {
             <p className="text-xl font-bold text-red-700">{demandes.filter(d => d.statut === 'Rejete').length}</p>
           </div>
         </div>
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+        <div className="bg-surface p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
           <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
             <TrendingUp className="h-6 w-6" />
           </div>
@@ -345,7 +360,7 @@ const RafDashboard = () => {
             <p className="text-xl font-bold text-gray-900">{paiements.length}</p>
           </div>
         </div>
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+        <div className="bg-surface p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
           <div className="p-3 bg-purple-50 text-purple-600 rounded-xl">
             <CreditCard className="h-6 w-6" />
           </div>
@@ -382,7 +397,7 @@ const RafDashboard = () => {
       {activeTab === 'demandes' && (
         <div className="space-y-6">
           {Object.entries(groupedDemandes).length === 0 ? (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center text-gray-400">
+            <div className="bg-surface rounded-2xl border border-gray-100 shadow-sm p-12 text-center text-gray-400">
               Aucune demande trouvée.
             </div>
           ) : (
@@ -392,7 +407,7 @@ const RafDashboard = () => {
               const isAllSelected = pendingInGroup.length > 0 && selectedInGroup.length === pendingInGroup.length;
 
               return (
-                <div key={type} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <div key={type} className="bg-surface rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                   <div className="p-4 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
                     <div className="flex items-center gap-3">
                       <div className={`p-2 rounded-lg ${
@@ -444,7 +459,19 @@ const RafDashboard = () => {
                         'border-l-gray-200';
                       
                       return (
-                        <div key={d.idDemande} className={`border border-gray-100 border-l-4 ${borderColor} rounded-xl bg-white p-4 hover:shadow-md transition-all flex items-start gap-4 group`}>
+                        <div key={d.idDemande} className={`border border-gray-100 border-l-4 ${borderColor} rounded-xl bg-surface p-4 hover:shadow-md transition-all flex items-start gap-4 group relative`}>
+                          {d.alerteRaf === 0 && (
+                            <div className="absolute -top-2 -right-2 z-10 flex items-center gap-1 bg-red-500 text-white text-[9px] font-black px-2 py-1 rounded-full shadow-lg shadow-red-200 animate-bounce">
+                              <Info className="h-3 w-3" />
+                              MODIFIÉ PAR CGMP
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); markRafAlerteAsVue(d.idDemande); }}
+                                className="ml-1 bg-white/20 hover:bg-white/40 rounded px-1 transition-colors"
+                              >
+                                &times;
+                              </button>
+                            </div>
+                          )}
                           {d.statut === 'En attente' && (
                             <input 
                               type="checkbox"
@@ -557,7 +584,7 @@ const RafDashboard = () => {
       {/* Contenu de l'onglet Paiements */}
       {activeTab === 'paiements' && (
         <div className="space-y-6">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="bg-surface rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="p-6 border-b border-gray-50 flex justify-between items-center">
               <h2 className="font-bold text-gray-800">Réceptions à payer</h2>
             </div>
@@ -600,7 +627,7 @@ const RafDashboard = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="bg-surface rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="p-6 border-b border-gray-50">
               <h2 className="font-bold text-gray-800">Historique des paiements</h2>
             </div>
@@ -687,7 +714,7 @@ const RafDashboard = () => {
       {/* Modal Budget */}
       {showBudgetModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl p-8 max-w-2xl w-full shadow-2xl animate-in fade-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh]">
+          <div className="bg-surface rounded-3xl p-8 max-w-2xl w-full shadow-2xl animate-in fade-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh]">
 
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-bold text-gray-900">Validation Budgétaire</h3>
@@ -745,7 +772,7 @@ const RafDashboard = () => {
                 <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3">Analyse Comparative des Prix</label>
                 <div className="space-y-3">
                   {tempArticles.map((art) => (
-                    <div key={art.idLigne} className="flex flex-col gap-2 p-3 bg-white rounded-xl border border-gray-100">
+                    <div key={art.idLigne} className="flex flex-col gap-2 p-3 bg-surface rounded-xl border border-gray-100">
                       <div className="flex justify-between items-center">
                         <span className="text-sm font-bold text-gray-700">{art.nomArticle}</span>
                         <span className="text-[10px] bg-gray-100 px-2 py-0.5 rounded-full text-gray-500">Qté: {art.quantite}</span>
@@ -801,7 +828,7 @@ const RafDashboard = () => {
                   required
                   value={budgetForm.motif}
                   onChange={(e) => setBudgetForm({...budgetForm, motif: e.target.value})}
-                  className="w-full px-4 py-2 border rounded-xl outline-none focus:ring-2 focus:ring-primary/20 bg-white text-sm"
+                  className="w-full px-4 py-2 border rounded-xl outline-none focus:ring-2 focus:ring-primary/20 bg-surface text-sm"
                   placeholder={selectedDemande?.statut === 'Rejete' ? "Pourquoi rejeter..." : "Note pour le demandeur..."}
                 ></textarea>
               </div>
@@ -828,7 +855,7 @@ const RafDashboard = () => {
       {/* Modal Paiement */}
       {showPaiementModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-surface rounded-3xl p-8 max-w-md w-full shadow-2xl animate-in fade-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-bold text-gray-900">Enregistrer un Paiement</h3>
               <button onClick={() => setShowPaiementModal(false)} className="text-gray-400 hover:text-gray-600">
@@ -872,7 +899,7 @@ const RafDashboard = () => {
       {/* Modal Détails Demande */}
       {showDetailsModal && selectedDemande && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-60 p-4">
-          <div className="bg-white rounded-3xl p-8 max-w-2xl w-full shadow-2xl animate-in fade-in zoom-in-95 duration-200 overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="bg-surface rounded-3xl p-8 max-w-2xl w-full shadow-2xl animate-in fade-in zoom-in-95 duration-200 overflow-hidden flex flex-col max-h-[90vh]">
             <div className="flex justify-between items-center mb-6">
               <div>
                 <h3 className="text-xl font-bold text-gray-900">Détails de la Demande #{selectedDemande.idDemande}</h3>
@@ -913,7 +940,7 @@ const RafDashboard = () => {
                       <MessageSquare className="h-4 w-4" />
                       Note / Motif du RAF
                     </p>
-                    <div className="bg-white/50 p-3 rounded-xl border border-current border-opacity-10 shadow-inner">
+                    <div className="bg-surface/50 p-3 rounded-xl border border-current border-opacity-10 shadow-inner">
                       <p className="text-base font-semibold leading-relaxed italic">
                         &ldquo;{selectedDemande.motif}&rdquo;
                       </p>
@@ -934,7 +961,7 @@ const RafDashboard = () => {
                         <th className="px-4 py-2 text-right text-[10px] font-bold text-gray-400 uppercase">Total validé</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 bg-white">
+                    <tbody className="divide-y divide-gray-100 bg-surface">
                       {selectedDemande.articles.map((a, i) => (
                         <tr key={i} className="hover:bg-gray-50">
                           <td className="px-4 py-3 text-sm font-medium text-gray-800">{a.nomArticle}</td>
@@ -975,7 +1002,7 @@ const RafDashboard = () => {
                     rows="2"
                     value={budgetForm.motif}
                     onChange={(e) => setBudgetForm({...budgetForm, motif: e.target.value})}
-                    className="w-full px-4 py-2 border border-red-200 rounded-xl outline-none focus:ring-2 focus:ring-red-500/20 bg-white text-sm"
+                    className="w-full px-4 py-2 border border-red-200 rounded-xl outline-none focus:ring-2 focus:ring-red-500/20 bg-surface text-sm"
                     placeholder="Pourquoi rejetez-vous ou quelle est votre note..."
                   ></textarea>
                 </div>
@@ -1034,10 +1061,10 @@ const RafDashboard = () => {
       {/* Modal Historique */}
       {showHistory && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl p-0 max-w-xl w-full shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden flex flex-col max-h-[85vh]">
+          <div className="bg-surface rounded-3xl p-0 max-w-4xl w-full shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden flex flex-col max-h-[85vh]">
             <div className="bg-linear-to-r from-gray-900 to-gray-800 p-6 text-white flex justify-between items-center shrink-0">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-white/10 rounded-xl">
+                <div className="p-2 bg-surface/10 rounded-xl">
                   <History className="h-6 w-6 text-blue-400" />
                 </div>
                 <div>
@@ -1047,7 +1074,7 @@ const RafDashboard = () => {
               </div>
               <button 
                 onClick={() => setShowHistory(false)} 
-                className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                className="p-2 hover:bg-surface/10 rounded-full transition-colors"
               >
                 <XCircle className="h-7 w-7" />
               </button>
@@ -1079,7 +1106,7 @@ const RafDashboard = () => {
                         'bg-blue-500 shadow-blue-200'
                       }`} />
                       
-                      <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
+                      <div className="bg-surface p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
                         <div className="flex justify-between items-start mb-3">
                           <h4 className="text-sm font-black text-gray-800 uppercase tracking-tight">{item.action}</h4>
                           <span className="text-[10px] font-mono bg-gray-100 text-gray-500 px-2 py-1 rounded-lg border border-gray-200">
@@ -1122,7 +1149,7 @@ const RafDashboard = () => {
               )}
             </div>
 
-            <div className="p-6 bg-white border-t border-gray-100 text-right shrink-0">
+            <div className="p-6 bg-surface border-t border-gray-100 text-right shrink-0">
               <button 
                 onClick={() => setShowHistory(false)} 
                 className="px-8 py-3 bg-gray-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-black transition-all shadow-lg shadow-gray-200"

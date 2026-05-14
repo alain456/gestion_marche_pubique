@@ -163,7 +163,7 @@ const CgmpBudgets = () => {
           <p className="text-gray-500 mt-2">Configurez les enveloppes budgétaires annuelles par catégorie avant l&apos;ouverture des demandes.</p>
         </div>
         <div className="flex gap-3">
-          <Link to="/cgmp" className="inline-flex items-center gap-2 px-4 py-2 bg-white text-gray-700 rounded-xl hover:bg-gray-50 border border-gray-200 transition-all font-medium shadow-sm">
+          <Link to="/cgmp" className="inline-flex items-center gap-2 px-4 py-2 bg-surface text-gray-700 rounded-xl hover:bg-gray-50 border border-gray-200 transition-all font-medium shadow-sm">
             <ArrowLeft className="h-4 w-4" /> Retour
           </Link>
           <button 
@@ -191,7 +191,7 @@ const CgmpBudgets = () => {
       )}
 
       {showForm && (
-        <section className="bg-white rounded-3xl border border-gray-100 shadow-xl overflow-hidden animate-in slide-in-from-top-4">
+        <section className="bg-surface rounded-3xl border border-gray-100 shadow-xl overflow-hidden animate-in slide-in-from-top-4">
           <div className="bg-primary px-8 py-5 text-white flex items-center gap-3">
             <PlusCircle className="h-6 w-6" />
             <h2 className="text-xl font-bold">{isEditing ? 'Modifier la Ligne Budgétaire' : 'Nouveau Numéro Budgétaire'}</h2>
@@ -263,7 +263,7 @@ const CgmpBudgets = () => {
         <input
           type="text"
           placeholder="Rechercher un budget..."
-          className="w-full pl-12 pr-4 py-3 bg-white border border-gray-100 rounded-2xl shadow-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+          className="w-full pl-12 pr-4 py-3 bg-surface border border-gray-100 rounded-2xl shadow-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
@@ -272,12 +272,12 @@ const CgmpBudgets = () => {
       {/* Liste des budgets */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredBudgets.length === 0 ? (
-          <div className="col-span-full p-12 text-center text-gray-400 font-medium bg-white rounded-3xl border border-dashed">
+          <div className="col-span-full p-12 text-center text-gray-400 font-medium bg-surface rounded-3xl border border-dashed">
             Aucun budget trouvé.
           </div>
         ) : (
           filteredBudgets.map(b => (
-            <div key={b.idBudget} className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all group">
+            <div key={b.idBudget} className="bg-surface p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all group">
               <div className="flex justify-between items-start mb-4">
                 <div className="h-12 w-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
                   <LayoutGrid className="h-6 w-6" />

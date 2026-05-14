@@ -118,7 +118,7 @@ const ReceptionDashboard = () => {
             <select 
               value={selectedMarketId}
               onChange={(e) => setSelectedMarketId(e.target.value)}
-              className="pl-10 pr-8 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary/20 outline-none appearance-none cursor-pointer"
+              className="pl-10 pr-8 py-2.5 bg-surface border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary/20 outline-none appearance-none cursor-pointer"
             >
               <option value="all">Tous les marchés</option>
               {data.marches.map(m => (
@@ -132,7 +132,7 @@ const ReceptionDashboard = () => {
             <select 
               value={period}
               onChange={(e) => setPeriod(e.target.value)}
-              className="pl-10 pr-8 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary/20 outline-none appearance-none cursor-pointer"
+              className="pl-10 pr-8 py-2.5 bg-surface border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary/20 outline-none appearance-none cursor-pointer"
             >
               <option value="all">Toutes les périodes</option>
               <option value="1">Dernières 24h</option>
@@ -150,14 +150,14 @@ const ReceptionDashboard = () => {
               placeholder="Nom ou référence..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 outline-none w-full sm:w-64"
+              className="pl-10 pr-4 py-2.5 bg-surface border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 outline-none w-full sm:w-64"
             />
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group">
+        <div className="bg-surface p-6 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group">
           <div className="relative z-10">
             <p className="text-sm font-bold text-gray-400 uppercase tracking-wider">Total Offres</p>
             <h3 className="text-4xl font-black text-gray-900 mt-2">{stats.totalOffers}</h3>
@@ -168,7 +168,7 @@ const ReceptionDashboard = () => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group">
+        <div className="bg-surface p-6 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group">
           <div className="relative z-10">
             <p className="text-sm font-bold text-gray-400 uppercase tracking-wider">Reçues Aujourd&apos;hui</p>
             <h3 className="text-4xl font-black text-gray-900 mt-2">{stats.totalOffersToday}</h3>
@@ -176,7 +176,7 @@ const ReceptionDashboard = () => {
           </div>
         </div>
 
-        {/* <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group">
+        {/* <div className="bg-surface p-6 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group">
           <div className="relative z-10">
             <p className="text-sm font-bold text-gray-400 uppercase tracking-wider">Marchés Publiés</p>
             <h3 className="text-4xl font-black text-gray-900 mt-2">{stats.activeMarkets}</h3>
@@ -192,7 +192,7 @@ const ReceptionDashboard = () => {
             ? `Résultats de recherche (${filteredSoumissions.length})` 
             : `Toutes les offres (${filteredSoumissions.length})`}
         </h2>
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="bg-surface rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-100">
               <thead>

@@ -243,14 +243,14 @@ const ReceptionSoumissions = () => {
         </div>
       )}
 
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-xl overflow-hidden">
+      <div className="bg-surface rounded-3xl border border-gray-100 shadow-xl overflow-hidden">
         <div className={`${isEditing ? 'bg-amber-500' : 'bg-primary'} px-8 py-5 text-white flex items-center justify-between`}>
           <div className="flex items-center gap-3">
             {isEditing ? <Edit2 className="h-6 w-6" /> : <PlusCircle className="h-6 w-6" />}
             <h2 className="text-xl font-bold">{isEditing ? `Modifier l'Offre #${editId}` : 'Nouveau Dépôt d\'Offre'}</h2>
           </div>
           {isEditing && (
-            <button onClick={resetForm} className="bg-white/20 hover:bg-white/30 p-2 rounded-xl transition-colors">
+            <button onClick={resetForm} className="bg-surface/20 hover:bg-surface/30 p-2 rounded-xl transition-colors">
               <X className="h-5 w-5" />
             </button>
           )}
@@ -392,7 +392,7 @@ const ReceptionSoumissions = () => {
           <Users className="text-primary h-6 w-6" />
           Historique
         </h3>
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="bg-surface rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-100">
               <thead>

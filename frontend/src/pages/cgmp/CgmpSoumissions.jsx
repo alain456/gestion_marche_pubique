@@ -133,7 +133,7 @@ const CgmpSoumissions = () => {
             <select 
               value={selectedMarketId}
               onChange={(e) => setSelectedMarketId(e.target.value)}
-              className="pl-10 pr-8 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary/20 outline-none appearance-none cursor-pointer"
+              className="pl-10 pr-8 py-2.5 bg-surface border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary/20 outline-none appearance-none cursor-pointer"
             >
               <option value="all">Tous les marchés</option>
               {data.marches.map(m => (
@@ -148,7 +148,7 @@ const CgmpSoumissions = () => {
             <select 
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
-              className="pl-10 pr-8 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary/20 outline-none appearance-none cursor-pointer"
+              className="pl-10 pr-8 py-2.5 bg-surface border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary/20 outline-none appearance-none cursor-pointer"
             >
               <option value="all">Tous les statuts</option>
               <option value="en attente">En attente</option>
@@ -165,7 +165,7 @@ const CgmpSoumissions = () => {
               placeholder="Rechercher nom ou réf..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 outline-none w-full sm:w-64"
+              className="pl-10 pr-4 py-2.5 bg-surface border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 outline-none w-full sm:w-64"
             />
           </div>
 
@@ -188,7 +188,7 @@ const CgmpSoumissions = () => {
 
       {/* Résumé Statistique */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4">
+        <div className="bg-surface p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4">
           <div className="h-12 w-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
             <FileText size={24} />
           </div>
@@ -197,7 +197,7 @@ const CgmpSoumissions = () => {
             <h3 className="text-2xl font-black text-gray-900">{filteredSoumissions.length}</h3>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4">
+        <div className="bg-surface p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4">
           <div className="h-12 w-12 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600">
             <AlertCircle size={24} />
           </div>
@@ -206,7 +206,7 @@ const CgmpSoumissions = () => {
             <h3 className="text-2xl font-black text-gray-900">{data.soumissions.filter(s => s.statut === 'en attente').length}</h3>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4">
+        <div className="bg-surface p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4">
           <div className="h-12 w-12 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600">
             <CheckCircle size={24} />
           </div>
@@ -215,7 +215,7 @@ const CgmpSoumissions = () => {
             <h3 className="text-2xl font-black text-gray-900">{data.soumissions.filter(s => s.statut === 'conforme').length}</h3>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4">
+        <div className="bg-surface p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4">
           <div className="h-12 w-12 bg-red-100 rounded-2xl flex items-center justify-center text-red-600">
             <XCircle size={24} />
           </div>
@@ -227,7 +227,7 @@ const CgmpSoumissions = () => {
       </div>
 
       {/* Tableau des Soumissionnaires */}
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-xl overflow-hidden">
+      <div className="bg-surface rounded-3xl border border-gray-100 shadow-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-100">
             <thead>
@@ -318,10 +318,10 @@ const CgmpSoumissions = () => {
       {/* Modal Motif de Rejet */}
       {showMotifModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300">
+          <div className="bg-surface rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300">
             <div className="p-6 bg-red-600 text-white flex justify-between items-center">
               <h2 className="text-xl font-bold">Rejeter l'Offre</h2>
-              <button onClick={() => setShowMotifModal(false)} className="hover:bg-white/10 p-2 rounded-full transition-colors">
+              <button onClick={() => setShowMotifModal(false)} className="hover:bg-surface/10 p-2 rounded-full transition-colors">
                 <XCircle className="h-6 w-6" />
               </button>
             </div>

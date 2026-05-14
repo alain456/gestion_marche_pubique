@@ -6,7 +6,7 @@ const Navbar = () => {
   const { user, logout } = useContext(AuthContext);
 
   return (
-    <header className="bg-white shadow-sm h-16 flex items-center justify-between px-4 md:px-8 lg:px-12 border-b border-gray-200">
+    <header className="bg-surface shadow-sm h-16 flex items-center justify-between px-4 md:px-8 lg:px-12 border-b border-gray-200">
       <div className="flex items-center">
         <h2 className="text-xl font-semibold text-primary hidden md:block">Système de Gestion des Marchés Publics</h2>
       </div>

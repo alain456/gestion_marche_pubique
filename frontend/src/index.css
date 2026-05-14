@@ -4,6 +4,7 @@
   --color-primary: #1e3a8a; /* blue-900 */
   --color-secondary: #f8fafc; /* slate-50 */
   --color-accent: #f59e0b; /* amber-500 */
+  --color-surface: #fdfdfd; /* premium near-white */
 }
 
 @layer base {

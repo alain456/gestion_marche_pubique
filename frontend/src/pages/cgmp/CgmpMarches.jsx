@@ -284,7 +284,7 @@ const CgmpMarches = () => {
 
       {/* Formulaire de création de marché */}
       {showForm && (
-        <section className="bg-white rounded-3xl border border-gray-100 shadow-xl overflow-hidden animate-in zoom-in-95 duration-300">
+        <section className="bg-surface rounded-3xl border border-gray-100 shadow-xl overflow-hidden animate-in zoom-in-95 duration-300">
           <div className="p-6 bg-primary text-white flex justify-between items-center">
             <div>
               <h2 className="text-xl font-bold">Nouveau Dossier d&apos;Appel d&apos;Offres</h2>
@@ -293,7 +293,7 @@ const CgmpMarches = () => {
                 {selectedDemand?.nomDemandeur && ` (${selectedDemand.nomDemandeur})`}
               </p>
               {selectedDemand?.motif && (
-                <div className="mt-2 bg-white/10 px-3 py-1.5 rounded-lg border border-white/20 text-xs italic">
+                <div className="mt-2 bg-surface/10 px-3 py-1.5 rounded-lg border border-white/20 text-xs italic">
                   Note RAF: {selectedDemand.motif}
                 </div>
               )}
@@ -302,7 +302,7 @@ const CgmpMarches = () => {
               </div>
 
             </div>
-            <button onClick={() => setShowForm(false)} className="hover:bg-white/10 p-2 rounded-full transition-colors">
+            <button onClick={() => setShowForm(false)} className="hover:bg-surface/10 p-2 rounded-full transition-colors">
               <XCircle className="h-6 w-6" />
             </button>
           </div>
@@ -487,7 +487,7 @@ const CgmpMarches = () => {
       {/* Modal de gestion du marché */}
       {showDetails && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+          <div className="bg-surface rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-300">
             <div className="p-6 bg-gray-900 text-white flex justify-between items-center">
               <div>
                 <h2 className="text-xl font-bold">Gestion du Marché #{selectedMarche?.idMarche}</h2>
@@ -496,7 +496,7 @@ const CgmpMarches = () => {
                   {selectedMarche?.nomDemandeur && ` (${selectedMarche.nomDemandeur})`}
                 </p>
               </div>
-              <button onClick={() => setShowDetails(false)} className="hover:bg-white/10 p-2 rounded-full transition-colors">
+              <button onClick={() => setShowDetails(false)} className="hover:bg-surface/10 p-2 rounded-full transition-colors">
                 <XCircle className="h-6 w-6" />
               </button>
             </div>
@@ -638,7 +638,7 @@ const CgmpMarches = () => {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-4 pt-4 border-t border-gray-50 sticky bottom-0 bg-white pb-2">
+              <div className="flex justify-end gap-4 pt-4 border-t border-gray-50 sticky bottom-0 bg-surface pb-2">
                 <button 
                   type="button" 
                   onClick={() => setShowDetails(false)}
@@ -668,12 +668,12 @@ const CgmpMarches = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {groupedDemands.length === 0 ? (
-            <div className="col-span-full p-12 bg-white rounded-3xl border border-dashed border-gray-200 text-center text-gray-400">
+            <div className="col-span-full p-12 bg-surface rounded-3xl border border-dashed border-gray-200 text-center text-gray-400">
                Aucune demande validée en attente de traitement.
             </div>
           ) : (
             groupedDemands.map(group => (
-              <div key={group.idBudget} className={`bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-all group ${expandedBudgets[group.idBudget] ? 'lg:col-span-3 md:col-span-2 col-span-1' : ''}`}>
+              <div key={group.idBudget} className={`bg-surface rounded-3xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-all group ${expandedBudgets[group.idBudget] ? 'lg:col-span-3 md:col-span-2 col-span-1' : ''}`}>
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-4">
                     <div className="h-12 w-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
@@ -728,7 +728,7 @@ const CgmpMarches = () => {
                   <div className="bg-gray-50 border-t border-gray-100 animate-in slide-in-from-top-2 p-6">
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                       {group.demands.map(d => (
-                        <div key={d.idDemande} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-shadow">
+                        <div key={d.idDemande} className="bg-surface rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-shadow">
                           <div className="p-5 flex-1">
                             <div className="flex justify-between items-start mb-4">
                               <div>
@@ -830,7 +830,7 @@ const CgmpMarches = () => {
       </section>
 
       {/* Liste des marchés existants */}
-      <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+      <section className="bg-surface rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="px-8 py-6 border-b border-gray-50 bg-gray-50/50 flex items-center justify-between">
           <h2 className="font-bold text-gray-900 flex items-center gap-2">
             <FileText className="text-primary h-5 w-5" />
@@ -840,7 +840,7 @@ const CgmpMarches = () => {
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-100">
             <thead>
-              <tr className="bg-white">
+              <tr className="bg-surface">
                 <th className="px-8 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">ID / Demande</th>
                 <th className="px-8 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Mode Passation</th>
                 <th className="px-8 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Montant Estimé</th>
@@ -900,7 +900,7 @@ const CgmpMarches = () => {
       {/* Modal de modification des articles par la CGMP */}
       {editingDemand && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-surface rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="bg-primary px-8 py-5 text-white flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Edit className="h-6 w-6" />
@@ -909,7 +909,7 @@ const CgmpMarches = () => {
                   <p className="text-xs text-white/70">Demande #{editingDemand.idDemande} - {editingDemand.nomService}</p>
                 </div>
               </div>
-              <button onClick={() => setEditingDemand(null)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+              <button onClick={() => setEditingDemand(null)} className="p-2 hover:bg-surface/10 rounded-full transition-colors">
                 <XCircle className="h-6 w-6" />
               </button>
             </div>
@@ -933,7 +933,7 @@ const CgmpMarches = () => {
                       <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Quantité</label>
                       <input 
                         type="number"
-                        className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none"
+                        className="w-full px-3 py-2 bg-surface border border-gray-200 rounded-xl text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none"
                         value={art.quantite}
                         onChange={(e) => handleUpdateArticleField(idx, 'quantite', e.target.value)}
                       />
@@ -942,7 +942,7 @@ const CgmpMarches = () => {
                       <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Prix Unitaire (FBU)</label>
                       <input 
                         type="number"
-                        className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none"
+                        className="w-full px-3 py-2 bg-surface border border-gray-200 rounded-xl text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none"
                         value={art.prixUnitaire}
                         onChange={(e) => handleUpdateArticleField(idx, 'prixUnitaire', e.target.value)}
                       />
@@ -957,7 +957,7 @@ const CgmpMarches = () => {
                 </label>
                 <textarea
                   rows="3"
-                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-2xl text-sm focus:ring-2 focus:ring-purple-500/20 outline-none transition-all italic"
+                  className="w-full px-4 py-3 bg-surface border border-gray-200 rounded-2xl text-sm focus:ring-2 focus:ring-purple-500/20 outline-none transition-all italic"
                   placeholder="Expliquez pourquoi ces modifications ont été apportées (ex: Standardisation, budget insuffisant...)"
                   value={adjustmentMotif}
                   onChange={(e) => setAdjustmentMotif(e.target.value)}
@@ -987,11 +987,11 @@ const CgmpMarches = () => {
 
       {/* Modal Historique */}
       {showHistory && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl p-0 max-w-xl w-full shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden flex flex-col max-h-[85vh]">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-surface rounded-3xl p-0 max-w-4xl w-full shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden flex flex-col max-h-[85vh]">
             <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-6 text-white flex justify-between items-center shrink-0">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-white/10 rounded-xl">
+                <div className="p-2 bg-surface/10 rounded-xl">
                   <History className="h-6 w-6 text-blue-400" />
                 </div>
                 <div>
@@ -1001,7 +1001,7 @@ const CgmpMarches = () => {
               </div>
               <button 
                 onClick={() => setShowHistory(false)} 
-                className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                className="p-2 hover:bg-surface/10 rounded-full transition-colors"
               >
                 <XCircle className="h-7 w-7" />
               </button>
@@ -1032,7 +1032,7 @@ const CgmpMarches = () => {
                         'bg-blue-500 shadow-blue-200'
                       }`} />
                       
-                      <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
+                      <div className="bg-surface p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
                         <div className="flex justify-between items-start mb-3">
                           <h4 className="text-sm font-black text-gray-800 uppercase tracking-tight">{item.action}</h4>
                           <span className="text-[10px] font-mono bg-gray-100 text-gray-500 px-2 py-1 rounded-lg border border-gray-200">
@@ -1075,7 +1075,7 @@ const CgmpMarches = () => {
               )}
             </div>
 
-            <div className="p-6 bg-white border-t border-gray-100 text-right shrink-0">
+            <div className="p-6 bg-surface border-t border-gray-100 text-right shrink-0">
               <button 
                 onClick={() => setShowHistory(false)} 
                 className="px-8 py-3 bg-gray-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-black transition-all shadow-lg shadow-gray-200"

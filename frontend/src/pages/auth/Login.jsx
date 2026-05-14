@@ -30,7 +30,7 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-secondary flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden">
+      <div className="bg-surface rounded-xl shadow-lg w-full max-w-md overflow-hidden">
         <div className="bg-primary p-6 text-center">
           <h1 className="text-3xl font-bold text-accent mb-2">SETIC</h1>
           <p className="text-blue-100">Gestion des Marchés Publics</p>
