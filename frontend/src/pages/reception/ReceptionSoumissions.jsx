@@ -292,7 +292,7 @@ const ReceptionSoumissions = () => {
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Téléphone</label>
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Téléphone ngendanwa</label>
             <div className="relative">
               <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
@@ -413,6 +413,9 @@ const ReceptionSoumissions = () => {
                     <td className="px-8 py-6">
                       <div className="font-bold text-gray-900">{o.nomSoumissionnaire}</div>
                       <div className="text-xs text-gray-500">{o.email}</div>
+                      <div className="text-xs text-primary font-semibold flex items-center gap-1 mt-1">
+                        <Phone className="h-3 w-3" /> {o.telephone}
+                      </div>
                     </td>
                     <td className="px-8 py-6">
                       <div className="font-medium text-gray-700">Marché #{o.idMarche}</div>

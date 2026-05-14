@@ -656,7 +656,11 @@ const RafDashboard = () => {
                   offers.filter(o => o.demandeModification === 1).map((o) => (
                     <tr key={o.idOffre} className="hover:bg-gray-50">
                       <td className="px-6 py-4 text-sm font-mono">#{o.idOffre}</td>
-                      <td className="px-6 py-4 text-sm font-semibold">{o.nomSoumissionnaire}</td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-semibold text-gray-900">{o.nomSoumissionnaire}</div>
+                        <div className="text-xs text-gray-500">{o.email}</div>
+                        <div className="text-xs text-primary font-medium">{o.telephone}</div>
+                      </td>
                       <td className="px-6 py-4 text-sm">Marché #{o.idMarche}</td>
                       <td className="px-6 py-4">
                         <div className="p-3 bg-amber-50 border border-amber-100 rounded-xl text-xs text-amber-800 italic">
