@@ -150,7 +150,7 @@ const AdminArticles = () => {
         </div>
         <Link
           to="/admin"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-white text-gray-700 rounded-xl hover:bg-gray-50 transition border border-gray-200 shadow-sm font-medium"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-surface text-gray-700 rounded-xl hover:bg-gray-50 transition border border-gray-200 shadow-sm font-medium"
         >
           <ArrowLeft className="h-4 w-4" />
           Retour au Tableau de bord
@@ -170,7 +170,7 @@ const AdminArticles = () => {
               className={`relative p-5 rounded-2xl border-2 transition-all duration-300 text-left group ${
                 isActive 
                   ? `${type.borderColor} ${type.bgLight} shadow-lg` 
-                  : 'border-gray-100 bg-white hover:border-gray-200 hover:shadow-sm'
+                  : 'border-gray-100 bg-surface hover:border-gray-200 hover:shadow-sm'
               }`}
             >
               <div className="flex items-center justify-between mb-2">
@@ -208,11 +208,11 @@ const AdminArticles = () => {
               placeholder={`Rechercher dans ${currentType.label}...`}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-2xl shadow-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+              className="w-full pl-12 pr-4 py-3 bg-surface border border-gray-200 rounded-2xl shadow-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
             />
           </div>
 
-          <section className={`bg-white rounded-3xl border-2 ${currentType.borderColor} shadow-sm overflow-hidden`}>
+          <section className={`bg-surface rounded-3xl border-2 ${currentType.borderColor} shadow-sm overflow-hidden`}>
             <div className={`px-6 py-4 border-b ${currentType.bgLight} flex items-center justify-between`}>
               <h2 className="font-semibold text-gray-800 flex items-center gap-2">
                 <TypeIcon className={`h-5 w-5 ${currentType.textColor}`} />
@@ -226,7 +226,7 @@ const AdminArticles = () => {
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead>
-                  <tr className="bg-white">
+                  <tr className="bg-surface">
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Identifiant / Nom de l&apos;Article</th>
                     <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">Actions</th>
                   </tr>
@@ -296,7 +296,7 @@ const AdminArticles = () => {
 
         {/* Right Column: Add/Edit Form */}
         <div className="space-y-6">
-          <section className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6 sticky top-6">
+          <section className="bg-surface rounded-3xl border border-gray-200 shadow-sm p-6 sticky top-6">
             <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
               {form.idArticle ? (
                 <>

@@ -37,10 +37,18 @@ pool.getConnection()
 
         // Vérifier si la colonne alerteVue existe dans demande, sinon la créer
         try {
-            await connection.query(`ALTER TABLE demande ADD COLUMN alerteVue TINYINT(1) DEFAULT 0`);
+            await connection.query(`ALTER TABLE demande ADD COLUMN alerteVue TINYINT(1) DEFAULT 1`);
             console.log('✅ Colonne alerteVue ajoutée à la table demande');
         } catch (err) {
             // console.log('ℹ️ Colonne alerteVue déjà existante');
+        }
+
+        // Vérifier si la colonne alerteRaf existe dans demande, sinon la créer
+        try {
+            await connection.query(`ALTER TABLE demande ADD COLUMN alerteRaf TINYINT(1) DEFAULT 1`);
+            console.log('✅ Colonne alerteRaf ajoutée à la table demande');
+        } catch (err) {
+            // console.log('ℹ️ Colonne alerteRaf déjà existante');
         }
 
         // Créer la table historique_demande si elle n'existe pas

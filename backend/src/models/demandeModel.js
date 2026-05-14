@@ -152,7 +152,7 @@ const Demande = {
 
             // 2. Marquer comme modifié par CGMP, mettre à jour le montant, ajouter le motif et réinitialiser l'alerte
             await connection.query(
-                'UPDATE demande SET modifieParCgmp = 1, montantEstime = ?, motif = ?, alerteVue = 0 WHERE idDemande = ?',
+                'UPDATE demande SET modifieParCgmp = 1, montantEstime = ?, motif = ?, alerteVue = 0, alerteRaf = 0 WHERE idDemande = ?',
                 [montantEstime, motif || 'Ajustement technique CGMP', idDemande]
             );
 
@@ -166,18 +166,19 @@ const Demande = {
         }
     },
 
-    updateStatut: async (id, statut, motif = undefined) => {
+    updateStatut: async (id, statut, motif = undefined, role = undefined) => {
+        const setAlerteRaf = role === 'CGMP' ? ', alerteRaf = 0' : '';
         if (statut === 'Rejete') {
             if (motif !== undefined) {
-                await db.query('UPDATE demande SET statut = ?, motif = ?, renvoyee = 1, alerteVue = 0 WHERE idDemande = ?', [statut, motif, id]);
+                await db.query(`UPDATE demande SET statut = ?, motif = ?, renvoyee = 1, alerteVue = 0${setAlerteRaf} WHERE idDemande = ?`, [statut, motif, id]);
             } else {
-                await db.query('UPDATE demande SET statut = ?, renvoyee = 1, alerteVue = 0 WHERE idDemande = ?', [statut, id]);
+                await db.query(`UPDATE demande SET statut = ?, renvoyee = 1, alerteVue = 0${setAlerteRaf} WHERE idDemande = ?`, [statut, id]);
             }
         } else {
             if (motif !== undefined) {
-                await db.query('UPDATE demande SET statut = ?, motif = ?, alerteVue = 0 WHERE idDemande = ?', [statut, motif, id]);
+                await db.query(`UPDATE demande SET statut = ?, motif = ?, alerteVue = 0${setAlerteRaf} WHERE idDemande = ?`, [statut, motif, id]);
             } else {
-                await db.query('UPDATE demande SET statut = ?, alerteVue = 0 WHERE idDemande = ?', [statut, id]);
+                await db.query(`UPDATE demande SET statut = ?, alerteVue = 0${setAlerteRaf} WHERE idDemande = ?`, [statut, id]);
             }
         }
         return true;
@@ -185,6 +186,11 @@ const Demande = {
 
     markAlerteAsVue: async (id) => {
         await db.query('UPDATE demande SET alerteVue = 1 WHERE idDemande = ?', [id]);
+        return true;
+    },
+
+    markAlerteRafAsVue: async (id) => {
+        await db.query('UPDATE demande SET alerteRaf = 1 WHERE idDemande = ?', [id]);
         return true;
     },
 

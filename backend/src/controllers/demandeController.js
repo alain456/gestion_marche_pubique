@@ -150,7 +150,7 @@ exports.updateStatut = async (req, res) => {
     }
 
     try {
-        await Demande.updateStatut(id, statut, motif);
+        await Demande.updateStatut(id, statut, motif, req.user.role);
 
         // Historique validation/rejet
         await Demande.addHistory(null, {
@@ -219,6 +219,17 @@ exports.markAlerteAsVue = async (req, res) => {
     try {
         await Demande.markAlerteAsVue(id);
         res.json({ message: "Alerte marquée comme vue." });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Erreur lors de la mise à jour." });
+    }
+};
+
+exports.markAlerteRafAsVue = async (req, res) => {
+    const { id } = req.params;
+    try {
+        await Demande.markAlerteRafAsVue(id);
+        res.json({ message: "Notification RAF marquée comme vue." });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Erreur lors de la mise à jour." });

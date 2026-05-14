@@ -38,10 +38,9 @@ const Sidebar = ({ user }) => {
       case 'CGMP':
         return [
           { name: 'Dashboard', path: '/cgmp', icon: Home },
-          { name: 'Lignes Budgétaires', path: '/cgmp/budgets', icon: CreditCard },
+          { name: 'Mes Commandes d\'Achat', path: '/cgmp/budgets', icon: CreditCard },
           { name: 'Marchés', path: '/cgmp/marches', icon: FileText },
         ];
-      case 'RECEPTIONISTE':
       case 'RECEPTIONNISTE':
         return [
           { name: 'Dashboard', path: '/reception', icon: Home },

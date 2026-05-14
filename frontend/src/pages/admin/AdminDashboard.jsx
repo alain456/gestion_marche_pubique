@@ -35,7 +35,7 @@ const AdminDashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
+        <div className="bg-surface p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
           <div className="p-3 bg-blue-50 text-primary rounded-lg">
             <Users className="h-8 w-8" />
           </div>
@@ -45,7 +45,7 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
+        <div className="bg-surface p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
           <div className="p-3 bg-amber-50 text-accent rounded-lg">
             <Shield className="h-8 w-8" />
           </div>
@@ -55,7 +55,7 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
+        <div className="bg-surface p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
           <div className="p-3 bg-green-50 text-green-600 rounded-lg">
             <Activity className="h-8 w-8" />
           </div>
@@ -66,7 +66,7 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <div className="bg-surface rounded-xl shadow-sm border border-gray-100 p-6">
         <h2 className="text-lg font-semibold text-gray-800 mb-4">Actions Rapides</h2>
         <div className="flex flex-col gap-3 sm:flex-row">
           <Link

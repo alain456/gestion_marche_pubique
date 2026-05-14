@@ -313,7 +313,7 @@ const DemandeurDemandes = () => {
 
       {/* Formulaire */}
       {showForm && (
-        <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-in slide-in-from-top-2">
+        <section className="bg-surface rounded-xl shadow-sm border border-gray-100 p-6 animate-in slide-in-from-top-2">
           <h2 className="text-xl font-semibold text-gray-800 mb-4">
             {editingId ? `Modifier la Commande #${editingId}` : 'Nouvelle Commande'}
           </h2>
@@ -326,7 +326,7 @@ const DemandeurDemandes = () => {
               <select 
                 value={form.idBudget} 
                 onChange={(e) => handleBudgetChange(e.target.value)}
-                className="w-full rounded-xl border-gray-200 bg-white py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 transition-all shadow-sm"
+                className="w-full rounded-xl border-gray-200 bg-surface py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 transition-all shadow-sm"
               >
                 <option value="">-- Sélectionner l&apos;enveloppe budgétaire --</option>
                 {budgets.map(b => (
@@ -363,7 +363,7 @@ const DemandeurDemandes = () => {
                 <select 
                   value={currentItem.idArticle} 
                   onChange={(e) => setCurrentItem({...currentItem, idArticle: e.target.value})} 
-                  className="w-full rounded-xl border-gray-200 py-2.5 px-4 text-sm bg-white shadow-sm focus:ring-2 focus:ring-emerald-500/20"
+                  className="w-full rounded-xl border-gray-200 py-2.5 px-4 text-sm bg-surface shadow-sm focus:ring-2 focus:ring-emerald-500/20"
                   disabled={!form.idBudget}
                 >
                   <option value="">{form.idBudget ? 'Chercher un article...' : 'Sélectionnez d&apos;abord un budget'}</option>
@@ -414,14 +414,14 @@ const DemandeurDemandes = () => {
                   type="text" 
                   value={currentItem.description} 
                   onChange={(e) => setCurrentItem({...currentItem, description: e.target.value})} 
-                  className="w-full rounded-xl border-gray-200 py-3 px-4 text-sm shadow-sm focus:ring-2 focus:ring-emerald-500/20 italic bg-white" 
+                  className="w-full rounded-xl border-gray-200 py-3 px-4 text-sm shadow-sm focus:ring-2 focus:ring-emerald-500/20 italic bg-surface" 
                   placeholder="Précisez la marque, le modèle, la qualité ou tout autre détail important..." 
                 />
               </div>
             </div>
 
             {selectedItems.length > 0 && (
-              <div className="mt-4 overflow-hidden rounded-lg border border-gray-200 bg-white">
+              <div className="mt-4 overflow-hidden rounded-lg border border-gray-200 bg-surface">
                 <table className="min-w-full divide-y divide-gray-200 text-sm">
                   <thead className="bg-gray-100">
                     <tr>
@@ -465,7 +465,7 @@ const DemandeurDemandes = () => {
               onClick={(e) => handleSubmit(e, true)} 
               disabled={selectedItems.length === 0 && !currentItem.idArticle} 
               className={`inline-flex items-center px-6 py-2.5 rounded-xl font-medium border transition ${
-                (selectedItems.length > 0 || currentItem.idArticle) ? 'bg-white border-primary text-primary hover:bg-blue-50' : 'bg-gray-50 text-gray-300 cursor-not-allowed'
+                (selectedItems.length > 0 || currentItem.idArticle) ? 'bg-surface border-primary text-primary hover:bg-blue-50' : 'bg-gray-50 text-gray-300 cursor-not-allowed'
               }`}
             >
               <Save className="h-4 w-4 mr-2" /> Enregistrer Brouillon
@@ -481,7 +481,7 @@ const DemandeurDemandes = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input type="text" placeholder="Rechercher par #ID, service ou article..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full rounded-xl border-gray-300 pl-10 py-2.5" />
         </div>
-        <select value={filterStatut} onChange={(e) => setFilterStatut(e.target.value)} className="rounded-xl border-gray-300 bg-white min-w-[180px]">
+        <select value={filterStatut} onChange={(e) => setFilterStatut(e.target.value)} className="rounded-xl border-gray-300 bg-surface min-w-[180px]">
           <option value="">Tous les statuts</option>
           <option value="Brouillon">Brouillon</option>
           <option value="En attente">En attente</option>
@@ -494,7 +494,7 @@ const DemandeurDemandes = () => {
       {/* Liste des commandes - Layout card responsive */}
       <section className="space-y-3">
         {filteredDemandes.length === 0 ? (
-          <div className="bg-white rounded-xl px-6 py-12 text-center text-gray-400 border border-gray-100 shadow-sm">Aucune commande trouvée.</div>
+          <div className="bg-surface rounded-xl px-6 py-12 text-center text-gray-400 border border-gray-100 shadow-sm">Aucune commande trouvée.</div>
         ) : (
           filteredDemandes.map((demande) => {
             const borderColor =
@@ -503,7 +503,7 @@ const DemandeurDemandes = () => {
               demande.statut === 'En attente' ? 'border-l-amber-400' :
               demande.statut === 'Brouillon' ? 'border-l-gray-300' : 'border-l-gray-200';
             return (
-              <div key={demande.idDemande} className={`bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 ${borderColor} p-4 hover:shadow-md transition-shadow`}>
+              <div key={demande.idDemande} className={`bg-surface rounded-xl shadow-sm border border-gray-100 border-l-4 ${borderColor} p-4 hover:shadow-md transition-shadow`}>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   {/* Colonne gauche: ID + Budget + Articles */}
                   <div className="flex items-start gap-3 min-w-0 flex-1">
@@ -613,7 +613,7 @@ const DemandeurDemandes = () => {
       {/* Modal Visualisation */}
       {viewingDemande && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+          <div className="bg-surface rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
             <div className="p-6 border-b border-gray-100 flex justify-between items-center">
               <div>
                 <h3 className="text-lg font-bold">Détails de la commande #{viewingDemande.idDemande}</h3>
@@ -660,11 +660,11 @@ const DemandeurDemandes = () => {
 
       {/* Modal Historique */}
       {showHistory && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl p-0 max-w-xl w-full shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden flex flex-col max-h-[85vh]">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-surface rounded-3xl p-0 max-w-4xl w-full shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden flex flex-col max-h-[85vh]">
             <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-6 text-white flex justify-between items-center shrink-0">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-white/10 rounded-xl">
+                <div className="p-2 bg-surface/10 rounded-xl">
                   <History className="h-6 w-6 text-blue-400" />
                 </div>
                 <div>
@@ -674,7 +674,7 @@ const DemandeurDemandes = () => {
               </div>
               <button 
                 onClick={() => setShowHistory(false)} 
-                className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                className="p-2 hover:bg-surface/10 rounded-full transition-colors"
               >
                 <XCircle className="h-7 w-7" />
               </button>
@@ -705,7 +705,7 @@ const DemandeurDemandes = () => {
                         'bg-blue-500 shadow-blue-200'
                       }`} />
                       
-                      <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
+                      <div className="bg-surface p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
                         <div className="flex justify-between items-start mb-3">
                           <h4 className="text-sm font-black text-gray-800 uppercase tracking-tight">{item.action}</h4>
                           <span className="text-[10px] font-mono bg-gray-100 text-gray-500 px-2 py-1 rounded-lg border border-gray-200">
@@ -748,7 +748,7 @@ const DemandeurDemandes = () => {
               )}
             </div>
 
-            <div className="p-6 bg-white border-t border-gray-100 text-right shrink-0">
+            <div className="p-6 bg-surface border-t border-gray-100 text-right shrink-0">
               <button 
                 onClick={() => setShowHistory(false)} 
                 className="px-8 py-3 bg-gray-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-black transition-all shadow-lg shadow-gray-200"

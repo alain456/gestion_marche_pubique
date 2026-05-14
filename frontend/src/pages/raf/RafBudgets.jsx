@@ -177,7 +177,7 @@ const RafBudgets = () => {
 
       {/* Statistiques globales */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+        <div className="bg-surface p-6 rounded-2xl border border-gray-100 shadow-sm">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
               <Building className="h-6 w-6" />
@@ -188,7 +188,7 @@ const RafBudgets = () => {
             </div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+        <div className="bg-surface p-6 rounded-2xl border border-gray-100 shadow-sm">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
               <CheckCircle className="h-6 w-6" />
@@ -199,7 +199,7 @@ const RafBudgets = () => {
             </div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+        <div className="bg-surface p-6 rounded-2xl border border-gray-100 shadow-sm">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
               <Clock className="h-6 w-6" />
@@ -214,7 +214,7 @@ const RafBudgets = () => {
 
       {/* Filtres */}
       {!selectedGroup && (
-        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
+        <div className="bg-surface p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
           <div className="relative w-full md:w-96">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input 
@@ -230,7 +230,7 @@ const RafBudgets = () => {
             <select 
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              className="px-4 py-2 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 bg-white min-w-[150px]"
+              className="px-4 py-2 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 bg-surface min-w-[150px]"
             >
               <option value="Tous">Tous les types</option>
               <option value="fourniture">Fourniture</option>
@@ -243,7 +243,7 @@ const RafBudgets = () => {
 
       {/* Vue groupée par typeMarche */}
       {showGroupedView && !selectedGroup && (
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="bg-surface rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="p-6 border-b border-gray-100">
             <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
               <Layers className="h-5 w-5 text-primary" /> Validation Groupée par Type de Marché
@@ -296,7 +296,7 @@ const RafBudgets = () => {
       {selectedGroup && (
         <div className="space-y-4">
           {/* Barre d'actions */}
-          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
+          <div className="bg-surface p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
             <div className="flex items-center gap-3">
               <input
                 type="checkbox"
@@ -327,7 +327,7 @@ const RafBudgets = () => {
           </div>
 
           {/* Table des demandes du groupe */}
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="bg-surface rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
@@ -381,7 +381,7 @@ const RafBudgets = () => {
 
       {/* Table standard des conteneurs */}
       {!showGroupedView && !selectedGroup && (
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="bg-surface rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>

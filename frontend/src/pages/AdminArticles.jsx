@@ -75,7 +75,7 @@ const AdminArticles = () => {
                 )}
             </form>
 
-            <table className="w-full border-collapse bg-white shadow-sm">
+            <table className="w-full border-collapse bg-surface shadow-sm">
                 <thead>
                     <tr className="bg-gray-100">
                         <th className="border p-2 text-left">ID</th>
