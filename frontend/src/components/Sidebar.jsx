@@ -41,8 +41,8 @@ const Sidebar = ({ user }) => {
           { name: 'Mes Commandes d\'Achat', path: '/cgmp/budgets', icon: CreditCard },
           { name: 'Marchés', path: '/cgmp/marches', icon: FileText },
         ];
-      case 'RECEPTIONNISTE':
       case 'RECEPTIONISTE':
+      case 'RECEPTIONNISTE':
         return [
           { name: 'Dashboard', path: '/reception', icon: Home },
           { name: 'Enregistrement Offres', path: '/reception/soumissions', icon: FileText },
