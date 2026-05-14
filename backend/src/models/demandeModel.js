@@ -219,6 +219,80 @@ const Demande = {
         `;
         const [rows] = await db.query(query, [idDemande]);
         return rows;
+    },
+
+    // Récupérer les demandes en attente groupées par typeMarche pour validation RAF
+    getPendingGroupedByType: async () => {
+        const query = `
+            SELECT 
+                d.typeMarche,
+                COUNT(*) as count,
+                GROUP_CONCAT(d.idDemande) as ids,
+                GROUP_CONCAT(s.nomService) as services,
+                SUM(
+                    COALESCE(
+                        (SELECT SUM(COALESCE(ld.montant, ld.quantite * ld.prixUnitaire, 0))
+                         FROM ligne_demande ld 
+                         WHERE ld.idDemande = d.idDemande), 
+                        0
+                    )
+                ) as totalMontant
+            FROM demande d
+            LEFT JOIN servicedemandeur s ON d.idService = s.idService
+            WHERE d.statut = 'En attente'
+            GROUP BY d.typeMarche
+            ORDER BY d.typeMarche
+        `;
+        const [rows] = await db.query(query);
+        return rows.map(row => ({
+            typeMarche: row.typeMarche,
+            count: row.count,
+            ids: row.ids ? row.ids.split(',').map(id => parseInt(id)) : [],
+            services: row.services ? row.services.split(',') : [],
+            totalMontant: row.totalMontant || 0
+        }));
+    },
+
+    // Récupérer les demandes d'un typeMarche spécifique
+    findByTypeMarche: async (typeMarche) => {
+        const query = `
+            SELECT 
+                d.*,
+                s.nomService,
+                da.numeroBudget,
+                da.exerciceBudgetaire,
+                da.sourceFinancier,
+                da.montantEstime as montantEstimeBudget,
+                u.nom as nomDemandeur,
+                r.nomRole as roleDemandeur,
+                GROUP_CONCAT(
+                    JSON_OBJECT(
+                        'idLigne', l.idLigne,
+                        'idArticle', l.idArticle,
+                        'nomArticle', a.nomArticle,
+                        'quantite', l.quantite,
+                        'prixUnitaire', l.prixUnitaire,
+                        'montant', l.montant,
+                        'description', l.description
+                    )
+                ) as articles
+            FROM demande d
+            LEFT JOIN budget da ON d.idBudget = da.idBudget
+            LEFT JOIN servicedemandeur s ON d.idService = s.idService
+            LEFT JOIN utilisateur u ON d.idUser = u.idUser
+            LEFT JOIN role r ON u.idRole = r.idRole
+            LEFT JOIN ligne_demande l ON d.idDemande = l.idDemande
+            LEFT JOIN article a ON l.idArticle = a.idArticle
+            WHERE d.typeMarche = ? AND d.statut = 'En attente'
+            GROUP BY d.idDemande
+            ORDER BY d.dateDemande DESC
+        `;
+        const [rows] = await db.query(query, [typeMarche]);
+        
+        return rows.map(row => ({
+            ...row,
+            articles: row.articles ? JSON.parse(`[${row.articles}]`) : []
+        }));
     }
 };
 

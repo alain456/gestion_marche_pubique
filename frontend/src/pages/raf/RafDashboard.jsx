@@ -29,6 +29,7 @@ const RafDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [budgetStatus, setBudgetStatus] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedDemandeIds, setSelectedDemandeIds] = useState([]);
 
   // États pour les modals/formulaires
   const [showBudgetModal, setShowBudgetModal] = useState(false);
@@ -53,6 +54,8 @@ const RafDashboard = () => {
   });
 
   const [tempArticles, setTempArticles] = useState([]);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
 
   const fetchData = async () => {
     setLoading(true);
@@ -117,6 +120,29 @@ const RafDashboard = () => {
       console.error('Erreur chargement historique:', err);
     } finally {
       setHistoryLoading(false);
+    }
+  };
+
+  const toggleSelection = (id) => {
+    setSelectedDemandeIds(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkValidate = async (idsToValidate = selectedDemandeIds) => {
+    if (idsToValidate.length === 0) return;
+    
+    const motif = window.prompt("Motif de validation groupée (Optionnel) :");
+    if (window.confirm(`Voulez-vous valider ${idsToValidate.length} demandes en une seule fois ?`)) {
+      try {
+        await api.post('/budgets/bulk-valider', { idDemandes: idsToValidate, motif });
+        setMessage(`${idsToValidate.length} demandes validées.`);
+        setSelectedDemandeIds(prev => prev.filter(id => !idsToValidate.includes(id)));
+        fetchData();
+      } catch (err) {
+        console.error(err);
+        setError('Erreur lors de la validation groupée.');
+      }
     }
   };
 
@@ -186,6 +212,21 @@ const RafDashboard = () => {
      d.idDemande.toString().includes(searchTerm))
   );
 
+  // Groupement par type de marché
+  const groupedDemandes = filteredDemandes.reduce((acc, d) => {
+    const type = d.typeMarche || 'autre';
+    if (!acc[type]) acc[type] = [];
+    acc[type].push(d);
+    return acc;
+  }, {});
+
+  const typeLabels = {
+    'travaux': 'Travaux',
+    'fourniture': 'Fournitures',
+    'service': 'Services',
+    'autre': 'Autres'
+  };
+
   const handleOpenDetails = (demande) => {
     setSelectedDemande(demande);
     setBudgetForm({ ...budgetForm, motif: '' }); // Reset motif for new view
@@ -203,6 +244,20 @@ const RafDashboard = () => {
 
   return (
     <div className="space-y-6">
+      {/* Banners de feedback */}
+      {message && (
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-2xl flex justify-between items-center animate-in fade-in slide-in-from-top-2">
+          <span className="text-sm font-bold">✓ {message}</span>
+          <button onClick={() => setMessage('')} className="text-emerald-500 hover:text-emerald-700 font-bold text-lg leading-none">&times;</button>
+        </div>
+      )}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-2xl flex justify-between items-center animate-in fade-in slide-in-from-top-2">
+          <span className="text-sm font-bold">⚠ {error}</span>
+          <button onClick={() => setError('')} className="text-red-500 hover:text-red-700 font-bold text-lg leading-none">&times;</button>
+        </div>
+      )}
+
       {/* En-tête */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
@@ -305,117 +360,177 @@ const RafDashboard = () => {
 
       {/* Contenu de l'onglet Demandes */}
       {activeTab === 'demandes' && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-gray-50">
-            <h2 className="font-bold text-gray-800">Demandes en attente de budget</h2>
-          </div>
-          <div className="p-4 space-y-2">
-            {filteredDemandes.length === 0 ? (
-              <div className="py-12 text-center text-gray-400">Aucune demande trouvée.</div>
-            ) : (
-              filteredDemandes.map((d) => {
-                const borderColor =
-                  d.statut === 'Valide' ? 'border-l-emerald-400' :
-                  d.statut === 'Rejete' ? 'border-l-red-400' :
-                  d.statut === 'En attente' ? 'border-l-amber-400' :
-                  'border-l-gray-200';
-                return (
-                  <div key={d.idDemande} className={`border border-gray-100 border-l-4 ${borderColor} rounded-xl bg-white p-4 hover:shadow-sm transition-shadow`}>
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                    {/* Info principale */}
-                    <div className="flex items-start gap-3 min-w-0 flex-1">
-                      <div className="text-xs font-mono text-gray-400 bg-gray-100 px-2 py-1 rounded-lg shrink-0">
-                        #{d.idDemande}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                          <span className="font-bold text-sm text-gray-800">{d.nomService || 'RAF'}</span>
-                          <span className="text-xs text-gray-400">{new Date(d.dateDemande).toLocaleDateString('fr-FR')}</span>
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                            d.statut === 'Valide' ? 'bg-green-100 text-green-700' :
-                            d.statut === 'Rejete' ? 'bg-red-100 text-red-700' :
-                            d.statut === 'En attente' ? 'bg-amber-100 text-amber-700' :
-                            'bg-gray-100 text-gray-700'
-                          }`}>{d.statut}</span>
-                        </div>
-                        {/* Articles + montants */}
-                        <div className="flex flex-wrap gap-2">
-                          {d.articles.slice(0, 2).map((a, i) => (
-                            <div key={i} className="text-xs text-gray-600 flex items-center gap-1 bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
-                              <Package className="h-3 w-3 text-gray-400" />
-                              <span>{a.nomArticle}</span>
-                              <span className="text-gray-400 font-mono">×{a.quantite}</span>
-                            </div>
-                          ))}
-                          {d.articles.length > 2 && (
-                            <span className="text-[10px] text-primary font-bold bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
-                              +{d.articles.length - 2} autres
-                            </span>
-                          )}
-                        </div>
-                        {/* Motif si présent */}
-                        {d.motif && (
-                          <div className={`mt-2 p-2 rounded-lg border text-xs max-w-lg ${
-                            d.statut === 'Rejete' ? 'bg-red-50 border-red-100 text-red-700' : 'bg-blue-50 border-blue-100 text-blue-700'
-                          }`}>
-                            <MessageSquare className="h-3 w-3 inline mr-1" />
-                            <span className="font-bold">Note : </span>
-                            <span className="italic">{d.motif}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+        <div className="space-y-6">
+          {Object.entries(groupedDemandes).length === 0 ? (
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center text-gray-400">
+              Aucune demande trouvée.
+            </div>
+          ) : (
+            Object.entries(groupedDemandes).map(([type, groupDemandes]) => {
+              const pendingInGroup = groupDemandes.filter(d => d.statut === 'En attente');
+              const selectedInGroup = selectedDemandeIds.filter(id => groupDemandes.some(d => d.idDemande === id));
+              const isAllSelected = pendingInGroup.length > 0 && selectedInGroup.length === pendingInGroup.length;
 
-                    {/* Montants + Actions */}
-                    <div className="flex flex-col items-end gap-2 shrink-0">
-                      <div className="flex gap-3 text-right">
-                        {d.articles.reduce((acc, a) => acc + (Number(a.montant) || 0), 0) > 0 && (
-                          <div>
-                            <p className="text-[9px] text-amber-500 font-bold uppercase">Proposé</p>
-                            <p className="text-sm font-bold text-amber-600">
-                              {d.articles.reduce((acc, a) => acc + (Number(a.montant) || 0), 0).toLocaleString()} FBU
-                            </p>
-                          </div>
-                        )}
-                        {d.montantEstime > 0 && (
-                          <div>
-                            <p className="text-[9px] text-primary font-bold uppercase">Validé</p>
-                            <p className="text-sm font-bold text-primary">
-                              {Number(d.montantEstime).toLocaleString()} FBU
-                            </p>
-                          </div>
-                        )}
+              return (
+                <div key={type} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                  <div className="p-4 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-lg ${
+                        type === 'travaux' ? 'bg-orange-50 text-orange-600' :
+                        type === 'fourniture' ? 'bg-blue-50 text-blue-600' :
+                        'bg-purple-50 text-purple-600'
+                      }`}>
+                        <Package className="h-5 w-5" />
                       </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => fetchHistory(d.idDemande)}
-                          className="p-1.5 text-gray-500 hover:bg-gray-50 rounded-lg border border-gray-100 transition"
-                          title="Historique"
-                        >
-                          <History className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleOpenDetails(d)}
-                          className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-200 transition"
-                        >
-                          DÉTAILS
-                        </button>
-                        {d.statut === 'En attente' && (
-                          <button
-                            onClick={() => openBudgetModal(d)}
-                            className="px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-blue-800 transition shadow-sm"
-                          >
-                            GÉRER
-                          </button>
-                        )}
+                      <div>
+                        <h2 className="font-bold text-gray-800 uppercase tracking-wide text-sm">{typeLabels[type] || type}</h2>
+                        <p className="text-[10px] text-gray-400 font-bold">{groupDemandes.length} demande(s) au total</p>
                       </div>
                     </div>
+                    
+                    <div className="flex items-center gap-4">
+                      {pendingInGroup.length > 0 && (
+                        <button 
+                          onClick={() => {
+                            const ids = pendingInGroup.map(d => d.idDemande);
+                            if (isAllSelected) {
+                              setSelectedDemandeIds(prev => prev.filter(id => !ids.includes(id)));
+                            } else {
+                              setSelectedDemandeIds(prev => [...new Set([...prev, ...ids])]);
+                            }
+                          }}
+                          className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+                        >
+                          {isAllSelected ? 'Tout désélectionner' : `Tout sélectionner (${pendingInGroup.length})`}
+                        </button>
+                      )}
+                      {selectedInGroup.length > 0 && (
+                        <button 
+                          onClick={() => handleBulkValidate(selectedInGroup)}
+                          className="px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-blue-800 transition shadow-sm flex items-center gap-2"
+                        >
+                          <Check className="h-4 w-4" /> VALIDER LA SÉLECTION ({selectedInGroup.length})
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="p-4 space-y-3">
+                    {groupDemandes.map((d) => {
+                      const borderColor =
+                        d.statut === 'Valide' ? 'border-l-emerald-400' :
+                        d.statut === 'Rejete' ? 'border-l-red-400' :
+                        d.statut === 'En attente' ? 'border-l-amber-400' :
+                        'border-l-gray-200';
+                      
+                      return (
+                        <div key={d.idDemande} className={`border border-gray-100 border-l-4 ${borderColor} rounded-xl bg-white p-4 hover:shadow-md transition-all flex items-start gap-4 group`}>
+                          {d.statut === 'En attente' && (
+                            <input 
+                              type="checkbox"
+                              checked={selectedDemandeIds.includes(d.idDemande)}
+                              onChange={() => toggleSelection(d.idDemande)}
+                              className="mt-1.5 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                            />
+                          )}
+                          <div className="flex flex-wrap items-start justify-between gap-3 flex-1">
+                            {/* Info principale */}
+                            <div className="flex items-start gap-3 min-w-0 flex-1">
+                              <div className="text-xs font-mono text-gray-400 bg-gray-100 px-2 py-1 rounded-lg shrink-0">
+                                #{d.idDemande}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                                  <span className="font-bold text-sm text-gray-800">{d.nomService || 'RAF'}</span>
+                                  <span className="text-xs text-gray-400">{new Date(d.dateDemande).toLocaleDateString('fr-FR')}</span>
+                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                                    d.statut === 'Valide' ? 'bg-green-100 text-green-700' :
+                                    d.statut === 'Rejete' ? 'bg-red-100 text-red-700' :
+                                    d.statut === 'En attente' ? 'bg-amber-100 text-amber-700' :
+                                    'bg-gray-100 text-gray-700'
+                                  }`}>{d.statut}</span>
+                                </div>
+                                {/* Articles + montants */}
+                                <div className="flex flex-wrap gap-2">
+                                  {d.articles.slice(0, 3).map((a, i) => (
+                                    <div key={i} className="text-xs text-gray-600 flex items-center gap-1 bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
+                                      <Package className="h-3 w-3 text-gray-400" />
+                                      <span>{a.nomArticle}</span>
+                                      <span className="text-gray-400 font-mono">×{a.quantite}</span>
+                                    </div>
+                                  ))}
+                                  {d.articles.length > 3 && (
+                                    <span className="text-[10px] text-primary font-bold bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
+                                      +{d.articles.length - 3} autres
+                                    </span>
+                                  )}
+                                </div>
+                                {/* Motif si présent */}
+                                {d.motif && (
+                                  <div className={`mt-2 p-2 rounded-lg border text-xs max-w-lg ${
+                                    d.statut === 'Rejete' ? 'bg-red-50 border-red-100 text-red-700' : 'bg-blue-50 border-blue-100 text-blue-700'
+                                  }`}>
+                                    <MessageSquare className="h-3 w-3 inline mr-1" />
+                                    <span className="font-bold">Note : </span>
+                                    <span className="italic">{d.motif}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Montants + Actions */}
+                            <div className="flex flex-col items-end gap-2 shrink-0">
+                              <div className="flex gap-3 text-right">
+                                {d.articles.reduce((acc, a) => acc + (Number(a.montant) || 0), 0) > 0 && (
+                                  <div>
+                                    <p className="text-[9px] text-amber-500 font-bold uppercase">Proposé</p>
+                                    <p className="text-sm font-bold text-amber-600">
+                                      {d.articles.reduce((acc, a) => acc + (Number(a.montant) || 0), 0).toLocaleString()} FBU
+                                    </p>
+                                  </div>
+                                )}
+                                {d.montantEstime > 0 && (
+                                  <div>
+                                    <p className="text-[9px] text-primary font-bold uppercase">Validé</p>
+                                    <p className="text-sm font-bold text-primary">
+                                      {Number(d.montantEstime).toLocaleString()} FBU
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => fetchHistory(d.idDemande)}
+                                  className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-lg border border-gray-100 transition opacity-0 group-hover:opacity-100"
+                                  title="Historique"
+                                >
+                                  <History className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleOpenDetails(d)}
+                                  className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-200 transition"
+                                >
+                                  DÉTAILS
+                                </button>
+                                {d.statut === 'En attente' && (
+                                  <button
+                                    onClick={() => openBudgetModal(d)}
+                                    className="px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-blue-800 transition shadow-sm"
+                                  >
+                                    GÉRER
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               );
             })
           )}
-          </div>
         </div>
       )}
 
@@ -719,7 +834,7 @@ const RafDashboard = () => {
                 </div>
 
                 {selectedDemande.motif && (
-                  <div className={`p-4 rounded-2xl border ${selectedDemande.statut === 'Rejete' ? 'bg-red-50 border-red-100 text-red-700' : 'bg-emerald-50 border-emerald-100 text-emerald-700'}`}>
+                  <div className={`p-4 rounded-2xl border ${selectedDemande.statut === 'Rejete' ? 'bg-red-50 border-red-100 text-red-700' : 'bg-linear-to-r from-emerald-50 to-white border-emerald-100 text-emerald-700'} relative`}>
                     <p className="text-sm font-bold uppercase mb-2 flex items-center gap-2">
                       <MessageSquare className="h-4 w-4" />
                       Note / Motif du RAF
@@ -844,9 +959,9 @@ const RafDashboard = () => {
 
       {/* Modal Historique */}
       {showHistory && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl p-0 max-w-xl w-full shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden flex flex-col max-h-[85vh]">
-            <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-6 text-white flex justify-between items-center shrink-0">
+            <div className="bg-linear-to-r from-gray-900 to-gray-800 p-6 text-white flex justify-between items-center shrink-0">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-white/10 rounded-xl">
                   <History className="h-6 w-6 text-blue-400" />
@@ -882,7 +997,8 @@ const RafDashboard = () => {
                   {historyData.map((item, idx) => (
                     <div key={idx} className="relative group">
                       {/* Point sur la ligne */}
-                      <div className={`absolute -left-[41px] top-0 w-6 h-6 rounded-full border-4 border-white shadow-sm transition-all duration-300 group-hover:scale-125 ${
+                      <div className="absolute left-[-41px] top-6 w-5 h-0.5 bg-gray-200"></div>
+                      <div className={`absolute left-[-41px] top-0 w-6 h-6 rounded-full border-4 border-white shadow-sm transition-all duration-300 group-hover:scale-125 ${
                         item.action.includes('Validation') || item.nouveauStatut === 'Valide' ? 'bg-emerald-500 shadow-emerald-200' :
                         item.nouveauStatut === 'Inclus dans Marché' ? 'bg-indigo-500 shadow-indigo-200' :
                         item.action.includes('Rejet') || item.nouveauStatut === 'Rejete' ? 'bg-red-500 shadow-red-200' :

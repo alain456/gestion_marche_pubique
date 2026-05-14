@@ -158,3 +158,57 @@ exports.getBudgetStatus = async (req, res) => {
         res.status(500).json({ message: "Erreur lors de la récupération de l'état du budget" });
     }
 };
+
+exports.bulkValiderBudget = async (req, res) => {
+    const { idDemandes, motif } = req.body;
+    if (!idDemandes || !Array.isArray(idDemandes) || idDemandes.length === 0) {
+        return res.status(400).json({ message: "Liste d'IDs de demandes requise." });
+    }
+
+    try {
+        for (const id of idDemandes) {
+            await Budget.createValidation({
+                idDemande: id,
+                motif: motif || "Validation groupée RAF",
+                responsableFinancier: req.user.nom,
+                montantEstime: null 
+            });
+
+            await Demande.addHistory(null, {
+                idDemande: id,
+                action: "Validation Groupée (RAF)",
+                nouveauStatut: "Valide",
+                idUtilisateur: req.user.idUser,
+                nomUtilisateur: req.user.nom,
+                roleUtilisateur: req.user.role,
+                motif: motif || "Validation groupée"
+            });
+        }
+
+        res.json({ message: `${idDemandes.length} demandes validées avec succès.` });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Erreur lors de la validation groupée." });
+    }
+};
+
+exports.getDemandesGroupedByType = async (req, res) => {
+    try {
+        const grouped = await Demande.getPendingGroupedByType();
+        res.json(grouped);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Erreur lors de la récupération des demandes groupées." });
+    }
+};
+
+exports.getDemandesByType = async (req, res) => {
+    const { typeMarche } = req.params;
+    try {
+        const demandes = await Demande.findByTypeMarche(typeMarche);
+        res.json(demandes);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Erreur lors de la récupération des demandes par type." });
+    }
+};

@@ -43,19 +43,33 @@ const Budget = {
         try {
             await connection.beginTransaction();
             
-            // 1. Mettre à jour le statut de la demande avec les nouveaux champs
-            const queryUpdateDemande = `
-                UPDATE demande 
-                SET statut = 'Valide', 
-                    motif = ?, 
-                    dateValidation = NOW(), 
-                    responsableFinancier = ?, 
-                    montantEstime = ? 
-                WHERE idDemande = ?
-            `;
-            await connection.query(queryUpdateDemande, [motif, responsableFinancier || 'RAF', montantEstime || 0, idDemande]);
+            // 1. Mettre à jour le statut de la demande
+            // Si montantEstime est null (validation groupée), on garde le montant existant
+            if (montantEstime !== null && montantEstime !== undefined) {
+                const queryUpdateDemande = `
+                    UPDATE demande 
+                    SET statut = 'Valide', 
+                        motif = ?, 
+                        dateValidation = NOW(), 
+                        responsableFinancier = ?, 
+                        montantEstime = ? 
+                    WHERE idDemande = ?
+                `;
+                await connection.query(queryUpdateDemande, [motif, responsableFinancier || 'RAF', montantEstime || 0, idDemande]);
+            } else {
+                // Mode validation groupée : ne pas écraser le montantEstime
+                const queryUpdateDemande = `
+                    UPDATE demande 
+                    SET statut = 'Valide', 
+                        motif = ?, 
+                        dateValidation = NOW(), 
+                        responsableFinancier = ?
+                    WHERE idDemande = ?
+                `;
+                await connection.query(queryUpdateDemande, [motif, responsableFinancier || 'RAF', idDemande]);
+            }
 
-            // 2. Mettre à jour les prix unitaires des articles
+            // 2. Mettre à jour les prix unitaires des articles si fournis
             if (articles && articles.length > 0) {
                 for (const art of articles) {
                     await connection.query(

@@ -19,6 +19,11 @@ router.get('/status/:id', authorizeRoles('RAF', 'ADMIN', 'CGMP'), budgetControll
 
 // Validation spécifique à une demande
 router.post('/valider', authorizeRoles('RAF', 'ADMIN'), budgetController.validerBudget);
+router.post('/bulk-valider', authorizeRoles('RAF', 'ADMIN'), budgetController.bulkValiderBudget);
 router.post('/rejeter', authorizeRoles('RAF', 'ADMIN'), budgetController.rejeterBudget);
+
+// Validation groupée par typeMarche
+router.get('/demandes-grouped', authorizeRoles('RAF', 'ADMIN'), budgetController.getDemandesGroupedByType);
+router.get('/demandes-by-type/:typeMarche', authorizeRoles('RAF', 'ADMIN'), budgetController.getDemandesByType);
 
 module.exports = router;
