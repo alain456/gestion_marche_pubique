@@ -26,6 +26,7 @@ const RafDashboard = () => {
   const [demandes, setDemandes] = useState([]);
   const [receptions, setReceptions] = useState([]);
   const [paiements, setPaiements] = useState([]);
+  const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [budgetStatus, setBudgetStatus] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -60,14 +61,16 @@ const RafDashboard = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [demRes, recRes, paiRes] = await Promise.all([
+      const [demRes, recRes, paiRes, offRes] = await Promise.all([
         api.get('/demandes'),
         api.get('/receptions'),
-        api.get('/paiements')
+        api.get('/paiements'),
+        api.get('/soumissions')
       ]);
       setDemandes(demRes.data);
       setReceptions(recRes.data);
       setPaiements(paiRes.data);
+      setOffers(offRes.data);
     } catch {
       console.error('Erreur chargement données RAF');
     } finally {
@@ -227,6 +230,17 @@ const RafDashboard = () => {
     'autre': 'Autres'
   };
 
+  const handleAuthorizeModification = async (idOffre) => {
+    try {
+      await api.post(`/soumissions/${idOffre}/authorize-modification`);
+      alert("Modification autorisée.");
+      fetchData();
+    } catch {
+      alert("Erreur lors de l'autorisation.");
+    }
+
+  };
+
   const handleOpenDetails = (demande) => {
     setSelectedDemande(demande);
     setBudgetForm({ ...budgetForm, motif: '' }); // Reset motif for new view
@@ -355,6 +369,12 @@ const RafDashboard = () => {
           className={`px-6 py-3 text-sm font-bold transition-all border-b-2 ${activeTab === 'paiements' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
         >
           Paiements & Facturation
+        </button>
+        <button 
+          onClick={() => setActiveTab('modifications')}
+          className={`px-6 py-3 text-sm font-bold transition-all border-b-2 ${activeTab === 'modifications' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+        >
+          Modifications Offres {offers.filter(o => o.demandeModification === 1).length > 0 && <span className="ml-2 bg-amber-500 text-white px-2 py-0.5 rounded-full text-[10px] animate-pulse">{offers.filter(o => o.demandeModification === 1).length}</span>}
         </button>
       </div>
 
@@ -606,6 +626,56 @@ const RafDashboard = () => {
                 </tbody>
               </table>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Contenu de l'onglet Modifications Offres */}
+      {activeTab === 'modifications' && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-gray-50 flex justify-between items-center">
+            <h2 className="font-bold text-gray-800">Demandes de Modification d&apos;Offres</h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase">ID Offre</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase">Soumissionnaire</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase">Marché</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase">Motif de modification</th>
+                  <th className="px-6 py-3 text-right text-xs font-bold text-gray-400 uppercase">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {offers.filter(o => o.demandeModification === 1).length === 0 ? (
+                  <tr>
+                    <td colSpan="5" className="px-6 py-12 text-center text-gray-500">Aucune demande de modification en attente.</td>
+                  </tr>
+                ) : (
+                  offers.filter(o => o.demandeModification === 1).map((o) => (
+                    <tr key={o.idOffre} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 text-sm font-mono">#{o.idOffre}</td>
+                      <td className="px-6 py-4 text-sm font-semibold">{o.nomSoumissionnaire}</td>
+                      <td className="px-6 py-4 text-sm">Marché #{o.idMarche}</td>
+                      <td className="px-6 py-4">
+                        <div className="p-3 bg-amber-50 border border-amber-100 rounded-xl text-xs text-amber-800 italic">
+                          &ldquo;{o.motifModification || 'Aucun motif précisé'}&rdquo;
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button 
+                          onClick={() => handleAuthorizeModification(o.idOffre)}
+                          className="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition shadow-sm flex items-center gap-2 ml-auto"
+                        >
+                          <Check className="h-4 w-4" /> Autoriser Modification
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       )}

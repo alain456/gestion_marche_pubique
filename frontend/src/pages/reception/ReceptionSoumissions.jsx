@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import api from '../../services/api';
+import { AuthContext } from '../../contexts/AuthContext';
 import { 
   PlusCircle, 
   FileText, 
@@ -17,16 +18,26 @@ import {
   Printer,
   Edit2,
   Trash2,
-  X
+  X,
+  AlertTriangle,
+  MessageSquare,
+  Lock,
+  Clock
 } from 'lucide-react';
 
 const ReceptionSoumissions = () => {
+  const { user } = useContext(AuthContext);
   const [marches, setMarches] = useState([]);
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editId, setEditId] = useState(null);
   
+  // États pour la demande de modification
+  const [showRequestModal, setShowRequestModal] = useState(false);
+  const [requestMotif, setRequestMotif] = useState('');
+  const [requestTargetId, setRequestTargetId] = useState(null);
+
   const [form, setForm] = useState({
     idMarche: '',
     nomSoumissionnaire: '',
@@ -90,7 +101,8 @@ const ReceptionSoumissions = () => {
 
     try {
       if (isEditing) {
-        await api.put(`/soumissions/${editId}`, form);
+        // On envoie aussi l'autorisationModification pour que le backend sache qu'il doit réinitialiser les flags
+        await api.put(`/soumissions/${editId}`, { ...form, autorisationModification: 1 });
         setMessage('Offre mise à jour avec succès.');
       } else {
         await api.post('/soumissions', form);
@@ -107,6 +119,11 @@ const ReceptionSoumissions = () => {
   };
 
   const handleEdit = (offer) => {
+    if (user?.role === 'Receptioniste' && !offer.autorisationModification) {
+      alert("Vous n'avez pas l'autorisation de modifier cette offre. Veuillez faire une demande au RAF.");
+      return;
+    }
+
     setForm({
       idMarche: offer.idMarche,
       nomSoumissionnaire: offer.nomSoumissionnaire,
@@ -122,16 +139,39 @@ const ReceptionSoumissions = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDelete = async (idOffre) => {
+  const handleDelete = async (offer) => {
+    if (user?.role === 'Receptioniste' && !offer.autorisationModification) {
+      alert("Vous n'avez pas l'autorisation de supprimer cette offre.");
+      return;
+    }
+
     if (window.confirm('Êtes-vous sûr de vouloir supprimer cette offre ?')) {
       try {
-        await api.delete(`/soumissions/${idOffre}`);
+        await api.delete(`/soumissions/${offer.idOffre}`);
         setMessage('Offre supprimée avec succès.');
         fetchData();
       } catch (err) {
         console.error(err);
         setError('Erreur lors de la suppression.');
       }
+    }
+  };
+
+  const handleRequestModification = async () => {
+    if (!requestMotif.trim()) {
+      alert("Veuillez saisir un motif.");
+      return;
+    }
+
+    try {
+      await api.post(`/soumissions/${requestTargetId}/request-modification`, { motifModification: requestMotif });
+      setMessage('Demande de modification envoyée au RAF.');
+      setShowRequestModal(false);
+      setRequestMotif('');
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      setError('Erreur lors de l\'envoi de la demande.');
     }
   };
 
@@ -217,6 +257,7 @@ const ReceptionSoumissions = () => {
         </div>
         
         <form onSubmit={handleSubmit} className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* ... (le reste du formulaire reste identique) ... */}
           <div className="md:col-span-2 space-y-2">
             <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Marché Concerné</label>
             <div className="relative">
@@ -359,9 +400,9 @@ const ReceptionSoumissions = () => {
                   <th className="px-8 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">ID</th>
                   <th className="px-8 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Soumissionnaire</th>
                   <th className="px-8 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Marché</th>
-                  <th className="px-8 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Téléphone</th>
                   <th className="px-8 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Date</th>
                   <th className="px-8 py-5 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Montant</th>
+                  <th className="px-8 py-5 text-center text-xs font-bold text-gray-400 uppercase tracking-wider">Statut Modif</th>
                   <th className="px-8 py-5 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -377,14 +418,47 @@ const ReceptionSoumissions = () => {
                       <div className="font-medium text-gray-700">Marché #{o.idMarche}</div>
                       <div className="text-[10px] text-gray-400 uppercase">{o.referenceAppelOffre}</div>
                     </td>
-                    <td className="px-8 py-6 font-semibold text-gray-600">{o.telephone}</td>
                     <td className="px-8 py-6 text-gray-500">{new Date(o.dateSoumission).toLocaleDateString()}</td>
                     <td className="px-8 py-6 text-right font-bold text-primary">{Number(o.montantPropose).toLocaleString()} FBU</td>
+                    <td className="px-8 py-6 text-center">
+                      {o.demandeModification === 1 && (
+                        <span className="px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-[10px] font-bold uppercase flex items-center justify-center gap-1">
+                          <Clock className="h-3 w-3" /> En attente RAF
+                        </span>
+                      )}
+                      {o.autorisationModification === 1 && (
+                        <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-bold uppercase flex items-center justify-center gap-1">
+                          <CheckCircle className="h-3 w-3" /> Autorisé
+                        </span>
+                      )}
+                      {!o.demandeModification && !o.autorisationModification && (
+                        <span className="text-gray-300 text-xs">—</span>
+                      )}
+                    </td>
                     <td className="px-8 py-6 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button onClick={() => printReceipt(o)} className="p-2 bg-gray-100 rounded-xl" title="Imprimer"><Printer className="h-4 w-4" /></button>
-                        <button onClick={() => handleEdit(o)} className="p-2 bg-amber-50 text-amber-600 rounded-xl" title="Modifier"><Edit2 className="h-4 w-4" /></button>
-                        <button onClick={() => handleDelete(o.idOffre)} className="p-2 bg-red-50 text-red-600 rounded-xl" title="Supprimer"><Trash2 className="h-4 w-4" /></button>
+                        
+                        {user?.role === 'Receptioniste' ? (
+                          // Pour le réceptionniste
+                          o.autorisationModification === 1 ? (
+                            <button onClick={() => handleEdit(o)} className="p-2 bg-amber-50 text-amber-600 rounded-xl" title="Modifier"><Edit2 className="h-4 w-4" /></button>
+                          ) : (
+                            <button 
+                              onClick={() => { setRequestTargetId(o.idOffre); setShowRequestModal(true); }} 
+                              className="p-2 bg-blue-50 text-blue-600 rounded-xl" 
+                              title="Demander modification"
+                            >
+                              <AlertTriangle className="h-4 w-4" />
+                            </button>
+                          )
+                        ) : (
+                          // Pour les autres rôles (Admin, CGMP, etc.)
+                          <>
+                            <button onClick={() => handleEdit(o)} className="p-2 bg-amber-50 text-amber-600 rounded-xl" title="Modifier"><Edit2 className="h-4 w-4" /></button>
+                            <button onClick={() => handleDelete(o)} className="p-2 bg-red-50 text-red-600 rounded-xl" title="Supprimer"><Trash2 className="h-4 w-4" /></button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -394,6 +468,44 @@ const ReceptionSoumissions = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal Demande de Modification */}
+      {showRequestModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <AlertTriangle className="text-amber-500" />
+                Demande de Modification
+              </h3>
+              <button onClick={() => setShowRequestModal(false)} className="text-gray-400 hover:text-gray-600">
+                <XCircle className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <p className="text-sm text-gray-500">
+                Vous n&apos;avez pas le droit de modifier cette offre directement. Veuillez expliquer au RAF pourquoi une modification est nécessaire.
+              </p>
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Motif de la modification</label>
+                <textarea 
+                  rows="4"
+                  value={requestMotif}
+                  onChange={(e) => setRequestMotif(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-100 bg-gray-50 rounded-2xl outline-none focus:ring-2 focus:ring-primary/20"
+                  placeholder="Ex: Erreur de saisie sur le montant, erreur de nom..."
+                ></textarea>
+              </div>
+              <button 
+                onClick={handleRequestModification}
+                className="w-full py-4 bg-primary text-white rounded-2xl font-bold hover:bg-blue-800 transition mt-2 flex items-center justify-center gap-2"
+              >
+                <MessageSquare className="h-5 w-5" /> Envoyer la demande
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

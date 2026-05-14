@@ -12,8 +12,8 @@ const Soumission = {
         const query = `INSERT INTO soumissionnaire (
             idMarche, nomSoumissionnaire, adresse, telephone, 
             email, referenceAppelOffre, dateSoumission, montantPropose,
-            statut, motif
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+            statut, motif, demandeModification, autorisationModification
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0)`;
 
         const [result] = await db.query(query, [
             idMarche, nomSoumissionnaire, adresse, telephone, 
@@ -47,20 +47,41 @@ const Soumission = {
         const { 
             idMarche, nomSoumissionnaire, adresse, telephone, 
             email, referenceAppelOffre, dateSoumission, montantPropose,
-            statut, motif 
+            statut, motif, autorisationModification
         } = data;
 
         const query = `UPDATE soumissionnaire SET 
             idMarche = ?, nomSoumissionnaire = ?, adresse = ?, telephone = ?, 
             email = ?, referenceAppelOffre = ?, dateSoumission = ?, montantPropose = ?,
-            statut = ?, motif = ?
+            statut = ?, motif = ?, autorisationModification = ?
             WHERE idOffre = ?`;
 
         const [result] = await db.query(query, [
             idMarche, nomSoumissionnaire, adresse, telephone, 
             email, referenceAppelOffre, dateSoumission, montantPropose,
-            statut, motif, idOffre
+            statut, motif, autorisationModification, idOffre
         ]);
+        return result;
+    },
+
+    // Demander une modification (par le réceptionniste)
+    requestModification: async (idOffre, motifModification) => {
+        const query = `UPDATE soumissionnaire SET demandeModification = 1, motifModification = ? WHERE idOffre = ?`;
+        const [result] = await db.query(query, [motifModification, idOffre]);
+        return result;
+    },
+
+    // Autoriser une modification (par le RAF)
+    authorizeModification: async (idOffre) => {
+        const query = `UPDATE soumissionnaire SET autorisationModification = 1, demandeModification = 0 WHERE idOffre = ?`;
+        const [result] = await db.query(query, [idOffre]);
+        return result;
+    },
+
+    // Réinitialiser les drapeaux de modification après modification
+    resetModificationFlags: async (idOffre) => {
+        const query = `UPDATE soumissionnaire SET autorisationModification = 0, demandeModification = 0, motifModification = NULL WHERE idOffre = ?`;
+        const [result] = await db.query(query, [idOffre]);
         return result;
     },
 

@@ -5,26 +5,55 @@ const Demande = {
     create: async (data) => {
         const { idService, idUser, typeMarche, statut, articles, idBudget } = data;
         const connection = await db.getConnection();
+
         try {
             await connection.beginTransaction();
-            
+
             // 1. Créer le header (demande)
-            const headerQuery = `INSERT INTO demande (idService, idUser, typeMarche, statut, idBudget) VALUES (?, ?, ?, ?, ?)`;
-            const [headerResult] = await connection.query(headerQuery, [idService, idUser, typeMarche, statut || 'En attente', idBudget]);
+            const headerQuery = `
+                INSERT INTO demande 
+                (idService, idUser, typeMarche, statut, idBudget) 
+                VALUES (?, ?, ?, ?, ?)
+            `;
+
+            const [headerResult] = await connection.query(headerQuery, [
+                idService,
+                idUser,
+                typeMarche,
+                statut || 'En attente',
+                idBudget
+            ]);
+
             const idDemande = headerResult.insertId;
 
             // 2. Créer les lignes
             if (articles && articles.length > 0) {
-                const lineQuery = `INSERT INTO ligne_demande (idDemande, idArticle, quantite, description, montant) VALUES ?`;
-                const lineValues = articles.map(art => [idDemande, art.idArticle, art.quantite, art.description, art.montant || null]);
+                const lineQuery = `
+                    INSERT INTO ligne_demande 
+                    (idDemande, idArticle, quantite, prixUnitaire, description, montant) 
+                    VALUES ?
+                `;
+
+                const lineValues = articles.map(art => [
+                    idDemande,
+                    art.idArticle,
+                    art.quantite,
+                    art.prixUnitaire || 0,
+                    art.description || '',
+                    art.montant || null
+                ]);
+
                 await connection.query(lineQuery, [lineValues]);
             }
 
             await connection.commit();
+
             return { idDemande };
+
         } catch (error) {
             await connection.rollback();
             throw error;
+
         } finally {
             connection.release();
         }
@@ -70,12 +99,14 @@ const Demande = {
             GROUP BY d.idDemande
             ORDER BY d.dateDemande DESC
         `;
+
         const [rows] = await db.query(query);
-        
-        // Parser le JSON retourné par GROUP_CONCAT
+
         return rows.map(row => ({
             ...row,
-            articles: row.articles ? JSON.parse(`[${row.articles}]`) : []
+            articles: row.articles
+                ? JSON.parse(`[${row.articles}]`)
+                : []
         }));
     },
 
@@ -84,7 +115,7 @@ const Demande = {
         const query = `
             SELECT 
                 d.*,
-                da.numeroBudget, 
+                da.numeroBudget,
                 GROUP_CONCAT(
                     JSON_OBJECT(
                         'idLigne', l.idLigne,
@@ -104,33 +135,44 @@ const Demande = {
             GROUP BY d.idDemande
             ORDER BY d.dateDemande DESC
         `;
+
         const [rows] = await db.query(query, [idService, idService]);
+
         return rows.map(row => ({
             ...row,
-            articles: row.articles ? JSON.parse(`[${row.articles}]`) : []
+            articles: row.articles
+                ? JSON.parse(`[${row.articles}]`)
+                : []
         }));
     },
 
-    // Mettre à jour les articles d'une demande (pour modification par le demandeur ou CGMP)
+    // Mettre à jour les articles d'une demande
     updateArticles: async (idDemande, articles) => {
         const connection = await db.getConnection();
+
         try {
             await connection.beginTransaction();
 
-            // 1. Supprimer les anciennes lignes
-            await connection.query('DELETE FROM ligne_demande WHERE idDemande = ?', [idDemande]);
+            // Supprimer anciennes lignes
+            await connection.query(
+                'DELETE FROM ligne_demande WHERE idDemande = ?',
+                [idDemande]
+            );
 
-            // 2. Insérer les nouvelles lignes (incluant prixUnitaire s'il existe)
+            // Ajouter nouvelles lignes
             if (articles && articles.length > 0) {
                 const lineQuery = `INSERT INTO ligne_demande (idDemande, idArticle, quantite, prixUnitaire, description, montant) VALUES ?`;
                 const lineValues = articles.map(art => [idDemande, art.idArticle, art.quantite, art.prixUnitaire || 0, art.description || '', art.montant || null]);
+
                 await connection.query(lineQuery, [lineValues]);
             }
 
             await connection.commit();
+
         } catch (error) {
             await connection.rollback();
             throw error;
+
         } finally {
             connection.release();
         }
@@ -138,15 +180,36 @@ const Demande = {
 
     // Mise à jour spécifique par la CGMP (avec flag de modification)
     updateByCgmp: async (idDemande, articles, montantEstime, motif) => {
+
         const connection = await db.getConnection();
+
         try {
             await connection.beginTransaction();
 
-            // 1. Mettre à jour les articles
-            await connection.query('DELETE FROM ligne_demande WHERE idDemande = ?', [idDemande]);
+            // Supprimer anciennes lignes
+            await connection.query(
+                'DELETE FROM ligne_demande WHERE idDemande = ?',
+                [idDemande]
+            );
+
+            // Ajouter nouvelles lignes
             if (articles && articles.length > 0) {
-                const lineQuery = `INSERT INTO ligne_demande (idDemande, idArticle, quantite, prixUnitaire, description) VALUES ?`;
-                const lineValues = articles.map(art => [idDemande, art.idArticle, art.quantite, art.prixUnitaire || 0, art.description || '']);
+
+                const lineQuery = `
+                    INSERT INTO ligne_demande 
+                    (idDemande, idArticle, quantite, prixUnitaire, description, montant) 
+                    VALUES ?
+                `;
+
+                const lineValues = articles.map(art => [
+                    idDemande,
+                    art.idArticle,
+                    art.quantite,
+                    art.prixUnitaire || 0,
+                    art.description || '',
+                    art.montant || null
+                ]);
+
                 await connection.query(lineQuery, [lineValues]);
             }
 
@@ -154,18 +217,23 @@ const Demande = {
             await connection.query(
                 'UPDATE demande SET modifieParCgmp = 1, montantEstime = ?, motif = ?, alerteVue = 0 WHERE idDemande = ?',
                 [montantEstime, motif || 'Ajustement technique CGMP', idDemande]
+
             );
 
             await connection.commit();
+
             return true;
+
         } catch (error) {
             await connection.rollback();
             throw error;
+
         } finally {
             connection.release();
         }
     },
 
+    // Mise à jour statut
     updateStatut: async (id, statut, motif = undefined) => {
         if (statut === 'Rejete') {
             if (motif !== undefined) {
@@ -179,7 +247,9 @@ const Demande = {
             } else {
                 await db.query('UPDATE demande SET statut = ?, alerteVue = 0 WHERE idDemande = ?', [statut, id]);
             }
+
         }
+
         return true;
     },
 
@@ -188,9 +258,15 @@ const Demande = {
         return true;
     },
 
+    // Supprimer une demande
+
     delete: async (id) => {
-        // La suppression des lignes est gérée par ON DELETE CASCADE
-        await db.query('DELETE FROM demande WHERE idDemande = ?', [id]);
+
+        await db.query(
+            'DELETE FROM demande WHERE idDemande = ?',
+            [id]
+        );
+
         return true;
     },
 

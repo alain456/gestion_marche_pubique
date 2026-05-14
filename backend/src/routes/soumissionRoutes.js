@@ -9,4 +9,8 @@ router.get('/marche/:idMarche', soumissionController.getSoumissionnairesByMarche
 router.put('/:idOffre', soumissionController.updateSoumission);
 router.delete('/:idOffre', soumissionController.deleteSoumission);
 
+// Routes pour les demandes de modification
+router.post('/:idOffre/request-modification', soumissionController.requestModification);
+router.post('/:idOffre/authorize-modification', soumissionController.authorizeModification);
+
 module.exports = router;
