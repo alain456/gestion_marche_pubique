@@ -120,6 +120,28 @@ exports.updateMarche = async (req, res) => {
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: "Marché non trouvé" });
         }
+
+        // Si le statut a été modifié, on l'ajoute à l'historique des demandes liées
+        if (data.statut) {
+            const marche = await Marche.findById(id);
+            if (marche && marche.idDemande) {
+                const ids = marche.idDemande.toString().split(',');
+                for (const idD of ids) {
+                    const trimmedId = idD.trim();
+                    if (!trimmedId) continue;
+
+                    await Demande.addHistory(null, {
+                        idDemande: trimmedId,
+                        action: "Mise à jour du Marché",
+                        nouveauStatut: "Inclus dans Marché",
+                        idUtilisateur: req.user.idUser,
+                        nomUtilisateur: req.user.nom,
+                        roleUtilisateur: req.user.role,
+                        motif: `Le marché #${id} est passé au statut : ${data.statut.toUpperCase()}`
+                    });
+                }
+            }
+        }
         
         res.json({ message: "Marché mis à jour avec succès" });
     } catch (error) {
@@ -132,11 +154,34 @@ exports.updateMarche = async (req, res) => {
 exports.deleteMarche = async (req, res) => {
     const { id } = req.params;
     try {
+        const marche = await Marche.findById(id);
+        if (marche && marche.idDemande) {
+            const ids = marche.idDemande.toString().split(',');
+            for (const idD of ids) {
+                const trimmedId = idD.trim();
+                if (!trimmedId) continue;
+
+                // Remettre la demande en état "Valide"
+                await Demande.updateStatut(trimmedId, "Valide", `Marché #${id} supprimé - Demande remise en attente de traitement.`);
+                
+                // Historique
+                await Demande.addHistory(null, {
+                    idDemande: trimmedId,
+                    action: "Retrait du Marché",
+                    nouveauStatut: "Valide",
+                    idUtilisateur: req.user.idUser,
+                    nomUtilisateur: req.user.nom,
+                    roleUtilisateur: req.user.role,
+                    motif: `Le marché #${id} a été supprimé. La demande est de nouveau disponible pour la CGMP.`
+                });
+            }
+        }
+
         const result = await Marche.delete(id);
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: "Marché non trouvé" });
         }
-        res.json({ message: "Marché supprimé avec succès" });
+        res.json({ message: "Marché supprimé avec succès. Les demandes liées sont à nouveau disponibles." });
     } catch (error) {
         if (error.code === 'ER_ROW_IS_REFERENCED_2') {
             return res.status(400).json({ message: "Impossible de supprimer un marché lié à d'autres données." });

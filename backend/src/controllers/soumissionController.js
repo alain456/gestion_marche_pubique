@@ -29,7 +29,8 @@ exports.addSoumissionnaire = async (req, res) => {
             email, 
             referenceAppelOffre, 
             dateSoumission, 
-            montantPropose
+            montantPropose,
+            delaiLivraison: req.body.delaiLivraison
         });
         
         const idOffre = result.insertId;

@@ -14,14 +14,12 @@ import {
   XCircle,
   Hash,
   Users,
-  Info,
   Printer,
   Edit2,
   Trash2,
   X,
   AlertTriangle,
   MessageSquare,
-  Lock,
   Clock
 } from 'lucide-react';
 
@@ -46,7 +44,8 @@ const ReceptionSoumissions = () => {
     email: '',
     referenceAppelOffre: '',
     dateSoumission: new Date().toISOString().split('T')[0],
-    montantPropose: ''
+    montantPropose: '',
+    delaiLivraison: ''
   });
 
   const [message, setMessage] = useState('');
@@ -82,7 +81,8 @@ const ReceptionSoumissions = () => {
       email: '',
       referenceAppelOffre: '',
       dateSoumission: new Date().toISOString().split('T')[0],
-      montantPropose: ''
+      montantPropose: '',
+      delaiLivraison: ''
     });
     setIsEditing(false);
     setEditId(null);
@@ -132,7 +132,8 @@ const ReceptionSoumissions = () => {
       email: offer.email,
       referenceAppelOffre: offer.referenceAppelOffre,
       dateSoumission: new Date(offer.dateSoumission).toISOString().split('T')[0],
-      montantPropose: offer.montantPropose
+      montantPropose: offer.montantPropose,
+      delaiLivraison: offer.delaiLivraison || ''
     });
     setIsEditing(true);
     setEditId(offer.idOffre);
@@ -268,7 +269,12 @@ const ReceptionSoumissions = () => {
                 value={form.idMarche}
                 onChange={(e) => {
                   const selectedId = e.target.value;
-                  setForm({...form, idMarche: selectedId, referenceAppelOffre: selectedId});
+                  const selectedMarche = marches.find(m => m.idMarche.toString() === selectedId);
+                  setForm({
+                    ...form, 
+                    idMarche: selectedId, 
+                    referenceAppelOffre: selectedMarche ? (selectedMarche.numeroBudget || selectedId) : ''
+                  });
                 }}
               >
                 <option value="">Sélectionnez le marché...</option>
@@ -364,16 +370,37 @@ const ReceptionSoumissions = () => {
           </div>
 
           <div className="md:col-span-2 space-y-2">
-            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Référence Appel d&apos;Offre</label>
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Délai de Livraison Proposé</label>
             <div className="relative">
-              <Hash className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
                 type="text"
                 required
+                placeholder="Ex: 15 jours, 1 mois, 48 heures..."
                 className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none"
+                value={form.delaiLivraison}
+                onChange={(e) => setForm({...form, delaiLivraison: e.target.value})}
+              />
+            </div>
+          </div>
+
+          <div className="md:col-span-2 space-y-2">
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Référence Appel d&apos;Offre</label>
+            <div className="relative">
+              <Hash className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <select
+                required
+                className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none appearance-none font-bold text-gray-800"
                 value={form.referenceAppelOffre}
                 onChange={(e) => setForm({...form, referenceAppelOffre: e.target.value})}
-              />
+              >
+                <option value="">Sélectionnez la référence...</option>
+                {marches.map(m => (
+                  <option key={m.idMarche} value={m.numeroBudget || m.idMarche}>
+                    {m.numeroBudget || `Marché #${m.idMarche}`}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 

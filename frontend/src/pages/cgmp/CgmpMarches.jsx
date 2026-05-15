@@ -17,7 +17,10 @@ import {
   ChevronUp,
   Edit,
   Save,
-  History
+  History,
+  BarChart3,
+  Printer,
+  Users
 } from 'lucide-react';
 
 const CgmpMarches = () => {
@@ -62,9 +65,12 @@ const CgmpMarches = () => {
   const [showHistory, setShowHistory] = useState(false);
   const [historyData, setHistoryData] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('info'); // 'info', 'articles', 'tracking'
+  const [activeTab, setActiveTab] = useState('info'); // 'info', 'articles', 'soumissions', 'tracking'
   const [marcheArticles, setMarcheArticles] = useState([]);
+  const [marcheOffers, setMarcheOffers] = useState([]);
   const [expandedMarches, setExpandedMarches] = useState({});
+  const [showComparison, setShowComparison] = useState(false);
+  const [comparisonMarche, setComparisonMarche] = useState(null);
 
   const fetchData = async () => {
     try {
@@ -230,7 +236,7 @@ const CgmpMarches = () => {
     }
   };
 
-  const handleManage = (marche) => {
+  const handleManage = async (marche) => {
     setSelectedMarche(marche);
     setActiveTab('info');
     setUpdateForm({
@@ -247,30 +253,27 @@ const CgmpMarches = () => {
       commentaire: marche.commentaire || ''
     });
 
-    // Extraire les articles des demandes liées
-    if (marche.idDemande) {
-      // idDemande peut être un nombre ou une chaîne avec virgules
-      const ids = marche.idDemande.toString().split(',').map(id => parseInt(id.trim()));
-      const articles = [];
-      allDemands.forEach(d => {
-        if (ids.includes(d.idDemande)) {
-          if (d.articles) {
-            d.articles.forEach(art => {
-              articles.push({
-                ...art,
-                serviceSource: d.nomService || d.roleDemandeur
-              });
-            });
-          }
-        }
-      });
+      // Récupérer les articles
+      const articles = getConsolidatedArticles(marche.idDemande);
       setMarcheArticles(articles);
-    } else {
-      setMarcheArticles([]);
-    }
+
+      // Récupérer les offres (soumissions) pour ce marché
+      try {
+        const offersRes = await api.get(`/soumissions/marche/${marche.idMarche}`);
+        setMarcheOffers(offersRes.data);
+      } catch (err) {
+        console.error("Erreur lors de la récupération des offres:", err);
+        setMarcheOffers([]);
+      }
 
     setShowDetails(true);
   };
+
+  const handleShowComparison = (marche) => {
+    setComparisonMarche(marche);
+    setShowComparison(true);
+  };
+
 
   const toggleMarcheExpansion = (idMarche) => {
     setExpandedMarches(prev => ({
@@ -487,7 +490,8 @@ const CgmpMarches = () => {
                 >
                   <option value="">Sélectionner un statut...</option>
                   {/* <option value="en attente">En attente</option> */}
-                  <option value="publie">Publié</option>
+                  <option value="preparation">Phase de préparation</option>
+                  <option value="publie">Marche publié</option>
                   <option value="attribution">Attribue</option>
                   <option value="suspendu">Suspendu</option>
                   <option value="cloture">Clôturé</option>
@@ -533,6 +537,7 @@ const CgmpMarches = () => {
                 ></textarea>
               </div>
             </div>
+
 
             <div className="md:col-span-2 lg:col-span-3 flex justify-end gap-4 pt-4">
                <button 
@@ -588,6 +593,14 @@ const CgmpMarches = () => {
                 }`}
               >
                 📦 Articles ({marcheArticles.length})
+              </button>
+              <button 
+                onClick={() => setActiveTab('soumissions')}
+                className={`flex-1 py-4 text-xs font-black uppercase tracking-widest transition-all ${
+                  activeTab === 'soumissions' ? 'text-primary border-b-2 border-primary bg-white' : 'text-gray-400 hover:text-gray-600'
+                }`}
+              >
+                🤝 Soumissions ({marcheOffers.length})
               </button>
               <button 
                 onClick={() => setActiveTab('tracking')}
@@ -708,6 +721,11 @@ const CgmpMarches = () => {
                                <td className="px-4 py-3">
                                  <p className="text-xs font-bold text-gray-700">{art.nomArticle}</p>
                                  <p className="text-[9px] text-gray-400 italic">{art.serviceSource}</p>
+                                 {art.description && (
+                                   <p className="text-[10px] text-blue-600 mt-1 leading-tight bg-blue-50/50 p-1 rounded border border-blue-100/30">
+                                     <span className="font-bold">Spécif. :</span> {art.description}
+                                   </p>
+                                 )}
                                </td>
                                <td className="px-4 py-3 text-center text-xs font-bold text-gray-600">{art.quantite}</td>
                                <td className="px-4 py-3 text-right text-xs text-gray-600 font-mono">{Number(art.prixUnitaire).toLocaleString()}</td>
@@ -731,6 +749,83 @@ const CgmpMarches = () => {
                 </div>
               )}
 
+              {activeTab === 'soumissions' && (
+                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100 flex items-center gap-3">
+                    <Info className="h-5 w-5 text-blue-600" />
+                    <p className="text-xs text-blue-800 leading-relaxed font-medium">
+                      Liste des prestataires ayant déposé une offre pour ce marché. Les offres sont classées par montant croissant (Mieux-disant).
+                    </p>
+                  </div>
+
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                      <Users className="h-5 w-5 text-primary" />
+                      Offres Reçues ({marcheOffers.length})
+                    </h3>
+                    {marcheOffers.length >= 2 && (
+                      <button 
+                        onClick={() => handleShowComparison(selectedMarche)}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 flex items-center gap-2"
+                      >
+                        <BarChart3 className="h-4 w-4" />
+                        Comparer les Offres
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                    <table className="min-w-full divide-y divide-gray-100">
+                      <thead>
+                        <tr className="bg-gray-50/50">
+                          <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Soumissionnaire</th>
+                          <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Date Dépôt</th>
+                          <th className="px-6 py-4 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Montant Proposé</th>
+                          <th className="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest">Statut</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-50">
+                        {marcheOffers.length === 0 ? (
+                          <tr>
+                            <td colSpan="4" className="px-6 py-10 text-center text-gray-400 italic text-sm">Aucune offre déposée pour le moment.</td>
+                          </tr>
+                        ) : (
+                          marcheOffers.map((offer, idx) => (
+                            <tr key={offer.idOffre} className={`hover:bg-gray-50 transition-colors ${idx === 0 ? 'bg-emerald-50/30' : ''}`}>
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-3">
+                                  {idx === 0 && (
+                                    <div className="h-6 w-6 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-sm" title="Meilleure offre">
+                                      <CheckCircle className="h-3 w-3" />
+                                    </div>
+                                  )}
+                                  <div>
+                                    <p className="text-sm font-bold text-gray-900">{offer.nomSoumissionnaire}</p>
+                                    <p className="text-[10px] text-gray-500">{offer.email || offer.telephone}</p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-500 font-medium">
+                                {new Date(offer.dateSoumission).toLocaleDateString()}
+                              </td>
+                              <td className="px-6 py-4 text-right">
+                                <span className={`text-sm font-black ${idx === 0 ? 'text-emerald-600' : 'text-primary'}`}>
+                                  {Number(offer.montantPropose).toLocaleString()} FBU
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-center">
+                                <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-[9px] font-bold uppercase">
+                                  Reçu
+                                </span>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
               {activeTab === 'tracking' && (
                 <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
                   {/* Timeline Visuelle */}
@@ -1211,7 +1306,11 @@ const CgmpMarches = () => {
                   <div key={idx} className="p-4 bg-gray-50 rounded-2xl border border-gray-100 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                     <div className="md:col-span-1">
                       <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">{art.nomArticle}</p>
-                      <p className="text-xs text-gray-500 italic">{art.description || 'Pas de description'}</p>
+                      {art.description && (
+                        <p className="text-[10px] text-blue-600 italic leading-tight bg-blue-50/50 p-1.5 rounded border border-blue-100/30 mb-1">
+                          {art.description}
+                        </p>
+                      )}
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Quantité</label>
@@ -1365,6 +1464,129 @@ const CgmpMarches = () => {
                 className="px-8 py-3 bg-gray-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-black transition-all shadow-lg shadow-gray-200"
               >
                 Fermer l&apos;Historique
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Modal Comparatif des Offres */}
+      {showComparison && comparisonMarche && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
+          <div className="bg-surface rounded-3xl shadow-2xl w-full max-w-5xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="bg-gray-900 px-8 py-6 text-white flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-md">
+                  <BarChart3 className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black uppercase tracking-tighter">Analyse Comparative des Offres</h2>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Marché #{comparisonMarche.idMarche} — Budget Estimé : {Number(comparisonMarche.montantEstime).toLocaleString()} FBU</p>
+                </div>
+              </div>
+              <button onClick={() => setShowComparison(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                <XCircle className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="p-8 max-h-[70vh] overflow-y-auto">
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="border-b border-gray-100">
+                      <th className="px-4 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Rang</th>
+                      <th className="px-4 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Soumissionnaire</th>
+                      <th className="px-4 py-4 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Prix Proposé</th>
+                      <th className="px-4 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest">Écart / Budget</th>
+                      <th className="px-4 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest">Délai de Livraison</th>
+                      <th className="px-4 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest">Score</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {marcheOffers
+                      .sort((a, b) => a.montantPropose - b.montantPropose)
+                      .map((offer, idx) => {
+                        const budget = Number(comparisonMarche.montantEstime);
+                        const price = Number(offer.montantPropose);
+                        const diff = ((price - budget) / budget) * 100;
+                        const isBest = idx === 0;
+
+                        return (
+                          <tr key={offer.idOffre} className={`hover:bg-gray-50/50 transition-colors ${isBest ? 'bg-blue-50/30' : ''}`}>
+                            <td className="px-4 py-6">
+                              <div className={`h-8 w-8 rounded-full flex items-center justify-center font-black text-xs ${
+                                isBest ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-gray-100 text-gray-400'
+                              }`}>
+                                {idx + 1}
+                              </div>
+                            </td>
+                            <td className="px-4 py-6">
+                              <p className="font-black text-gray-800 text-sm">{offer.nomSoumissionnaire}</p>
+                              <p className="text-[10px] text-gray-400 font-bold uppercase">{offer.email}</p>
+                            </td>
+                            <td className="px-4 py-6 text-right">
+                              <p className={`font-black text-sm ${isBest ? 'text-blue-600' : 'text-gray-700'}`}>
+                                {Number(offer.montantPropose).toLocaleString()} FBU
+                              </p>
+                            </td>
+                            <td className="px-4 py-6 text-center">
+                              <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${
+                                diff <= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+                              }`}>
+                                {diff > 0 ? '+' : ''}{diff.toFixed(1)}%
+                              </span>
+                            </td>
+                            <td className="px-4 py-6 text-center">
+                              <div className="flex items-center justify-center gap-2 text-xs font-bold text-gray-600">
+                                <Clock className="h-3.5 w-3.5 text-gray-400" />
+                                {offer.delaiLivraison || 'Non précisé'}
+                              </div>
+                            </td>
+                            <td className="px-4 py-6 text-center">
+                              {isBest && (
+                                <div className="flex items-center justify-center gap-1.5 text-blue-600 animate-bounce">
+                                  <CheckCircle className="h-4 w-4" />
+                                  <span className="text-[10px] font-black uppercase">Mieux-disant</span>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="mt-8 p-6 bg-blue-50 rounded-2xl border border-blue-100">
+                <div className="flex gap-4 items-start">
+                  <div className="p-3 bg-white rounded-xl shadow-sm">
+                    <Info className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-black text-blue-900 text-sm uppercase">Note d&apos;Analyse CGMP</h4>
+                    <p className="text-xs text-blue-700 leading-relaxed mt-1">
+                      L&apos;offre de <strong>{marcheOffers[0]?.nomSoumissionnaire}</strong> est actuellement la plus avantageuse économiquement, 
+                      se situant à <strong>{Math.abs(((Number(marcheOffers[0]?.montantPropose) - Number(comparisonMarche.montantEstime)) / Number(comparisonMarche.montantEstime)) * 100).toFixed(1)}%</strong> 
+                      {Number(marcheOffers[0]?.montantPropose) <= Number(comparisonMarche.montantEstime) ? ' en dessous' : ' au-dessus'} de votre estimation budgétaire.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 bg-gray-50 border-t border-gray-100 flex justify-end gap-4">
+              <button 
+                onClick={() => setShowComparison(false)}
+                className="px-8 py-3 bg-white border border-gray-200 text-gray-700 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-50 transition-all shadow-sm"
+              >
+                Fermer l&apos;analyse
+              </button>
+              <button 
+                onClick={() => {
+                  window.print();
+                }}
+                className="px-8 py-3 bg-gray-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-black transition-all shadow-lg flex items-center gap-2"
+              >
+                <Printer className="h-4 w-4" /> Imprimer l&apos;Analyse
               </button>
             </div>
           </div>

@@ -6,19 +6,19 @@ const Soumission = {
         const { 
             idMarche, nomSoumissionnaire, adresse, telephone, 
             email, referenceAppelOffre, dateSoumission, montantPropose,
-            statut, motif
+            delaiLivraison, statut, motif
         } = data;
 
         const query = `INSERT INTO soumissionnaire (
             idMarche, nomSoumissionnaire, adresse, telephone, 
             email, referenceAppelOffre, dateSoumission, montantPropose,
-            statut, motif, demandeModification, autorisationModification
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0)`;
+            delaiLivraison, statut, motif, demandeModification, autorisationModification
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0)`;
 
         const [result] = await db.query(query, [
             idMarche, nomSoumissionnaire, adresse, telephone, 
             email, referenceAppelOffre, dateSoumission, montantPropose,
-            statut || 'en attente', motif || null
+            delaiLivraison || null, statut || 'en attente', motif || null
         ]);
         return result;
     },
@@ -47,19 +47,19 @@ const Soumission = {
         const { 
             idMarche, nomSoumissionnaire, adresse, telephone, 
             email, referenceAppelOffre, dateSoumission, montantPropose,
-            statut, motif, autorisationModification
+            delaiLivraison, statut, motif, autorisationModification
         } = data;
 
         const query = `UPDATE soumissionnaire SET 
             idMarche = ?, nomSoumissionnaire = ?, adresse = ?, telephone = ?, 
             email = ?, referenceAppelOffre = ?, dateSoumission = ?, montantPropose = ?,
-            statut = ?, motif = ?, autorisationModification = ?
+            delaiLivraison = ?, statut = ?, motif = ?, autorisationModification = ?
             WHERE idOffre = ?`;
 
         const [result] = await db.query(query, [
             idMarche, nomSoumissionnaire, adresse, telephone, 
             email, referenceAppelOffre, dateSoumission, montantPropose,
-            statut, motif, autorisationModification, idOffre
+            delaiLivraison, statut, motif, autorisationModification, idOffre
         ]);
         return result;
     },

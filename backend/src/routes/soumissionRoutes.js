@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const soumissionController = require('../controllers/soumissionController');
+const { verifyToken } = require('../middlewares/authMiddleware');
+
+router.use(verifyToken);
 
 // Routes pour la gestion des offres (CGMP)
 router.post('/', soumissionController.addSoumissionnaire);
