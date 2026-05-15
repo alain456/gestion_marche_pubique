@@ -47,7 +47,7 @@ exports.addSoumissionnaire = async (req, res) => {
                              `Téléphone enregistré : ${telephone}\n` +
                              `Montant proposé : ${Number(montantPropose).toLocaleString()} FBU\n` +
                              `Date : ${new Date(dateSoumission).toLocaleDateString()}\n\n` +
-                             `Offre yawe yabaye enregistre neza muri SETIC.\n\n` +
+                             `Offre yawe yabaye enregistre neza  cane muri SETIC.\n\n` +
                              `Cordialement,\n` +
                              `L'équipe SETIC - Gestion des Marchés Publics`;
                 
