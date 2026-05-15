@@ -1,8 +1,9 @@
-import { useState, useEffect, Fragment } from 'react';
+import { useState, useEffect, useMemo, Fragment } from 'react';
 import api from '../../services/api';
 import { 
   FileText, 
   PlusCircle, 
+  Search,
   CheckCircle, 
   XCircle, 
   Clock, 
@@ -72,6 +73,12 @@ const CgmpMarches = () => {
   const [showComparison, setShowComparison] = useState(false);
   const [comparisonMarche, setComparisonMarche] = useState(null);
 
+  // États pour les filtres
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [filterYear, setFilterYear] = useState('');
+
   const fetchData = async () => {
     try {
       const [marchesRes, demandsRes] = await Promise.all([
@@ -108,6 +115,32 @@ const CgmpMarches = () => {
       setLoading(false);
     }
   };
+
+  // Logique de filtrage des containers (Demandes validées)
+  const filteredGroupedDemands = useMemo(() => {
+    return groupedDemands.filter(group => {
+      const matchSearch = group.numeroBudget?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          group.typeMarche?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchType = filterType === '' || group.typeMarche === filterType;
+      const matchYear = filterYear === '' || group.exerciceBudgetaire?.toString() === filterYear;
+      
+      return matchSearch && matchType && matchYear;
+    });
+  }, [groupedDemands, searchQuery, filterType, filterYear]);
+
+  // Logique de filtrage des marchés existants
+  const filteredMarches = useMemo(() => {
+    return marches.filter(m => {
+      const matchSearch = m.idMarche?.toString().includes(searchQuery) ||
+                          m.numeroBudget?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          m.typeMarche?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchType = filterType === '' || m.typeMarche === filterType;
+      const matchStatus = filterStatus === '' || m.statut === filterStatus;
+      const matchYear = filterYear === '' || m.exerciceBudgetaire?.toString() === filterYear;
+
+      return matchSearch && matchType && matchStatus && matchYear;
+    });
+  }, [marches, searchQuery, filterType, filterStatus, filterYear]);
 
   useEffect(() => {
     fetchData();
@@ -344,6 +377,86 @@ const CgmpMarches = () => {
           {error}
         </div>
       )}
+      {/* Section des Filtres et Recherche */}
+      <div className="bg-surface rounded-3xl border border-gray-100 shadow-sm p-6 mb-8">
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Barre de recherche */}
+          <div className="flex-1">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-2 block">Recherche intelligente</label>
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <input 
+                type="text"
+                placeholder="Rechercher un marché, un budget ou un ID..."
+                className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-primary/10 transition-all font-medium text-sm"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Filtres Dropdowns */}
+          <div className="flex flex-wrap gap-4 items-end">
+            <div>
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-2 block">Type</label>
+              <select 
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="px-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none text-xs font-bold text-gray-700 min-w-[150px] appearance-none"
+              >
+                <option value="">Tous les types</option>
+                <option value="Travaux">Travaux</option>
+                <option value="Fournitures">Fournitures</option>
+                <option value="Services">Services</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-2 block">Statut</label>
+              <select 
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="px-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none text-xs font-bold text-gray-700 min-w-[150px] appearance-none"
+              >
+                <option value="">Tous les statuts</option>
+                <option value="preparation">Préparation</option>
+                <option value="publie">Publié</option>
+                <option value="attribution">Attribué</option>
+                <option value="cloture">Clôturé</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-2 block">Année</label>
+              <select 
+                value={filterYear}
+                onChange={(e) => setFilterYear(e.target.value)}
+                className="px-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none text-xs font-bold text-gray-700 min-w-[100px] appearance-none"
+              >
+                <option value="">Toutes</option>
+                <option value="2024">2024</option>
+                <option value="2025">2025</option>
+                <option value="2026">2026</option>
+              </select>
+            </div>
+
+            {(searchQuery || filterType || filterStatus || filterYear) && (
+              <button 
+                onClick={() => {
+                  setSearchQuery('');
+                  setFilterType('');
+                  setFilterStatus('');
+                  setFilterYear('');
+                }}
+                className="p-4 text-red-500 hover:bg-red-50 rounded-2xl transition-colors font-bold text-xs uppercase"
+                title="Réinitialiser"
+              >
+                Effacer
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Formulaire de création de marché */}
       {showForm && (
@@ -974,12 +1087,12 @@ const CgmpMarches = () => {
         </h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {groupedDemands.length === 0 ? (
+          {filteredGroupedDemands.length === 0 ? (
             <div className="col-span-full p-12 bg-surface rounded-3xl border border-dashed border-gray-200 text-center text-gray-400">
-               Aucune demande validée en attente de traitement.
+               {searchQuery || filterType || filterYear ? "Aucun résultat pour ces filtres." : "Aucune demande validée en attente de traitement."}
             </div>
           ) : (
-            groupedDemands.map(group => (
+            filteredGroupedDemands.map(group => (
               <div key={group.idBudget} className={`bg-surface rounded-3xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-all group ${expandedBudgets[group.idBudget] ? 'lg:col-span-3 md:col-span-2 col-span-1' : ''}`}>
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-4">
@@ -1158,12 +1271,14 @@ const CgmpMarches = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {marches.length === 0 ? (
+              {filteredMarches.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-8 py-12 text-center text-gray-400">Aucun marché enregistré.</td>
+                  <td colSpan="7" className="px-8 py-12 text-center text-gray-400">
+                    {searchQuery || filterType || filterStatus || filterYear ? "Aucun marché trouvé pour ces filtres." : "Aucun marché enregistré."}
+                  </td>
                 </tr>
               ) : (
-                marches.map(m => {
+                filteredMarches.map(m => {
                   const consolidated = getConsolidatedArticles(m.idDemande);
                   const isExpanded = expandedMarches[m.idMarche];
                   
