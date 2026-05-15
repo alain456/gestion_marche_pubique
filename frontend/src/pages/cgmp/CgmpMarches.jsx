@@ -33,6 +33,7 @@ const CgmpMarches = () => {
   
   const [form, setForm] = useState({
     idDemande: '',
+    numeroBudget: '',
     montantEstime: '',
     modePassation: '',
     justificationChoix: '',
@@ -137,6 +138,7 @@ const CgmpMarches = () => {
     setForm(prev => ({ 
       ...prev, 
       idDemande: allIds,
+      numeroBudget: group.numeroBudget || '',
       montantEstime: group.totalMontant || '' 
     }));
     setShowForm(true);
@@ -202,19 +204,20 @@ const CgmpMarches = () => {
       await api.post('/marches', form);
       setMessage('Marché créé et publié avec succès.');
       setShowForm(false);
-      setForm({
-        idDemande: '',
-        montantEstime: '',
-        modePassation: '',
-        justificationChoix: '',
-        seuilReglementaireApplique: '',
-        dateSelection: new Date().toISOString().split('T')[0],
-        validateur: '',
-        statut: 'en attente',
-        dateCloture: '',
-        cloturePar: '',
-        commentaire: ''
-      });
+        setForm({
+          idDemande: '',
+          numeroBudget: '',
+          montantEstime: '',
+          modePassation: '',
+          justificationChoix: '',
+          seuilReglementaireApplique: '',
+          dateSelection: new Date().toISOString().split('T')[0],
+          validateur: '',
+          statut: 'en attente',
+          dateCloture: '',
+          cloturePar: '',
+          commentaire: ''
+        });
       fetchData();
     } catch (err) {
       console.error(err);
@@ -226,6 +229,7 @@ const CgmpMarches = () => {
     setSelectedMarche(marche);
     setUpdateForm({
       statut: marche.statut,
+      numeroBudget: marche.numeroBudget || '',
       montantEstime: marche.montantEstime,
       modePassation: marche.modePassation,
       justificationChoix: marche.justificationChoix,
@@ -308,6 +312,21 @@ const CgmpMarches = () => {
           </div>
           
           <form onSubmit={handleSubmit} className="p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Numéro Budgétaire</label>
+              <div className="relative">
+                <LayoutGrid className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  required
+                  value={form.numeroBudget}
+                  onChange={(e) => setForm({...form, numeroBudget: e.target.value})}
+                  className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all font-bold text-primary"
+                  placeholder="Référence budget"
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Montant Estimé (FBU)</label>
               <div className="relative">
@@ -503,6 +522,19 @@ const CgmpMarches = () => {
             
             <form onSubmit={handleUpdate} className="p-8 space-y-6 overflow-y-auto max-h-[70vh]">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Numéro Budgétaire</label>
+                  <div className="relative">
+                    <LayoutGrid className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input
+                      type="text"
+                      value={updateForm.numeroBudget || ''}
+                      onChange={(e) => setUpdateForm({...updateForm, numeroBudget: e.target.value})}
+                      className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all font-bold text-primary"
+                    />
+                  </div>
+                </div>
+
                 {/* Informations existantes (Lecture seule ou Modifiables) */}
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Montant Estimé (FBU)</label>
@@ -842,6 +874,7 @@ const CgmpMarches = () => {
             <thead>
               <tr className="bg-surface">
                 <th className="px-8 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">ID / Demande</th>
+                <th className="px-8 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Numéro Budgétaire</th>
                 <th className="px-8 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Mode Passation</th>
                 <th className="px-8 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Montant Estimé</th>
                 <th className="px-8 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Clôture</th>
@@ -852,7 +885,7 @@ const CgmpMarches = () => {
             <tbody className="divide-y divide-gray-50">
               {marches.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="px-8 py-12 text-center text-gray-400">Aucun marché enregistré.</td>
+                  <td colSpan="7" className="px-8 py-12 text-center text-gray-400">Aucun marché enregistré.</td>
                 </tr>
               ) : (
                 marches.map(m => (
@@ -868,6 +901,9 @@ const CgmpMarches = () => {
                           <div className="text-[10px] text-gray-400 uppercase">Publié le {new Date(m.dateSelection).toLocaleDateString()}</div>
                         </div>
                       </div>
+                    </td>
+                    <td className="px-8 py-5 whitespace-nowrap">
+                      <span className="text-sm font-bold text-primary">{m.numeroBudget || 'N/A'}</span>
                     </td>
                     <td className="px-8 py-5 whitespace-nowrap text-sm text-gray-600 font-medium">{m.modePassation}</td>
                     <td className="px-8 py-5 whitespace-nowrap text-sm font-bold text-gray-900">{Number(m.montantEstime).toLocaleString()} FBU</td>

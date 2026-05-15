@@ -8,6 +8,7 @@ const STATUTS_VALIDES = ['en attente', 'publie', 'attribution', 'suspendu', 'clo
 exports.createMarche = async (req, res) => {
     const { 
         idDemande,
+        numeroBudget,
         montantEstime, 
         modePassation, 
         justificationChoix, 
@@ -31,6 +32,7 @@ exports.createMarche = async (req, res) => {
         // Sanatisation des données pour la base de données (chaînes vides -> null)
         const sanitizedData = {
             idDemande,
+            numeroBudget: numeroBudget || null,
             montantEstime: montantEstime || null,
             modePassation,
             justificationChoix: justificationChoix || null,

@@ -4,19 +4,19 @@ const Marche = {
     // Créer un nouveau marché
     create: async (data) => {
         const { 
-            idDemande, montantEstime, modePassation, justificationChoix, 
+            idDemande, numeroBudget, montantEstime, modePassation, justificationChoix, 
             seuilReglementaireApplique, dateSelection, validateur, 
             statut, dateCloture, cloturePar, commentaire 
         } = data;
 
         const query = `INSERT INTO marche (
-            idDemande, montantEstime, modePassation, justificationChoix, 
+            idDemande, numeroBudget, montantEstime, modePassation, justificationChoix, 
             seuilReglementaireApplique, dateSelection, validateur, 
             statut, dateCloture, cloturePar, commentaire
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
         const [result] = await db.query(query, [
-            idDemande, montantEstime, modePassation, justificationChoix, 
+            idDemande, numeroBudget, montantEstime, modePassation, justificationChoix, 
             seuilReglementaireApplique, dateSelection, validateur, 
             statut, dateCloture, cloturePar, commentaire
         ]);

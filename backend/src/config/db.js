@@ -80,6 +80,14 @@ pool.getConnection()
         } catch (err) {
             console.error('❌ Erreur lors de la création de la table historique_demande:', err.message);
         }
+
+        // Vérifier si la colonne numeroBudget existe dans marche, sinon la créer
+        try {
+            await connection.query(`ALTER TABLE marche ADD COLUMN numeroBudget VARCHAR(100) AFTER idDemande`);
+            console.log('✅ Colonne numeroBudget ajoutée à la table marche');
+        } catch (err) {
+            // console.log('ℹ️ Colonne numeroBudget déjà existante');
+        }
         
         connection.release(); // On libère la connexion après le test
     })
