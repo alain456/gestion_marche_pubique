@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import api from '../../services/api';
 import { 
   FileText, 
@@ -23,6 +23,7 @@ import {
 const CgmpMarches = () => {
   const [marches, setMarches] = useState([]);
   const [groupedDemands, setGroupedDemands] = useState([]); // Nouveau nom pour plus de clarté
+  const [allDemands, setAllDemands] = useState([]); // Pour retrouver les articles des marchés existants
   const [expandedBudgets, setExpandedBudgets] = useState({}); // Pour déplier/replier les containers
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -61,6 +62,9 @@ const CgmpMarches = () => {
   const [showHistory, setShowHistory] = useState(false);
   const [historyData, setHistoryData] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('info'); // 'info', 'articles', 'tracking'
+  const [marcheArticles, setMarcheArticles] = useState([]);
+  const [expandedMarches, setExpandedMarches] = useState({});
 
   const fetchData = async () => {
     try {
@@ -69,6 +73,7 @@ const CgmpMarches = () => {
         api.get('/demandes')
       ]);
       setMarches(marchesRes.data);
+      setAllDemands(demandsRes.data);
       const pending = demandsRes.data.filter(d => d.statut === 'Valide');
       
       // Groupement par Budget (Container)
@@ -227,19 +232,70 @@ const CgmpMarches = () => {
 
   const handleManage = (marche) => {
     setSelectedMarche(marche);
+    setActiveTab('info');
     setUpdateForm({
-      statut: marche.statut,
+      idDemande: marche.idDemande,
       numeroBudget: marche.numeroBudget || '',
       montantEstime: marche.montantEstime,
       modePassation: marche.modePassation,
       justificationChoix: marche.justificationChoix,
       dateSelection: marche.dateSelection ? new Date(marche.dateSelection).toISOString().split('T')[0] : '',
       validateur: marche.validateur,
+      statut: marche.statut,
       dateCloture: marche.dateCloture ? new Date(marche.dateCloture).toISOString().split('T')[0] : '',
       cloturePar: marche.cloturePar || '',
       commentaire: marche.commentaire || ''
     });
+
+    // Extraire les articles des demandes liées
+    if (marche.idDemande) {
+      // idDemande peut être un nombre ou une chaîne avec virgules
+      const ids = marche.idDemande.toString().split(',').map(id => parseInt(id.trim()));
+      const articles = [];
+      allDemands.forEach(d => {
+        if (ids.includes(d.idDemande)) {
+          if (d.articles) {
+            d.articles.forEach(art => {
+              articles.push({
+                ...art,
+                serviceSource: d.nomService || d.roleDemandeur
+              });
+            });
+          }
+        }
+      });
+      setMarcheArticles(articles);
+    } else {
+      setMarcheArticles([]);
+    }
+
     setShowDetails(true);
+  };
+
+  const toggleMarcheExpansion = (idMarche) => {
+    setExpandedMarches(prev => ({
+      ...prev,
+      [idMarche]: !prev[idMarche]
+    }));
+  };
+
+  const getConsolidatedArticles = (idDemandeStr) => {
+    if (!idDemandeStr) return [];
+    const ids = idDemandeStr.toString().split(',').map(id => parseInt(id.trim()));
+    const articles = [];
+    allDemands.forEach(d => {
+      if (ids.includes(d.idDemande)) {
+        if (d.articles) {
+          d.articles.forEach(art => {
+            articles.push({
+              ...art,
+              serviceSource: d.nomService || d.roleDemandeur
+            });
+          });
+        }
+      }
+    });
+    return articles;
   };
 
   const handleUpdate = async (e) => {
@@ -291,16 +347,11 @@ const CgmpMarches = () => {
         <section className="bg-surface rounded-3xl border border-gray-100 shadow-xl overflow-hidden animate-in zoom-in-95 duration-300">
           <div className="p-6 bg-primary text-white flex justify-between items-center">
             <div>
-              <h2 className="text-xl font-bold">Nouveau Dossier d&apos;Appel d&apos;Offres</h2>
+              <h2 className="text-xl font-bold">Nouveau marché</h2>
               <p className="text-blue-100 text-sm mt-1">
                 Demande #{selectedDemand?.idDemande} — {selectedDemand?.nomService || selectedDemand?.roleDemandeur || 'Direction Générale'} 
                 {selectedDemand?.nomDemandeur && ` (${selectedDemand.nomDemandeur})`}
               </p>
-              {selectedDemand?.motif && (
-                <div className="mt-2 bg-surface/10 px-3 py-1.5 rounded-lg border border-white/20 text-xs italic">
-                  Note RAF: {selectedDemand.motif}
-                </div>
-              )}
               <div className="mt-2 text-[10px] text-blue-100 uppercase font-bold">
                 ID(s) Demande: {form.idDemande}
               </div>
@@ -313,15 +364,15 @@ const CgmpMarches = () => {
           
           <form onSubmit={handleSubmit} className="p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Numéro Budgétaire</label>
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Reference du marché</label>
               <div className="relative">
                 <LayoutGrid className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
                   type="text"
                   required
+                  readOnly
                   value={form.numeroBudget}
-                  onChange={(e) => setForm({...form, numeroBudget: e.target.value})}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all font-bold text-primary"
+                  className="w-full pl-10 pr-4 py-3 bg-gray-100 border border-gray-100 rounded-2xl outline-none transition-all font-bold text-primary cursor-not-allowed"
                   placeholder="Référence budget"
                 />
               </div>
@@ -386,7 +437,7 @@ const CgmpMarches = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Date de Sélection</label>
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Date de creation</label>
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
@@ -411,7 +462,7 @@ const CgmpMarches = () => {
               </div>
             </div>
 
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <label className="text-xs font-black text-gray-500 uppercase tracking-widest ml-1">Responsable de Publication</label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -423,7 +474,7 @@ const CgmpMarches = () => {
                   className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                 />
               </div>
-            </div>
+            </div> */}
 
             <div className="space-y-2">
               <label className="text-xs font-black text-gray-500 uppercase tracking-widest ml-1">État du Marché</label>
@@ -506,7 +557,7 @@ const CgmpMarches = () => {
       {/* Modal de gestion du marché */}
       {showDetails && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
-          <div className="bg-surface rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+          <div className="bg-surface rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden animate-in zoom-in-95 duration-300">
             <div className="p-6 bg-gray-900 text-white flex justify-between items-center">
               <div>
                 <h2 className="text-xl font-bold">Gestion du Marché #{selectedMarche?.idMarche}</h2>
@@ -520,155 +571,284 @@ const CgmpMarches = () => {
               </button>
             </div>
             
-            <form onSubmit={handleUpdate} className="p-8 space-y-6 overflow-y-auto max-h-[70vh]">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Numéro Budgétaire</label>
-                  <div className="relative">
-                    <LayoutGrid className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input
-                      type="text"
-                      value={updateForm.numeroBudget || ''}
-                      onChange={(e) => setUpdateForm({...updateForm, numeroBudget: e.target.value})}
-                      className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all font-bold text-primary"
-                    />
+            {/* Onglets */}
+            <div className="flex border-b border-gray-100 bg-gray-50/50">
+              <button 
+                onClick={() => setActiveTab('info')}
+                className={`flex-1 py-4 text-xs font-black uppercase tracking-widest transition-all ${
+                  activeTab === 'info' ? 'text-primary border-b-2 border-primary bg-white' : 'text-gray-400 hover:text-gray-600'
+                }`}
+              >
+                📋 Informations
+              </button>
+              <button 
+                onClick={() => setActiveTab('articles')}
+                className={`flex-1 py-4 text-xs font-black uppercase tracking-widest transition-all ${
+                  activeTab === 'articles' ? 'text-primary border-b-2 border-primary bg-white' : 'text-gray-400 hover:text-gray-600'
+                }`}
+              >
+                📦 Articles ({marcheArticles.length})
+              </button>
+              <button 
+                onClick={() => setActiveTab('tracking')}
+                className={`flex-1 py-4 text-xs font-black uppercase tracking-widest transition-all ${
+                  activeTab === 'tracking' ? 'text-primary border-b-2 border-primary bg-white' : 'text-gray-400 hover:text-gray-600'
+                }`}
+              >
+                📈 Suivi & Clôture
+              </button>
+            </div>
+            
+            <form onSubmit={handleUpdate} className="p-8 space-y-6 overflow-y-auto max-h-[80vh]">
+              {activeTab === 'info' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Reference du marché</label>
+                    <div className="relative">
+                      <LayoutGrid className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <input
+                        type="text"
+                        readOnly
+                        value={updateForm.numeroBudget || ''}
+                        className="w-full pl-10 pr-4 py-3 bg-gray-100 border border-gray-100 rounded-2xl outline-none transition-all font-bold text-primary cursor-not-allowed"
+                      />
+                    </div>
                   </div>
-                </div>
 
-                {/* Informations existantes (Lecture seule ou Modifiables) */}
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Montant Estimé (FBU)</label>
-                  <div className="relative">
-                    <DollarSign className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input
-                      type="number"
-                      value={updateForm.montantEstime || ''}
-                      onChange={(e) => setUpdateForm({...updateForm, montantEstime: e.target.value})}
-                      className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all font-semibold"
-                    />
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Montant Estimé (FBU)</label>
+                    <div className="relative">
+                      <DollarSign className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <input
+                        type="number"
+                        value={updateForm.montantEstime || ''}
+                        onChange={(e) => setUpdateForm({...updateForm, montantEstime: e.target.value})}
+                        className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all font-semibold"
+                      />
+                    </div>
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Mode de Passation</label>
-                  <div className="relative">
-                    <Gavel className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <select
-                      value={updateForm.modePassation || ''}
-                      onChange={(e) => setUpdateForm({...updateForm, modePassation: e.target.value})}
-                      className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all appearance-none"
-                    >
-                      <option value="AO">Appel d&apos;Offres</option>
-                      <option value="AOR">Appel d&apos;Offres Restreint</option>
-                      <option value="PVN">Procédure avec Négociation</option>
-                      <option value="GG">Gré à Gré</option>
-                      <option value="DC">Dialogue competitif</option>
-                      <option value="PA">Procedure adapte</option>
-                    </select>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Mode de Passation</label>
+                    <div className="relative">
+                      <Gavel className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <select
+                        value={updateForm.modePassation || ''}
+                        onChange={(e) => setUpdateForm({...updateForm, modePassation: e.target.value})}
+                        className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all appearance-none"
+                      >
+                        <option value="AO">Appel d&apos;Offres</option>
+                        <option value="AOR">Appel d&apos;Offres Restreint</option>
+                        <option value="PVN">Procédure avec Négociation</option>
+                        <option value="GG">Gré à Gré</option>
+                        <option value="DC">Dialogue competitif</option>
+                        <option value="PA">Procedure adapte</option>
+                      </select>
+                    </div>
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Date de Sélection</label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input
-                      type="date"
-                      value={updateForm.dateSelection || ''}
-                      onChange={(e) => setUpdateForm({...updateForm, dateSelection: e.target.value})}
-                      className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                    />
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Date de création</label>
+                    <div className="relative">
+                      <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <input
+                        type="date"
+                        value={updateForm.dateSelection || ''}
+                        onChange={(e) => setUpdateForm({...updateForm, dateSelection: e.target.value})}
+                        className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                      />
+                    </div>
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Validateur / Responsable</label>
-                  <div className="relative">
-                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input
-                      type="text"
-                      value={updateForm.validateur || ''}
-                      onChange={(e) => setUpdateForm({...updateForm, validateur: e.target.value})}
-                      className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                    />
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Validateur / Responsable</label>
+                    <div className="relative">
+                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <input
+                        type="text"
+                        value={updateForm.validateur || ''}
+                        onChange={(e) => setUpdateForm({...updateForm, validateur: e.target.value})}
+                        className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                      />
+                    </div>
                   </div>
-                </div>
 
-                <div className="md:col-span-2 space-y-2">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Justification du choix</label>
-                  <textarea
-                    rows="2"
-                    value={updateForm.justificationChoix || ''}
-                    onChange={(e) => setUpdateForm({...updateForm, justificationChoix: e.target.value})}
-                    className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
-                  ></textarea>
-                </div>
-
-                <div className="md:col-span-2 h-px bg-gray-100 my-4"></div>
-                <h3 className="md:col-span-2 text-sm font-bold text-gray-900 flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-primary" />
-                  Suivi et Clôture
-                </h3>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Statut du Marché</label>
-                  <div className="relative">
-                    <Info className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <select
-                      value={updateForm.statut}
-                      onChange={(e) => setUpdateForm({...updateForm, statut: e.target.value})}
-                      className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all appearance-none font-bold text-primary"
-                    >
-                      <option value="en attente">En attente</option>
-                      <option value="publie">Publié</option>
-                      <option value="attribution">Attribué</option>
-                      <option value="suspendu">Suspendu</option>
-                      <option value="cloture">Clôturé</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Date de Clôture</label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input
-                      type="date"
-                      value={updateForm.dateCloture}
-                      onChange={(e) => setUpdateForm({...updateForm, dateCloture: e.target.value})}
-                      className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2 md:col-span-2">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Clôturé Par</label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="Nom du responsable de clôture"
-                      value={updateForm.cloturePar}
-                      onChange={(e) => setUpdateForm({...updateForm, cloturePar: e.target.value})}
-                      className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2 md:col-span-2">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Commentaires / Rapport Final</label>
-                  <div className="relative">
-                    <MessageSquare className="absolute left-4 top-4 h-4 w-4 text-gray-400" />
+                  <div className="md:col-span-2 space-y-2">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Justification du choix</label>
                     <textarea
-                      rows="3"
-                      value={updateForm.commentaire}
-                      onChange={(e) => setUpdateForm({...updateForm, commentaire: e.target.value})}
-                      className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
-                      placeholder="Informations sur la fin du marché..."
+                      rows="2"
+                      value={updateForm.justificationChoix || ''}
+                      onChange={(e) => setUpdateForm({...updateForm, justificationChoix: e.target.value})}
+                      className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
                     ></textarea>
                   </div>
                 </div>
-              </div>
+              )}
+
+              {activeTab === 'articles' && (
+                <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                   <div className="bg-gray-50 rounded-2xl border border-gray-100 overflow-hidden">
+                     <table className="min-w-full divide-y divide-gray-200">
+                       <thead className="bg-gray-100/50">
+                         <tr>
+                           <th className="px-4 py-3 text-left text-[10px] font-black text-gray-400 uppercase">Article</th>
+                           <th className="px-4 py-3 text-center text-[10px] font-black text-gray-400 uppercase">Quantité</th>
+                           <th className="px-4 py-3 text-right text-[10px] font-black text-gray-400 uppercase">Prix Unit.</th>
+                           <th className="px-4 py-3 text-right text-[10px] font-black text-gray-400 uppercase">Total</th>
+                         </tr>
+                       </thead>
+                       <tbody className="divide-y divide-gray-100">
+                         {marcheArticles.length === 0 ? (
+                           <tr>
+                             <td colSpan="4" className="px-4 py-8 text-center text-gray-400 text-xs italic">Aucun article trouvé.</td>
+                           </tr>
+                         ) : (
+                           marcheArticles.map((art, idx) => (
+                             <tr key={idx} className="hover:bg-white transition-colors">
+                               <td className="px-4 py-3">
+                                 <p className="text-xs font-bold text-gray-700">{art.nomArticle}</p>
+                                 <p className="text-[9px] text-gray-400 italic">{art.serviceSource}</p>
+                               </td>
+                               <td className="px-4 py-3 text-center text-xs font-bold text-gray-600">{art.quantite}</td>
+                               <td className="px-4 py-3 text-right text-xs text-gray-600 font-mono">{Number(art.prixUnitaire).toLocaleString()}</td>
+                               <td className="px-4 py-3 text-right text-xs font-black text-primary font-mono">{Number(art.quantite * art.prixUnitaire).toLocaleString()}</td>
+                             </tr>
+                           ))
+                         )}
+                       </tbody>
+                       {marcheArticles.length > 0 && (
+                         <tfoot className="bg-primary/5">
+                           <tr>
+                             <td colSpan="3" className="px-4 py-3 text-right text-[10px] font-black uppercase text-primary">Total Consolidé</td>
+                             <td className="px-4 py-3 text-right text-sm font-black text-primary">
+                               {marcheArticles.reduce((sum, a) => sum + (a.quantite * a.prixUnitaire), 0).toLocaleString()} FBU
+                             </td>
+                           </tr>
+                         </tfoot>
+                       )}
+                     </table>
+                   </div>
+                </div>
+              )}
+
+              {activeTab === 'tracking' && (
+                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  {/* Timeline Visuelle */}
+                  <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-6 text-center">Étape actuelle du processus</p>
+                    <div className="relative flex justify-between">
+                      <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-200 -translate-y-1/2 z-0"></div>
+                      <div 
+                        className="absolute top-1/2 left-0 h-1 bg-primary -translate-y-1/2 z-0 transition-all duration-500"
+                        style={{ 
+                          width: updateForm.statut === 'en attente' ? '0%' : 
+                                 updateForm.statut === 'publie' ? '33.33%' : 
+                                 updateForm.statut === 'attribution' ? '66.66%' : 
+                                 updateForm.statut === 'suspendu' ? '66.66%' : '100%' 
+                        }}
+                      ></div>
+                      
+                      {[
+                        { id: 'en attente', label: 'Préparation', icon: Clock },
+                        { id: 'publie', label: 'Publication', icon: FileText },
+                        { id: 'attribution', label: 'Attribution', icon: Gavel },
+                        { id: 'cloture', label: 'Clôture', icon: CheckCircle }
+                      ].map((step) => {
+                        const statusOrder = ['en attente', 'publie', 'attribution', 'cloture'];
+                        const currentIdx = statusOrder.indexOf(updateForm.statut === 'suspendu' ? 'attribution' : updateForm.statut);
+                        const stepIdx = statusOrder.indexOf(step.id);
+                        
+                        const isCompleted = currentIdx > stepIdx;
+                        const isActive = currentIdx === stepIdx;
+                        
+                        return (
+                          <div key={step.id} className="relative z-10 flex flex-col items-center">
+                            <div className={`h-8 w-8 rounded-full flex items-center justify-center border-4 border-white shadow-sm transition-all duration-300 ${
+                              isActive ? 'bg-primary text-white scale-125' : 
+                              isCompleted ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-400'
+                            }`}>
+                              <step.icon className="h-4 w-4" />
+                            </div>
+                            <span className={`mt-2 text-[9px] font-bold uppercase tracking-tighter ${
+                              isActive ? 'text-primary' : 
+                              isCompleted ? 'text-emerald-600' : 'text-gray-400'
+                            }`}>
+                              {step.label}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Statut du Marché</label>
+                      <div className="relative">
+                        <Info className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <select
+                          value={updateForm.statut}
+                          onChange={(e) => setUpdateForm({...updateForm, statut: e.target.value})}
+                          className={`w-full pl-10 pr-4 py-3 border rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all appearance-none font-bold ${
+                            updateForm.statut === 'cloture' ? 'bg-gray-100 text-gray-600 border-gray-200' :
+                            updateForm.statut === 'publie' ? 'bg-blue-50 text-blue-700 border-blue-100' :
+                            updateForm.statut === 'attribution' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                            updateForm.statut === 'en attente' ? 'bg-amber-50 text-amber-700 border-amber-100' :
+                            'bg-gray-50 text-primary border-gray-100'
+                          }`}
+                        >
+                          <option value="en attente">Phase de Préparation (Modifiable)</option>
+                          <option value="publie">Marché Publié</option>
+                          <option value="attribution">Marché Attribué</option>
+                          <option value="suspendu">Marché Suspendu</option>
+                          <option value="cloture">Marché Clôturé</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Date de Clôture</label>
+                      <div className="relative">
+                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                          type="date"
+                          value={updateForm.dateCloture}
+                          onChange={(e) => setUpdateForm({...updateForm, dateCloture: e.target.value})}
+                          className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 md:col-span-2">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Clôturé Par</label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                          type="text"
+                          placeholder="Nom du responsable de clôture"
+                          value={updateForm.cloturePar}
+                          onChange={(e) => setUpdateForm({...updateForm, cloturePar: e.target.value})}
+                          className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 md:col-span-2">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Commentaires / Rapport Final</label>
+                      <div className="relative">
+                        <MessageSquare className="absolute left-4 top-4 h-4 w-4 text-gray-400" />
+                        <textarea
+                          rows="3"
+                          value={updateForm.commentaire}
+                          onChange={(e) => setUpdateForm({...updateForm, commentaire: e.target.value})}
+                          className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
+                          placeholder="Informations sur la fin du marché..."
+                        ></textarea>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="flex justify-end gap-4 pt-4 border-t border-gray-50 sticky bottom-0 bg-surface pb-2">
                 <button 
@@ -874,7 +1054,7 @@ const CgmpMarches = () => {
             <thead>
               <tr className="bg-surface">
                 <th className="px-8 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">ID / Demande</th>
-                <th className="px-8 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Numéro Budgétaire</th>
+                <th className="px-8 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Reference du marché</th>
                 <th className="px-8 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Mode Passation</th>
                 <th className="px-8 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Montant Estimé</th>
                 <th className="px-8 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Clôture</th>
@@ -888,46 +1068,114 @@ const CgmpMarches = () => {
                   <td colSpan="7" className="px-8 py-12 text-center text-gray-400">Aucun marché enregistré.</td>
                 </tr>
               ) : (
-                marches.map(m => (
-                  <tr key={m.idMarche} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="px-8 py-5 whitespace-nowrap">
-                      <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold text-xs">
-                          {m.idMarche}
-                        </div>
-                        <div>
-                          <div className="text-sm font-bold text-gray-900">Demande #{m.idDemande}</div>
-                          <div className="text-[10px] text-gray-500 font-medium">{m.nomService || m.roleDemandeur || 'N/A'}</div>
-                          <div className="text-[10px] text-gray-400 uppercase">Publié le {new Date(m.dateSelection).toLocaleDateString()}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-8 py-5 whitespace-nowrap">
-                      <span className="text-sm font-bold text-primary">{m.numeroBudget || 'N/A'}</span>
-                    </td>
-                    <td className="px-8 py-5 whitespace-nowrap text-sm text-gray-600 font-medium">{m.modePassation}</td>
-                    <td className="px-8 py-5 whitespace-nowrap text-sm font-bold text-gray-900">{Number(m.montantEstime).toLocaleString()} FBU</td>
-                    <td className="px-8 py-5 whitespace-nowrap text-sm text-gray-500">
-                      {m.dateCloture ? new Date(m.dateCloture).toLocaleDateString() : 'N/A'}
-                    </td>
-                    <td className="px-8 py-5 whitespace-nowrap">
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                        m.statut === 'cloture' ? 'bg-gray-100 text-gray-600' : 'bg-blue-100 text-blue-700'
-                      }`}>
-                        {m.statut}
-                      </span>
-                    </td>
-                    <td className="px-8 py-5 whitespace-nowrap text-right">
-                      <button 
-                        onClick={() => handleManage(m)}
-                        className="text-primary hover:text-blue-800 font-bold text-xs flex items-center gap-1 justify-end ml-auto group"
-                      >
-                        <PlusCircle className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                        Gérer
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                marches.map(m => {
+                  const consolidated = getConsolidatedArticles(m.idDemande);
+                  const isExpanded = expandedMarches[m.idMarche];
+                  
+                  return (
+                    <Fragment key={m.idMarche}>
+                      <tr className={`hover:bg-gray-50/50 transition-colors ${isExpanded ? 'bg-primary/5' : ''}`}>
+                        <td className="px-8 py-5 whitespace-nowrap">
+                          <div className="flex items-center gap-3">
+                            <button 
+                              onClick={() => toggleMarcheExpansion(m.idMarche)}
+                              className={`h-8 w-8 rounded-lg flex items-center justify-center font-bold text-xs transition-all ${
+                                isExpanded ? 'bg-primary text-white' : 'bg-primary/10 text-primary hover:bg-primary/20'
+                              }`}
+                            >
+                              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                            </button>
+                            <div>
+                              <div className="text-sm font-bold text-gray-900">Marché #{m.idMarche}</div>
+                              <div className="text-[10px] text-gray-500 font-medium">Demande #{m.idDemande}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-8 py-5 whitespace-nowrap">
+                          <span className="text-sm font-bold text-primary">{m.numeroBudget || 'N/A'}</span>
+                        </td>
+                        <td className="px-8 py-5 whitespace-nowrap text-sm text-gray-600 font-medium">{m.modePassation}</td>
+                        <td className="px-8 py-5 whitespace-nowrap text-sm font-bold text-gray-900">{Number(m.montantEstime).toLocaleString()} FBU</td>
+                        <td className="px-8 py-5 whitespace-nowrap text-sm text-gray-500">
+                          {m.dateCloture ? new Date(m.dateCloture).toLocaleDateString() : 'N/A'}
+                        </td>
+                        <td className="px-8 py-5 whitespace-nowrap">
+                          <div className="flex flex-col gap-2 min-w-[150px]">
+                            <div className="flex justify-between items-center px-1">
+                              <span className={`text-[9px] font-black uppercase tracking-tighter ${m.statut === 'en attente' ? 'text-primary' : 'text-gray-400'}`}>P</span>
+                              <span className={`text-[9px] font-black uppercase tracking-tighter ${m.statut === 'publie' ? 'text-blue-600' : 'text-gray-400'}`}>A</span>
+                              <span className={`text-[9px] font-black uppercase tracking-tighter ${m.statut === 'attribution' ? 'text-emerald-600' : 'text-gray-400'}`}>G</span>
+                              <span className={`text-[9px] font-black uppercase tracking-tighter ${m.statut === 'cloture' ? 'text-gray-600' : 'text-gray-400'}`}>C</span>
+                            </div>
+                            <div className="h-1.5 w-full bg-gray-100 rounded-full relative overflow-hidden">
+                              <div 
+                                className={`absolute top-0 left-0 h-full transition-all duration-700 rounded-full ${
+                                  m.statut === 'suspendu' ? 'bg-amber-500' : 
+                                  m.statut === 'cloture' ? 'bg-gray-400' : 'bg-primary'
+                                }`}
+                                style={{ 
+                                  width: m.statut === 'en attente' ? '15%' : 
+                                         m.statut === 'publie' ? '40%' : 
+                                         m.statut === 'attribution' ? '70%' : 
+                                         m.statut === 'suspendu' ? '50%' : '100%' 
+                                }}
+                              ></div>
+                            </div>
+                            <span className={`text-[10px] font-bold uppercase tracking-wider ${
+                              m.statut === 'cloture' ? 'text-gray-500' : 
+                              m.statut === 'publie' ? 'text-blue-600' : 
+                              m.statut === 'attribution' ? 'text-emerald-600' : 
+                              m.statut === 'suspendu' ? 'text-amber-600' : 'text-primary'
+                            }`}>
+                              {m.statut}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-8 py-5 whitespace-nowrap text-right">
+                          <button 
+                            onClick={() => handleManage(m)}
+                            className="text-primary hover:text-blue-800 font-bold text-xs flex items-center gap-1 justify-end ml-auto group"
+                          >
+                            <Edit className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                            Gérer
+                          </button>
+                        </td>
+                      </tr>
+                      
+                      {/* Ligne d'extension pour les articles */}
+                      {isExpanded && (
+                        <tr className="bg-gray-50/50 animate-in fade-in slide-in-from-top-1 duration-200">
+                          <td colSpan="7" className="px-8 py-4">
+                            <div className="bg-white rounded-2xl border border-gray-100 shadow-inner overflow-hidden">
+                              <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Articles Consolidés ({consolidated.length})</span>
+                                <span className="text-[10px] font-bold text-primary">Total: {consolidated.reduce((sum, a) => sum + (a.quantite * a.prixUnitaire), 0).toLocaleString()} FBU</span>
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-3">
+                                {consolidated.length === 0 ? (
+                                  <p className="col-span-full text-center text-[10px] text-gray-400 py-4 italic">Aucun détail d&apos;article disponible.</p>
+                                ) : (
+                                  consolidated.map((art, idx) => (
+                                    <div key={idx} className="flex justify-between items-center p-2 bg-gray-50/50 rounded-xl border border-gray-100/50">
+                                      <div>
+                                        <p className="text-[11px] font-bold text-gray-700">{art.nomArticle}</p>
+                                        <p className="text-[9px] text-gray-400 uppercase tracking-tighter">{art.serviceSource}</p>
+                                      </div>
+                                      <div className="text-right">
+                                        <p className="text-[10px] font-black text-primary">x{art.quantite}</p>
+                                        <p className="text-[9px] text-gray-400 font-mono">{Number(art.prixUnitaire).toLocaleString()} FBU</p>
+                                      </div>
+                                    </div>
+                                  ))
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -935,7 +1183,7 @@ const CgmpMarches = () => {
       </section>
       {/* Modal de modification des articles par la CGMP */}
       {editingDemand && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-100 flex items-center justify-center p-4">
           <div className="bg-surface rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="bg-primary px-8 py-5 text-white flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -1025,7 +1273,7 @@ const CgmpMarches = () => {
       {showHistory && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-surface rounded-3xl p-0 max-w-4xl w-full shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden flex flex-col max-h-[85vh]">
-            <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-6 text-white flex justify-between items-center shrink-0">
+            <div className="bg-linear-to-r from-gray-900 to-gray-800 p-6 text-white flex justify-between items-center shrink-0">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-surface/10 rounded-xl">
                   <History className="h-6 w-6 text-blue-400" />
@@ -1061,7 +1309,7 @@ const CgmpMarches = () => {
                   {historyData.map((item, idx) => (
                     <div key={idx} className="relative group">
                       {/* Point sur la ligne */}
-                      <div className={`absolute -left-[41px] top-0 w-6 h-6 rounded-full border-4 border-white shadow-sm transition-all duration-300 group-hover:scale-125 ${
+                      <div className={`absolute left-[-41px] top-0 w-6 h-6 rounded-full border-4 border-white shadow-sm transition-all duration-300 group-hover:scale-125 ${
                         item.action.includes('Validation') || item.nouveauStatut === 'Valide' ? 'bg-emerald-500 shadow-emerald-200' :
                         item.nouveauStatut === 'Inclus dans Marché' ? 'bg-indigo-500 shadow-indigo-200' :
                         item.action.includes('Rejet') || item.nouveauStatut === 'Rejete' ? 'bg-red-500 shadow-red-200' :

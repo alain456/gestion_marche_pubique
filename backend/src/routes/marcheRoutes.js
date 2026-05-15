@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const marcheController = require('../controllers/marcheController');
+const { verifyToken } = require('../middlewares/authMiddleware');
+
+router.use(verifyToken);
 
 // Définition des routes
 router.post('/', marcheController.createMarche);
