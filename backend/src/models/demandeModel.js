@@ -3,7 +3,7 @@ const db = require('../config/db');
 const Demande = {
     // Créer une demande avec plusieurs lignes (transactionnel)
     create: async (data) => {
-        const { idService, idUser, typeMarche, statut, articles, idBudget } = data;
+        const { idService, idUser, typeMarche, priorite, statut, articles, idBudget } = data;
         const connection = await db.getConnection();
 
         try {
@@ -12,14 +12,15 @@ const Demande = {
             // 1. Créer le header (demande)
             const headerQuery = `
                 INSERT INTO demande 
-                (idService, idUser, typeMarche, statut, idBudget) 
-                VALUES (?, ?, ?, ?, ?)
+                (idService, idUser, typeMarche, priorite, statut, idBudget) 
+                VALUES (?, ?, ?, ?, ?, ?)
             `;
 
             const [headerResult] = await connection.query(headerQuery, [
                 idService,
                 idUser,
                 typeMarche,
+                priorite || 'Normale',
                 statut || 'En attente',
                 idBudget
             ]);
@@ -137,6 +138,36 @@ const Demande = {
         `;
 
         const [rows] = await db.query(query, [idService, idService]);
+
+    },
+    
+    // Récupérer par utilisateur (Strictement mes demandes)
+    findByUser: async (idUser) => {
+        const query = `
+            SELECT 
+                d.*,
+                da.numeroBudget,
+                GROUP_CONCAT(
+                    JSON_OBJECT(
+                        'idLigne', l.idLigne,
+                        'idArticle', l.idArticle,
+                        'nomArticle', a.nomArticle,
+                        'quantite', l.quantite,
+                        'prixUnitaire', l.prixUnitaire,
+                        'montant', l.montant,
+                        'description', l.description
+                    )
+                ) as articles
+            FROM demande d
+            LEFT JOIN budget da ON d.idBudget = da.idBudget
+            LEFT JOIN ligne_demande l ON d.idDemande = l.idDemande
+            LEFT JOIN article a ON l.idArticle = a.idArticle
+            WHERE d.idUser = ?
+            GROUP BY d.idDemande
+            ORDER BY d.dateDemande DESC
+        `;
+
+        const [rows] = await db.query(query, [idUser]);
 
         return rows.map(row => ({
             ...row,

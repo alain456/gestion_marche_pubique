@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { 
   ArrowLeft, 
   Search, 
-  Filter,
   Download,
   CreditCard,
   Building,
@@ -11,8 +10,7 @@ import {
   CheckCircle,
   Clock,
   Layers,
-  CheckSquare,
-  X
+  CheckSquare
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
@@ -26,6 +24,8 @@ const RafBudgets = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('Tous');
+  const [filterService, setFilterService] = useState('');
+  const [filterPriority, setFilterPriority] = useState('');
   const [showGroupedView, setShowGroupedView] = useState(true);
   const [selectedForValidation, setSelectedForValidation] = useState([]);
   const [motif, setMotif] = useState('');
@@ -65,17 +65,40 @@ const RafBudgets = () => {
     const matchesSearch = !searchTerm || 
       b.numeroBudget.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === 'Tous' || b.typeBudget === filterType;
-    return matchesSearch && matchesType;
+    
+    // Filtrer par service (si au moins une demande du service est liée à ce budget)
+    const matchesService = !filterService || demandes.some(d => d.idBudget === b.idBudget && d.nomService === filterService);
+    
+    return matchesSearch && matchesType && matchesService;
   });
+
+  const filteredGroupDemandes = groupDemandes.filter(d => {
+    const matchesSearch = !searchTerm || 
+      d.nomService?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      d.idDemande.toString().includes(searchTerm);
+    const matchesService = !filterService || d.nomService === filterService;
+    const matchesPriority = !filterPriority || d.priorite === filterPriority;
+    
+    return matchesSearch && matchesService && matchesPriority;
+  });
+
+  const services = [...new Set(demandes.map(d => d.nomService))].filter(Boolean).sort();
 
   // Calculer les stats pour chaque budget
   const getBudgetStats = (idBudget) => {
     const relatedDemandes = demandes.filter(d => d.idBudget === idBudget);
-    const totalValid = relatedDemandes.filter(d => d.statut === 'Valide').length;
+    const validDemandes = relatedDemandes.filter(d => d.statut === 'Valide');
+    
+    const consumedAmount = validDemandes.reduce((total, d) => {
+      const demandeAmount = d.articles?.reduce((sum, a) => sum + (a.montant || a.quantite * a.prixUnitaire || 0), 0) || 0;
+      return total + demandeAmount;
+    }, 0);
+
     return {
       count: relatedDemandes.length,
-      valid: totalValid,
-      pending: relatedDemandes.filter(d => d.statut === 'En attente').length
+      valid: validDemandes.length,
+      pending: relatedDemandes.filter(d => d.statut === 'En attente').length,
+      consumed: consumedAmount
     };
   };
 
@@ -212,29 +235,79 @@ const RafBudgets = () => {
 
       {/* Filtres */}
       {!selectedGroup && (
-        <div className="bg-surface p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
-          <div className="relative w-full md:w-96">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input 
-              type="text" 
-              placeholder="Rechercher par n° de budget..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 pr-4 py-2 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 w-full"
-            />
-          </div>
-          <div className="flex items-center gap-3">
-            <Filter className="h-4 w-4 text-gray-400" />
-            <select 
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
-              className="px-4 py-2 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 bg-surface min-w-[150px]"
-            >
-              <option value="Tous">Tous les types</option>
-              <option value="fourniture">Fourniture</option>
-              <option value="travaux">Travaux</option>
-              <option value="service">Service</option>
-            </select>
+        <div className="bg-surface p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4">
+          <div className="flex flex-col md:flex-row gap-4 justify-between items-end">
+            <div className="flex-1 space-y-2">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Recherche globale</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input 
+                  type="text" 
+                  placeholder="Rechercher budget, service ou ID..." 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 w-full font-medium"
+                />
+              </div>
+            </div>
+            
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Type de Marché</label>
+                <select 
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value)}
+                  className="px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 font-bold text-gray-700 min-w-[140px]"
+                >
+                  <option value="Tous">Tous les types</option>
+                  <option value="fourniture">Fourniture</option>
+                  <option value="travaux">Travaux</option>
+                  <option value="service">Service</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Service Demandeur</label>
+                <select 
+                  value={filterService}
+                  onChange={(e) => setFilterService(e.target.value)}
+                  className="px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 font-bold text-gray-700 min-w-[180px]"
+                >
+                  <option value="">Tous les services</option>
+                  {services.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+
+              {selectedGroup && (
+                <div className="space-y-2 animate-in slide-in-from-right-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Priorité</label>
+                  <select 
+                    value={filterPriority}
+                    onChange={(e) => setFilterPriority(e.target.value)}
+                    className="px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 font-bold text-gray-700 min-w-[120px]"
+                  >
+                    <option value="">Toutes</option>
+                    <option value="Normale">Normale</option>
+                    <option value="Urgente">Urgente</option>
+                    <option value="Critique">Critique</option>
+                  </select>
+                </div>
+              )}
+
+              {(searchTerm || filterType !== 'Tous' || filterService || filterPriority) && (
+                <button 
+                  onClick={() => {
+                    setSearchTerm('');
+                    setFilterType('Tous');
+                    setFilterService('');
+                    setFilterPriority('');
+                  }}
+                  className="px-4 py-3 text-red-500 hover:bg-red-50 rounded-xl transition-colors font-bold text-xs uppercase mt-6"
+                >
+                  Effacer
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -339,10 +412,10 @@ const RafBudgets = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {groupDemandes.length === 0 ? (
-                    <tr><td colSpan="6" className="px-6 py-10 text-center text-gray-500">Aucune demande trouvée.</td></tr>
+                  {filteredGroupDemandes.length === 0 ? (
+                    <tr><td colSpan="7" className="px-6 py-10 text-center text-gray-500">Aucune demande trouvée pour ces filtres.</td></tr>
                   ) : (
-                    groupDemandes.map((demande) => (
+                    filteredGroupDemandes.map((demande) => (
                       <tr key={demande.idDemande} className="hover:bg-gray-50/50 transition">
                         <td className="px-6 py-4">
                           <input
@@ -353,7 +426,16 @@ const RafBudgets = () => {
                           />
                         </td>
                         <td className="px-6 py-4">
-                          <span className="font-medium text-gray-900">{demande.nomService}</span>
+                          <div className="flex flex-col">
+                            <span className="font-medium text-gray-900">{demande.nomService}</span>
+                            <span className={`text-[9px] font-black uppercase mt-1 px-2 py-0.5 rounded-full w-fit ${
+                              demande.priorite === 'Critique' ? 'bg-red-100 text-red-700' :
+                              demande.priorite === 'Urgente' ? 'bg-amber-100 text-amber-700' :
+                              'bg-gray-100 text-gray-600'
+                            }`}>
+                              {demande.priorite || 'Normale'}
+                            </span>
+                          </div>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-600">{demande.nomDemandeur}</td>
                         <td className="px-6 py-4 text-sm text-gray-600">
@@ -429,8 +511,31 @@ const RafBudgets = () => {
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 font-bold text-primary">
-                          {budget.montantEstime?.toLocaleString() || 0} Fbu
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col gap-1.5 min-w-[150px]">
+                            <div className="flex justify-between items-end">
+                              <span className="text-xs font-black text-primary">{budget.montantEstime?.toLocaleString()} Fbu</span>
+                              <span className={`text-[10px] font-black uppercase ${
+                                (stats.consumed / budget.montantEstime) > 0.9 ? 'text-red-500' : 
+                                (stats.consumed / budget.montantEstime) > 0.7 ? 'text-amber-500' : 'text-emerald-500'
+                              }`}>
+                                {((stats.consumed / budget.montantEstime) * 100).toFixed(0)}%
+                              </span>
+                            </div>
+                            {/* Barre de progression */}
+                            <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                              <div 
+                                className={`h-full transition-all duration-1000 ${
+                                  (stats.consumed / budget.montantEstime) > 0.9 ? 'bg-red-500' : 
+                                  (stats.consumed / budget.montantEstime) > 0.7 ? 'bg-amber-500' : 'bg-emerald-500'
+                                }`}
+                                style={{ width: `${Math.min((stats.consumed / budget.montantEstime) * 100, 100)}%` }}
+                              ></div>
+                            </div>
+                            <span className="text-[10px] text-gray-400 font-bold italic">
+                              Consommé: {stats.consumed.toLocaleString()} Fbu
+                            </span>
+                          </div>
                         </td>
                         <td className="px-6 py-4 text-right">
                           <button className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-primary transition">

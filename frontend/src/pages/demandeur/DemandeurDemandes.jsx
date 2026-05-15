@@ -41,7 +41,8 @@ const DemandeurDemandes = () => {
   const [form, setForm] = useState({
     idService: user?.idService || '',
     typeMarche: '',
-    idBudget: ''
+    idBudget: '',
+    priorite: 'Normale'
   });
 
   const loadDemandes = async () => {
@@ -80,7 +81,7 @@ const DemandeurDemandes = () => {
   }, [user]);
 
   const resetForm = () => {
-    setForm({ idService: user?.idService || '', typeMarche: '', idBudget: '' });
+    setForm({ idService: user?.idService || '', typeMarche: '', idBudget: '', priorite: 'Normale' });
     setSelectedItems([]);
     setCurrentItem({ idArticle: '', quantite: '', description: '', montant: '' });
     setEditingId(null);
@@ -130,10 +131,11 @@ const DemandeurDemandes = () => {
     }
 
     try {
-      const statut = isDraft ? 'Brouillon' : 'En attente';
+      const statut = isDraft ? 'Brouillon' : (isChef ? 'En attente' : 'Soumis');
       const payload = {
         idService: form.idService ? parseInt(form.idService) : null,
         typeMarche: form.typeMarche,
+        priorite: form.priorite,
         statut: statut,
         articles: finalItems,
         idBudget: parseInt(form.idBudget),
@@ -219,6 +221,7 @@ const DemandeurDemandes = () => {
       idService: demande.idService || '',
       idBudget: demande.idBudget || '',
       typeMarche: demande.typeMarche ? demande.typeMarche.toLowerCase() : '',
+      priorite: demande.priorite || 'Normale'
     });
     setSelectedItems(demande.articles.map(art => ({
       idArticle: art.idArticle,
@@ -296,11 +299,21 @@ const DemandeurDemandes = () => {
       {/* En-tête */}
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Mes Commandes d&apos;Achat</h1>
-          <p className="text-gray-600 mt-1">Gérez vos demandes groupées par ligne budgétaire.</p>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {isChef ? 'Mes Demandes Personnelles' : 'Mes Commandes d\'Achat'}
+          </h1>
+          <p className="text-gray-600 mt-1">
+            {isChef
+              ? `Bienvenue ${user?.nom}. Vos demandes créées personnellement.`
+              : 'Gérez vos demandes groupées par ligne budgétaire.'
+            }
+          </p>
         </div>
         <div className="flex gap-3">
-          <Link to="/demandeur" className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition border border-gray-300">
+          <Link 
+            to={isChef ? '/chef' : '/demandeur'} 
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition border border-gray-300"
+          >
             <ArrowLeft className="h-4 w-4" /> Retour
           </Link>
           <button onClick={() => { setShowForm(!showForm); if(!showForm) resetForm(); }} className="inline-flex items-center gap-2 px-5 py-2 bg-primary text-white rounded-lg shadow-sm">
@@ -345,6 +358,20 @@ const DemandeurDemandes = () => {
                 disabled 
                 className="w-full rounded-xl border-gray-100 bg-gray-50 py-3 px-4 text-sm font-bold text-gray-500 uppercase tracking-tight shadow-inner" 
               />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-black text-gray-700 uppercase tracking-wider flex items-center gap-2">
+                <Clock className="h-4 w-4 text-primary" /> Niveau de Priorité
+              </label>
+              <select 
+                value={form.priorite} 
+                onChange={(e) => setForm({...form, priorite: e.target.value})}
+                className="w-full rounded-xl border-gray-200 bg-surface py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 transition-all shadow-sm"
+              >
+                <option value="Normale">Normale</option>
+                <option value="Urgente">Urgente</option>
+                <option value="Critique">Critique</option>
+              </select>
             </div>
           </div>
 

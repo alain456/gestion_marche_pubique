@@ -491,6 +491,13 @@ const RafDashboard = () => {
                                   <span className="font-bold text-sm text-gray-800">{d.nomService || 'RAF'}</span>
                                   <span className="text-xs text-gray-400">{new Date(d.dateDemande).toLocaleDateString('fr-FR')}</span>
                                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                                    d.priorite === 'Critique' ? 'bg-red-100 text-red-700' :
+                                    d.priorite === 'Urgente' ? 'bg-amber-100 text-amber-700' :
+                                    'bg-gray-100 text-gray-600'
+                                  }`}>
+                                    {d.priorite || 'Normale'}
+                                  </span>
+                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
                                     d.statut === 'Valide' ? 'bg-green-100 text-green-700' :
                                     d.statut === 'Rejete' ? 'bg-red-100 text-red-700' :
                                     d.statut === 'En attente' ? 'bg-amber-100 text-amber-700' :
@@ -745,6 +752,18 @@ const RafDashboard = () => {
                       <p className="text-xs font-bold text-indigo-900">{Number(budgetStatus.montantConsomme).toLocaleString()} FBU</p>
                     </div>
                   </div>
+                  
+                  {/* Barre de progression visuelle */}
+                  <div className="mt-2 h-2 w-full bg-indigo-200/50 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full transition-all duration-1000 ${
+                        (budgetStatus.montantConsomme / budgetStatus.montantAlloue) > 0.9 ? 'bg-red-500' : 
+                        (budgetStatus.montantConsomme / budgetStatus.montantAlloue) > 0.7 ? 'bg-amber-500' : 'bg-emerald-500'
+                      }`}
+                      style={{ width: `${Math.min((budgetStatus.montantConsomme / budgetStatus.montantAlloue) * 100, 100)}%` }}
+                    ></div>
+                  </div>
+
                   <div className="pt-2 border-t border-indigo-100 flex justify-between items-end">
                     <div>
                       <p className="text-[9px] text-indigo-600 font-black uppercase">Solde Restant</p>

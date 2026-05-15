@@ -16,11 +16,14 @@ import {
   Calendar,
   Filter,
   Search,
-  ListFilter
+  ListFilter,
+  PlusCircle
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 
 const ChefDashboard = () => {
+  const navigate = useNavigate();
   const [marches, setMarches] = useState([]);
   const [demandes, setDemandes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -186,6 +189,12 @@ const ChefDashboard = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <button 
+            onClick={() => navigate('/demandeur/demandes')}
+            className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100"
+          >
+            <PlusCircle className="h-5 w-5" /> Nouvelle Demande
+          </button>
           <button onClick={fetchData} className="p-3 bg-surface border border-gray-100 rounded-2xl text-gray-500 hover:text-primary transition-all shadow-sm">
             <History className="h-5 w-5" />
           </button>

@@ -40,6 +40,7 @@ exports.createDemande = async (req, res) => {
             idService,
             idUser: req.user.idUser,
             typeMarche: typeMarcheFinal,
+            priorite: req.body.priorite || 'Normale',
             statut: statutFinal,
             articles, // [{ idArticle, quantite, description }, ...]
             idBudget
@@ -176,12 +177,17 @@ exports.getAllDemandes = async (req, res) => {
         const mesDemandes = req.query.mesdemandes === 'true';
         let rows;
 
-        // Si c'est un ADMIN, RAF ou CGMP, il voit tout (sauf si mesdemandes=true)
         const userRole = role ? role.toUpperCase() : '';
-        if ((userRole === 'ADMIN' || userRole === 'RAF' || userRole === 'CGMP' || userRole === 'CHEF_INSTITUTION') && !mesDemandes) {
+        // Si mesDemandes=true est spécifié, on ne voit QUE ses propres créations (idUser)
+        if (mesDemandes) {
+            rows = await Demande.findByUser(req.user.idUser);
+        } 
+        // Sinon, si c'est un ADMIN, RAF ou CGMP, il voit tout
+        else if (userRole === 'ADMIN' || userRole === 'RAF' || userRole === 'CGMP' || userRole === 'CHEF_INSTITUTION') {
             rows = await Demande.findAll();
-        } else {
-            // Sinon (DEMANDEUR, CHEF_SERVICE, ou mesdemandes=true), il ne voit que son service
+        } 
+        // Sinon (DEMANDEUR, CHEF_SERVICE), il ne voit que son service
+        else {
             rows = await Demande.findByService(idService);
         }
         

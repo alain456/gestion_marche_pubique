@@ -37,7 +37,7 @@ const RootRedirect = () => {
     case 'DEMANDEUR':
       return <Navigate to="/demandeur" replace />;
     case 'CHEF_SERVICE':
-      return <Navigate to="/demandeur" replace />;
+      return <Navigate to="/chef" replace />;
     case 'CHEF_INSTITUTION':
       return <Navigate to="/chef" replace />;
     case 'RAF':

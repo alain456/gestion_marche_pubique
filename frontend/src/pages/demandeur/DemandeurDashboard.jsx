@@ -67,10 +67,17 @@ const DemandeurDashboard = () => {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-800 border-b pb-2">
-            Tableau de Bord — {user?.nomService || 'Service Demandeur'}
+            {isChef
+              ? `Espace Personnel — ${user?.nom || 'Chef'}`
+              : `Tableau de Bord — ${user?.nomService || 'Service Demandeur'}`
+            }
           </h1>
           <p className="text-gray-600 mt-2">
-            Bienvenue, <span className="font-medium">{user?.nom || 'Utilisateur'}</span>. Gérez vos demandes d&apos;achat ici.
+            Bienvenue, <span className="font-medium">{user?.nom || 'Utilisateur'}</span>.
+            {isChef
+              ? ' Gérez ici vos propres demandes d\'achat personnelles.'
+              : ' Gérez vos demandes d\'achat ici.'
+            }
           </p>
         </div>
         <Link
