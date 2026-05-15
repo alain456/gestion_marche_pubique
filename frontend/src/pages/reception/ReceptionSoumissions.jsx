@@ -266,7 +266,10 @@ const ReceptionSoumissions = () => {
                 required
                 className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none transition-all font-bold text-gray-800 appearance-none"
                 value={form.idMarche}
-                onChange={(e) => setForm({...form, idMarche: e.target.value})}
+                onChange={(e) => {
+                  const selectedId = e.target.value;
+                  setForm({...form, idMarche: selectedId, referenceAppelOffre: selectedId});
+                }}
               >
                 <option value="">Sélectionnez le marché...</option>
                 {marches.map(m => (
