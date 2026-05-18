@@ -7,7 +7,8 @@ import {
   CreditCard,
   CheckSquare,
   Building2,
-  Gavel
+  Gavel,
+  ClipboardList
 } from 'lucide-react';
 import PropTypes from 'prop-types';
 
@@ -46,6 +47,7 @@ const Sidebar = ({ user }) => {
           { name: 'Dashboard', path: '/cgmp', icon: Home },
           { name: 'Mes Commandes d\'Achat', path: '/cgmp/budgets', icon: CreditCard },
           { name: 'Marchés', path: '/cgmp/marches', icon: FileText },
+          { name: 'Soumissionnaires', path: '/cgmp/soumissionnaires', icon: ClipboardList },
         ];
       case 'RECEPTIONISTE':
       case 'RECEPTIONNISTE':
