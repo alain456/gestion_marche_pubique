@@ -678,7 +678,7 @@ const CgmpMarches = () => {
           <div className="bg-surface rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden animate-in zoom-in-95 duration-300">
             <div className="p-6 bg-gray-900 text-white flex justify-between items-center">
               <div>
-                <h2 className="text-xl font-bold">Gestion du Marché #{selectedMarche?.idMarche}</h2>
+                <h2 className="text-xl font-bold">Gestion du Marché #{selectedMarche?.idMarche}.......</h2>
                 <p className="text-gray-400 text-sm">
                   Demande #{selectedMarche?.idDemande} — {selectedMarche?.nomService || selectedMarche?.roleDemandeur || 'Direction Générale'}
                   {selectedMarche?.nomDemandeur && ` (${selectedMarche.nomDemandeur})`}
