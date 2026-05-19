@@ -5,10 +5,12 @@ async function resetPasswords() {
     try {
         const users = [
             { email: 'admin@setic.local', password: '12345678' },
+            { email: 'alaineucridegushakakwimana@gmail.com', password: '12345678' },
             { email: 'abby@gmail.com', password: '12345678' },
             { email: 'noe@gmail.com', password: '12345678' },
             { email: 'a@gmail.com', password: '12345678' },
-            { email: 'l@gmail.com', password: '12345678' }
+            { email: 'l@gmail.com', password: '12345678' },
+            { email: 'k@gmail.com', password: '12345678' }
         ];
 
         for (const user of users) {
