@@ -1,42 +1,16 @@
--- phpMyAdmin SQL Dump
--- version 5.2.1
--- https://www.phpmyadmin.net/
---
--- Hôte : localhost
--- Généré le : mar. 12 mai 2026 à 10:05
--- Version du serveur : 10.4.32-MariaDB
--- Version de PHP : 8.2.12
+-- SETIC Database Dump
+SET FOREIGN_KEY_CHECKS=0;
 
-SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
-START TRANSACTION;
-SET time_zone = "+00:00";
-
-
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8mb4 */;
-
---
--- Base de données : `gestion_marche_publique`
---
-
--- --------------------------------------------------------
-
---
--- Structure de la table `article`
---
-
+-- Table structure for table `article`
+DROP TABLE IF EXISTS `article`;
 CREATE TABLE `article` (
-  `idArticle` int(11) NOT NULL,
+  `idArticle` int(11) NOT NULL AUTO_INCREMENT,
   `nomArticle` varchar(100) DEFAULT NULL,
-  `typeArticle` enum('fourniture','travaux','service') NOT NULL DEFAULT 'fourniture'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `typeArticle` enum('fourniture','travaux','service') NOT NULL DEFAULT 'fourniture',
+  PRIMARY KEY (`idArticle`)
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Déchargement des données de la table `article`
---
-
+-- Dumping data for table `article`
 INSERT INTO `article` (`idArticle`, `nomArticle`, `typeArticle`) VALUES
 (1, 'ordinateur', 'fourniture'),
 (2, 'papier', 'fourniture'),
@@ -47,14 +21,10 @@ INSERT INTO `article` (`idArticle`, `nomArticle`, `typeArticle`) VALUES
 (7, 'table', 'travaux'),
 (8, 'cartouche', 'service');
 
--- --------------------------------------------------------
-
---
--- Structure de la table `budget`
---
-
+-- Table structure for table `budget`
+DROP TABLE IF EXISTS `budget`;
 CREATE TABLE `budget` (
-  `idBudget` int(11) NOT NULL,
+  `idBudget` int(11) NOT NULL AUTO_INCREMENT,
   `numeroBudget` varchar(50) DEFAULT NULL,
   `typeBudget` enum('fourniture','travaux','service') DEFAULT NULL,
   `exerciceBudgetaire` int(11) DEFAULT NULL,
@@ -62,35 +32,26 @@ CREATE TABLE `budget` (
   `sourceFinancier` varchar(100) DEFAULT NULL,
   `statusValidation` varchar(50) DEFAULT NULL,
   `dateValidation` date DEFAULT NULL,
-  `responsableFinancier` varchar(100) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `responsableFinancier` varchar(100) DEFAULT NULL,
+  PRIMARY KEY (`idBudget`)
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Déchargement des données de la table `budget`
---
-
+-- Dumping data for table `budget`
 INSERT INTO `budget` (`idBudget`, `numeroBudget`, `typeBudget`, `exerciceBudgetaire`, `montantEstime`, `sourceFinancier`, `statusValidation`, `dateValidation`, `responsableFinancier`) VALUES
-(1, NULL, NULL, 2026, 0, NULL, 'Rejete', '2026-04-30', 'alain'),
-(2, NULL, NULL, 2027, 3000000, 'Etat', 'Valide', '2026-04-30', 'alain'),
-(3, NULL, NULL, 2026, 1234567890, 'Propre', 'Valide', '2026-04-30', 'alain'),
-(4, NULL, NULL, 2026, 666666, NULL, 'Rejete', '2026-04-30', 'alain'),
-(5, NULL, NULL, 2026, 0, NULL, 'Rejete', '2026-04-30', 'alain'),
-(6, NULL, NULL, 2026, 488000, 'Propre', 'Valide', '2026-05-05', 'alain'),
-(7, NULL, NULL, 2026, 1000, 'Propre', 'Valide', '2026-05-06', 'alain'),
-(8, NULL, NULL, 2026, 200000, 'Etat', 'Valide', '2026-05-07', 'alain'),
-(9, 'servicc', 'fourniture', 2026, 0, 'Etat', 'Ouvert', NULL, NULL),
+(5, NULL, NULL, 2026, 0, NULL, 'Rejete', '2026-04-29 22:00:00', 'alain'),
+(6, NULL, NULL, 2026, 488000, 'Propre', 'Valide', '2026-05-04 22:00:00', 'alain'),
+(7, NULL, NULL, 2026, 1000, 'Propre', 'Valide', '2026-05-05 22:00:00', 'alain'),
+(8, NULL, NULL, 2026, 200000, 'Etat', 'Valide', '2026-05-06 22:00:00', 'alain'),
 (10, 'ibikoresho', 'travaux', 2026, 0, 'Etat', 'Ouvert', NULL, NULL),
 (11, 'm/ser/2026', 'service', 2026, 0, 'Etat', 'Ouvert', NULL, NULL),
-(12, 'mais/2026/f002', 'fourniture', 2026, 0, 'Etat', 'Ouvert', NULL, NULL);
+(12, 'mais/2026/f002', 'fourniture', 2026, 0, 'Etat', 'Ouvert', NULL, NULL),
+(13, 'BUDGET-2026-T002', 'travaux', 2026, 0, 'Etat', 'Ouvert', NULL, NULL),
+(14, 'BUDGET-2026-F001', 'fourniture', 2026, 0, 'Etat', 'Ferme', NULL, NULL);
 
--- --------------------------------------------------------
-
---
--- Structure de la table `contrat`
---
-
+-- Table structure for table `contrat`
+DROP TABLE IF EXISTS `contrat`;
 CREATE TABLE `contrat` (
-  `idContrat` int(11) NOT NULL,
+  `idContrat` int(11) NOT NULL AUTO_INCREMENT,
   `idMarche` int(11) DEFAULT NULL,
   `titulaireMarche` varchar(100) DEFAULT NULL,
   `montant` int(11) DEFAULT NULL,
@@ -98,126 +59,194 @@ CREATE TABLE `contrat` (
   `dateFin` date DEFAULT NULL,
   `dureeContrat` varchar(50) DEFAULT NULL,
   `conditionsContractuelles` varchar(100) DEFAULT NULL,
-  `statut` varchar(50) DEFAULT NULL
+  `statut` varchar(50) DEFAULT NULL,
+  PRIMARY KEY (`idContrat`),
+  UNIQUE KEY `idMarche` (`idMarche`),
+  CONSTRAINT `contrat_ibfk_1` FOREIGN KEY (`idMarche`) REFERENCES `marche` (`idMarche`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- --------------------------------------------------------
-
---
--- Structure de la table `demande`
---
-
+-- Table structure for table `demande`
+DROP TABLE IF EXISTS `demande`;
 CREATE TABLE `demande` (
-  `idDemande` int(11) NOT NULL,
+  `idDemande` int(11) NOT NULL AUTO_INCREMENT,
   `idService` int(11) DEFAULT NULL,
   `idUser` int(11) DEFAULT NULL,
   `idBudget` int(11) DEFAULT NULL,
   `typeMarche` varchar(50) DEFAULT NULL,
+  `priorite` varchar(20) DEFAULT 'Normale',
   `dateDemande` timestamp NOT NULL DEFAULT current_timestamp(),
   `statut` varchar(50) DEFAULT NULL,
   `motif` varchar(255) DEFAULT NULL,
   `dateValidation` datetime DEFAULT NULL,
   `responsableFinancier` varchar(255) DEFAULT NULL,
-  `montantEstime` decimal(15,2) DEFAULT 0.00
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `montantEstime` decimal(15,2) DEFAULT 0.00,
+  `modifieParCgmp` tinyint(1) DEFAULT 0,
+  `renvoyee` tinyint(1) DEFAULT 0,
+  `alerteVue` tinyint(1) DEFAULT 0,
+  `alerteRaf` tinyint(1) DEFAULT 1,
+  `alerteChef` tinyint(1) DEFAULT 1,
+  PRIMARY KEY (`idDemande`),
+  KEY `idService` (`idService`),
+  KEY `fk_demande_user` (`idUser`),
+  KEY `fk_demande_budget` (`idBudget`),
+  CONSTRAINT `demande_ibfk_1` FOREIGN KEY (`idService`) REFERENCES `servicedemandeur` (`idService`),
+  CONSTRAINT `fk_demande_budget` FOREIGN KEY (`idBudget`) REFERENCES `budget` (`idBudget`),
+  CONSTRAINT `fk_demande_user` FOREIGN KEY (`idUser`) REFERENCES `utilisateur` (`idUser`)
+) ENGINE=InnoDB AUTO_INCREMENT=36 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Déchargement des données de la table `demande`
---
+-- Dumping data for table `demande`
+INSERT INTO `demande` (`idDemande`, `idService`, `idUser`, `idBudget`, `typeMarche`, `priorite`, `dateDemande`, `statut`, `motif`, `dateValidation`, `responsableFinancier`, `montantEstime`, `modifieParCgmp`, `renvoyee`, `alerteVue`, `alerteRaf`, `alerteChef`) VALUES
+(15, 1, NULL, 14, 'fourniture', 'Normale', '2026-04-30 08:59:43', 'Inclus dans Marché', 'Inclus dans le Marché Public #4', NULL, NULL, '0.00', 0, 0, 0, 1, 1),
+(16, 1, NULL, 14, 'fourniture', 'Normale', '2026-04-30 09:30:53', 'Inclus dans Marché', 'Inclus dans le Marché Public #4', NULL, NULL, '0.00', 0, 0, 0, 1, 1),
+(17, NULL, NULL, 14, 'fourniture', 'Normale', '2026-04-30 11:09:58', 'Rejete', NULL, NULL, NULL, '0.00', 0, 0, 0, 1, 1),
+(18, NULL, NULL, 14, 'fourniture', 'Normale', '2026-04-30 11:11:12', 'Inclus dans Marché', 'Inclus dans le Marché Public #4', NULL, NULL, '0.00', 0, 0, 0, 1, 1),
+(19, NULL, NULL, 14, 'fourniture', 'Normale', '2026-04-30 11:14:59', 'En attente', NULL, NULL, NULL, '0.00', 0, 0, 0, 1, 1),
+(20, 1, NULL, 14, 'fourniture', 'Normale', '2026-04-30 12:02:23', 'Inclus dans Marché', 'Inclus dans le Marché Public #4', NULL, NULL, '0.00', 0, 0, 0, 1, 1),
+(21, 2, NULL, 14, 'fourniture', 'Normale', '2026-04-30 12:07:20', 'Rejete', 'twavyanse.', NULL, NULL, '0.00', 0, 0, 0, 1, 1),
+(22, NULL, 8, 14, 'fourniture', 'Normale', '2026-05-06 10:29:32', 'Inclus dans Marché', 'Inclus dans le Marché Public #4', NULL, NULL, '0.00', 0, 0, 0, 1, 1),
+(23, 1, 6, 14, 'fourniture', 'Normale', '2026-05-07 08:44:35', 'Inclus dans Marché', 'Inclus dans le Marché Public #4', NULL, NULL, '0.00', 0, 0, 0, 1, 1),
+(24, 1, 6, 14, 'fourniture', 'Normale', '2026-05-07 09:34:37', 'Rejete', NULL, NULL, NULL, '0.00', 0, 0, 0, 1, 1),
+(25, 1, 6, 14, 'fourniture', 'Normale', '2026-05-07 13:30:23', 'Inclus dans Marché', 'Inclus dans le Marché Public #4', NULL, NULL, '15998.00', 0, 0, 0, 1, 1),
+(26, 1, 6, 14, 'fourniture', 'Normale', '2026-05-07 13:58:50', 'En attente', NULL, NULL, NULL, '0.00', 0, 0, 0, 1, 1),
+(27, 1, 6, 14, 'fourniture', 'Normale', '2026-05-07 14:07:38', 'Inclus dans Marché', 'Inclus dans le Marché Public #4', NULL, NULL, '403994.00', 0, 0, 0, 1, 1),
+(28, 1, 6, 14, 'fourniture', 'Normale', '2026-05-07 14:16:15', 'Inclus dans Marché', 'Inclus dans le Marché Public #4', '2026-05-12 14:11:20', 'alain', '350000.00', 1, 0, 0, 0, 1),
+(29, 1, 6, 10, 'travaux', 'Normale', '2026-05-08 11:31:59', 'Valide', 'vyakunze.....!', '2026-05-13 10:48:54', 'alain', '135000.00', 1, 1, 1, 1, 1),
+(30, 1, 6, 11, 'service', 'Normale', '2026-05-11 07:44:33', 'Valide', 'n sawa', '2026-05-13 13:42:23', 'alain', '90.00', 0, 0, 0, 1, 1),
+(31, 1, 6, 12, 'fourniture', 'Normale', '2026-05-12 07:05:31', 'En attente', NULL, NULL, NULL, '0.00', 0, 0, 0, 1, 1),
+(32, 1, 6, 14, 'fourniture', 'Normale', '2026-05-12 12:49:16', 'Inclus dans Marché', 'Inclus dans le Marché Public #3', '2026-05-13 11:11:14', 'alain', '29000.00', 0, 1, 0, 1, 1),
+(33, 1, 6, 13, 'travaux', 'Normale', '2026-05-12 13:52:53', 'Valide', 'c\'est bon vous avez bien fait..', '2026-05-12 14:25:31', 'alain', '30000.00', 1, 0, 1, 1, 1),
+(34, 1, 6, 10, 'travaux', 'Normale', '2026-05-12 14:35:55', 'Valide', 'twagabanije gatoyaaaaaa', '2026-05-12 14:37:11', 'alain', '3000000.00', 1, 0, 1, 1, 1),
+(35, 1, 6, 13, 'travaux', 'Normale', '2026-05-13 11:23:19', 'Valide', 'sorry twakuyeko 10k', '2026-05-13 11:24:24', 'alain', '160000.00', 1, 0, 0, 0, 1);
 
-INSERT INTO `demande` (`idDemande`, `idService`, `idUser`, `idBudget`, `typeMarche`, `dateDemande`, `statut`, `motif`, `dateValidation`, `responsableFinancier`, `montantEstime`) VALUES
-(1, 1, NULL, NULL, 'fourniture', '2026-04-29 13:07:40', 'En attente', NULL, NULL, NULL, 0.00),
-(10, 1, NULL, NULL, 'fourniture', '2026-04-29 13:17:15', 'En attente', NULL, NULL, NULL, 0.00),
-(13, 1, NULL, NULL, 'fourniture', '2026-04-30 07:45:39', 'Rejete', NULL, NULL, NULL, 0.00),
-(14, 1, NULL, NULL, 'fourniture', '2026-04-30 07:48:27', 'Rejete', NULL, NULL, NULL, 0.00),
-(15, 1, NULL, NULL, 'fourniture', '2026-04-30 08:59:43', 'Valide', NULL, NULL, NULL, 0.00),
-(16, 1, NULL, NULL, 'fourniture', '2026-04-30 09:30:53', 'Valide', NULL, NULL, NULL, 0.00),
-(17, NULL, NULL, NULL, 'fourniture', '2026-04-30 11:09:58', 'Rejete', NULL, NULL, NULL, 0.00),
-(18, NULL, NULL, NULL, 'fourniture', '2026-04-30 11:11:12', 'Valide', NULL, NULL, NULL, 0.00),
-(19, NULL, NULL, NULL, 'fourniture', '2026-04-30 11:14:59', 'En attente', NULL, NULL, NULL, 0.00),
-(20, 1, NULL, NULL, 'fourniture', '2026-04-30 12:02:23', 'Valide', 'twavyemeye', NULL, NULL, 0.00),
-(21, 2, NULL, NULL, 'fourniture', '2026-04-30 12:07:20', 'Rejete', 'twavyanse.', NULL, NULL, 0.00),
-(22, NULL, 8, NULL, 'fourniture', '2026-05-06 10:29:32', 'Valide', NULL, NULL, NULL, 0.00),
-(23, 1, 6, NULL, 'fourniture', '2026-05-07 08:44:35', 'Valide', NULL, NULL, NULL, 0.00),
-(24, 1, 6, NULL, 'fourniture', '2026-05-07 09:34:37', 'Rejete', NULL, NULL, NULL, 0.00),
-(25, 1, 6, 9, 'fourniture', '2026-05-07 13:30:23', 'Valide', 'Validé budgétairement', NULL, NULL, 15998.00),
-(26, 1, 6, 9, 'fourniture', '2026-05-07 13:58:50', 'En attente', NULL, NULL, NULL, 0.00),
-(27, 1, 6, 9, 'fourniture', '2026-05-07 14:07:38', 'Valide', 'vu', NULL, NULL, 403994.00),
-(28, 1, 6, 9, 'fourniture', '2026-05-07 14:16:15', 'En attente', NULL, NULL, NULL, 0.00),
-(29, 1, 6, 10, 'travaux', '2026-05-08 11:31:59', 'Valide', 'ivyo mwasavye vyemewe reo mushobora kurindira.', NULL, NULL, 2750000.00),
-(30, 1, 6, 11, 'service', '2026-05-11 07:44:33', 'Brouillon', NULL, NULL, NULL, 0.00),
-(31, 1, 6, 12, 'fourniture', '2026-05-12 07:05:31', 'En attente', NULL, NULL, NULL, 0.00);
-
--- --------------------------------------------------------
-
---
--- Structure de la table `execution`
---
-
+-- Table structure for table `execution`
+DROP TABLE IF EXISTS `execution`;
 CREATE TABLE `execution` (
-  `idExecution` int(11) NOT NULL,
+  `idExecution` int(11) NOT NULL AUTO_INCREMENT,
   `idMarche` int(11) DEFAULT NULL,
   `livreur` varchar(100) DEFAULT NULL,
-  `dateExecution` date DEFAULT NULL
+  `dateExecution` date DEFAULT NULL,
+  PRIMARY KEY (`idExecution`),
+  KEY `idMarche` (`idMarche`),
+  CONSTRAINT `execution_ibfk_1` FOREIGN KEY (`idMarche`) REFERENCES `marche` (`idMarche`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- --------------------------------------------------------
+-- Table structure for table `historique_demande`
+DROP TABLE IF EXISTS `historique_demande`;
+CREATE TABLE `historique_demande` (
+  `idHistorique` int(11) NOT NULL AUTO_INCREMENT,
+  `idDemande` int(11) NOT NULL,
+  `action` varchar(255) NOT NULL,
+  `statutPrecedent` varchar(50) DEFAULT NULL,
+  `nouveauStatut` varchar(50) DEFAULT NULL,
+  `idUtilisateur` int(11) DEFAULT NULL,
+  `nomUtilisateur` varchar(255) DEFAULT NULL,
+  `roleUtilisateur` varchar(50) DEFAULT NULL,
+  `motif` text DEFAULT NULL,
+  `dateAction` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`idHistorique`),
+  KEY `idDemande` (`idDemande`),
+  CONSTRAINT `historique_demande_ibfk_1` FOREIGN KEY (`idDemande`) REFERENCES `demande` (`idDemande`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=45 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Structure de la table `ligne_demande`
---
+-- Dumping data for table `historique_demande`
+INSERT INTO `historique_demande` (`idHistorique`, `idDemande`, `action`, `statutPrecedent`, `nouveauStatut`, `idUtilisateur`, `nomUtilisateur`, `roleUtilisateur`, `motif`, `dateAction`) VALUES
+(1, 35, 'Soumission de la demande', NULL, 'En attente', 6, 'abby', 'CHEF_SERVICE', NULL, '2026-05-13 11:23:19'),
+(2, 35, 'Validation Budgétaire (RAF)', NULL, 'Valide', 8, 'alain', 'RAF', 'nayagabanije', '2026-05-13 11:24:24'),
+(3, 30, 'Validation Budgétaire (RAF)', NULL, 'Valide', 8, 'alain', 'RAF', 'n sawa', '2026-05-13 13:42:23'),
+(4, 33, 'Ajustement technique par la CGMP', NULL, NULL, 7, 'noe', 'CGMP', 'c\'est bon vous avez bien fait..', '2026-05-13 13:52:12'),
+(5, 35, 'Ajustement technique par la CGMP', NULL, NULL, 7, 'noe', 'CGMP', 'twadugije prix unitaire', '2026-05-14 14:35:55'),
+(6, 35, 'Ajustement technique par la CGMP', NULL, NULL, 7, 'noe', 'CGMP', 'sorry twakuyeko 10k', '2026-05-14 14:45:31'),
+(7, 28, 'Ajustement technique par la CGMP', NULL, NULL, 7, 'noe', 'CGMP', 'oya mwara mwakabije.', '2026-05-14 16:02:48'),
+(8, 28, 'Création du Marché Public', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Inclus dans le marché #4 (Mode: AO)', '2026-05-15 08:46:44'),
+(9, 27, 'Création du Marché Public', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Inclus dans le marché #4 (Mode: AO)', '2026-05-15 08:46:44'),
+(10, 25, 'Création du Marché Public', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Inclus dans le marché #4 (Mode: AO)', '2026-05-15 08:46:44'),
+(11, 23, 'Création du Marché Public', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Inclus dans le marché #4 (Mode: AO)', '2026-05-15 08:46:44'),
+(12, 22, 'Création du Marché Public', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Inclus dans le marché #4 (Mode: AO)', '2026-05-15 08:46:44'),
+(13, 20, 'Création du Marché Public', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Inclus dans le marché #4 (Mode: AO)', '2026-05-15 08:46:44'),
+(14, 18, 'Création du Marché Public', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Inclus dans le marché #4 (Mode: AO)', '2026-05-15 08:46:44'),
+(15, 16, 'Création du Marché Public', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Inclus dans le marché #4 (Mode: AO)', '2026-05-15 08:46:44'),
+(16, 15, 'Création du Marché Public', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Inclus dans le marché #4 (Mode: AO)', '2026-05-15 08:46:44'),
+(17, 28, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #4 est passé au statut : ATTRIBUTION', '2026-05-15 10:49:34'),
+(18, 27, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #4 est passé au statut : ATTRIBUTION', '2026-05-15 10:49:34'),
+(19, 25, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #4 est passé au statut : ATTRIBUTION', '2026-05-15 10:49:34'),
+(20, 23, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #4 est passé au statut : ATTRIBUTION', '2026-05-15 10:49:34'),
+(21, 22, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #4 est passé au statut : ATTRIBUTION', '2026-05-15 10:49:34'),
+(22, 20, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #4 est passé au statut : ATTRIBUTION', '2026-05-15 10:49:34'),
+(23, 18, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #4 est passé au statut : ATTRIBUTION', '2026-05-15 10:49:34'),
+(24, 16, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #4 est passé au statut : ATTRIBUTION', '2026-05-15 10:49:34'),
+(25, 15, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #4 est passé au statut : ATTRIBUTION', '2026-05-15 10:49:34'),
+(26, 28, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #4 est passé au statut : PUBLIE', '2026-05-15 10:49:58'),
+(27, 27, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #4 est passé au statut : PUBLIE', '2026-05-15 10:49:58'),
+(28, 25, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #4 est passé au statut : PUBLIE', '2026-05-15 10:49:58'),
+(29, 23, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #4 est passé au statut : PUBLIE', '2026-05-15 10:49:58'),
+(30, 22, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #4 est passé au statut : PUBLIE', '2026-05-15 10:49:58'),
+(31, 20, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #4 est passé au statut : PUBLIE', '2026-05-15 10:49:58'),
+(32, 18, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #4 est passé au statut : PUBLIE', '2026-05-15 10:49:58'),
+(33, 16, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #4 est passé au statut : PUBLIE', '2026-05-15 10:49:58'),
+(34, 15, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #4 est passé au statut : PUBLIE', '2026-05-15 10:49:58'),
+(35, 32, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #3 est passé au statut : PUBLIE', '2026-05-19 13:42:02'),
+(36, 28, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #3 est passé au statut : PUBLIE', '2026-05-19 13:42:02'),
+(37, 27, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #3 est passé au statut : PUBLIE', '2026-05-19 13:42:02'),
+(38, 25, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #3 est passé au statut : PUBLIE', '2026-05-19 13:42:02'),
+(39, 23, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #3 est passé au statut : PUBLIE', '2026-05-19 13:42:02'),
+(40, 22, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #3 est passé au statut : PUBLIE', '2026-05-19 13:42:02'),
+(41, 20, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #3 est passé au statut : PUBLIE', '2026-05-19 13:42:02'),
+(42, 18, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #3 est passé au statut : PUBLIE', '2026-05-19 13:42:02'),
+(43, 16, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #3 est passé au statut : PUBLIE', '2026-05-19 13:42:02'),
+(44, 15, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #3 est passé au statut : PUBLIE', '2026-05-19 13:42:02');
 
+-- Table structure for table `ligne_demande`
+DROP TABLE IF EXISTS `ligne_demande`;
 CREATE TABLE `ligne_demande` (
-  `idLigne` int(11) NOT NULL,
+  `idLigne` int(11) NOT NULL AUTO_INCREMENT,
   `idDemande` int(11) NOT NULL,
   `idArticle` int(11) NOT NULL,
   `quantite` int(11) NOT NULL,
   `prixUnitaire` decimal(15,2) DEFAULT 0.00,
-  `description` text DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `description` text DEFAULT NULL,
+  `montant` decimal(15,2) DEFAULT NULL,
+  `statut` varchar(50) DEFAULT 'Valide',
+  `motif` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`idLigne`),
+  KEY `idDemande` (`idDemande`),
+  KEY `idArticle` (`idArticle`),
+  CONSTRAINT `ligne_demande_ibfk_1` FOREIGN KEY (`idDemande`) REFERENCES `demande` (`idDemande`) ON DELETE CASCADE,
+  CONSTRAINT `ligne_demande_ibfk_2` FOREIGN KEY (`idArticle`) REFERENCES `article` (`idArticle`)
+) ENGINE=InnoDB AUTO_INCREMENT=77 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Déchargement des données de la table `ligne_demande`
---
+-- Dumping data for table `ligne_demande`
+INSERT INTO `ligne_demande` (`idLigne`, `idDemande`, `idArticle`, `quantite`, `prixUnitaire`, `description`, `montant`, `statut`, `motif`) VALUES
+(32, 15, 3, 2, '0.00', 'sdfgghhhhhhhhhhhhhhhhhhhh', NULL, 'Valide', NULL),
+(33, 16, 1, 2, '0.00', 'bbbbbbbbbbbbbbbbbbb', NULL, 'Valide', NULL),
+(34, 17, 1, 6, '0.00', 'fghjkl', NULL, 'Valide', NULL),
+(35, 18, 4, 3, '0.00', 'eeeeeeeeeeeeeeeeeeeeee', NULL, 'Valide', NULL),
+(36, 19, 4, 2, '0.00', 'bbbbbbbbbbbbb', NULL, 'Valide', NULL),
+(41, 20, 1, 1, '0.00', 'fotofoo', NULL, 'Valide', NULL),
+(42, 20, 4, 6, '0.00', 'ffffffffffffffffff', NULL, 'Valide', NULL),
+(43, 21, 1, 8, '0.00', 'hhhhhhh', NULL, 'Valide', NULL),
+(44, 22, 4, 1, '0.00', 'ndayishaka caane', NULL, 'Valide', NULL),
+(45, 23, 5, 5, '0.00', 'DFGHGJYJ', NULL, 'Valide', NULL),
+(46, 23, 3, 1, '0.00', 'EEEEE', NULL, 'Valide', NULL),
+(47, 24, 2, 5, '0.00', 'ffff', NULL, 'Valide', NULL),
+(48, 25, 1, 2, '7999.00', 'wwwwwwwwwww', NULL, 'Valide', NULL),
+(52, 27, 5, 4, '500.00', 'eeeeee', NULL, 'Valide', NULL),
+(53, 27, 1, 6, '66999.00', 'tttttttttttttttt', NULL, 'Valide', NULL),
+(54, 26, 4, 1, '0.00', 'qwertyu', NULL, 'Valide', NULL),
+(59, 31, 4, 7, '0.00', 'vvvvvvvv', NULL, 'Valide', NULL),
+(64, 30, 8, 3, '30.00', 'zzzz', '15000.00', 'Valide', NULL),
+(67, 34, 7, 1, '3000000.00', 'imeza zimez neza zinyerera', '500000.00', 'Valide', 'kubrako nayandi ma service akeneye twazigananije.'),
+(69, 32, 1, 29, '1000.00', 'dushaka ikomeye', '1000.00', 'Valide', NULL),
+(71, 29, 7, 3, '45000.00', 'eeeeee', NULL, 'Valide', NULL),
+(73, 33, 7, 2, '15000.00', 'mama', NULL, 'Valide', NULL),
+(75, 35, 7, 2, '80000.00', 'qqqqqqqqqqqqqqqqqqqqqqqqqqq', NULL, 'Valide', NULL),
+(76, 28, 2, 5, '70000.00', '23456uil;lkjhgfdsasdfg', NULL, 'Valide', NULL);
 
-INSERT INTO `ligne_demande` (`idLigne`, `idDemande`, `idArticle`, `quantite`, `prixUnitaire`, `description`) VALUES
-(1, 1, 1, 1, 0.00, 'ewewe'),
-(8, 1, 1, 1, 0.00, 'ewewe'),
-(27, 10, 2, 4, 0.00, 'tttttt44'),
-(28, 10, 2, 4, 0.00, 'ssssss'),
-(29, 10, 1, 2, 0.00, 'brigtt'),
-(30, 13, 1, 2, 0.00, 'alain'),
-(31, 14, 2, 2, 0.00, 'ndagukunda'),
-(32, 15, 3, 2, 0.00, 'sdfgghhhhhhhhhhhhhhhhhhhh'),
-(33, 16, 1, 2, 0.00, 'bbbbbbbbbbbbbbbbbbb'),
-(34, 17, 1, 6, 0.00, 'fghjkl'),
-(35, 18, 4, 3, 0.00, 'eeeeeeeeeeeeeeeeeeeeee'),
-(36, 19, 4, 2, 0.00, 'bbbbbbbbbbbbb'),
-(41, 20, 1, 1, 0.00, 'fotofoo'),
-(42, 20, 4, 6, 0.00, 'ffffffffffffffffff'),
-(43, 21, 1, 8, 0.00, 'hhhhhhh'),
-(44, 22, 4, 1, 0.00, 'ndayishaka caane'),
-(45, 23, 5, 5, 0.00, 'DFGHGJYJ'),
-(46, 23, 3, 1, 0.00, 'EEEEE'),
-(47, 24, 2, 5, 0.00, 'ffff'),
-(48, 25, 1, 2, 7999.00, 'wwwwwwwwwww'),
-(52, 27, 5, 4, 500.00, 'eeeeee'),
-(53, 27, 1, 6, 66999.00, 'tttttttttttttttt'),
-(54, 26, 4, 1, 0.00, 'qwertyu'),
-(55, 28, 2, 5, 0.00, '23456uil;lkjhgfdsasdfg'),
-(56, 29, 7, 55, 50000.00, 'eeeeee'),
-(58, 30, 6, 1, 0.00, 'zzzz'),
-(59, 31, 4, 7, 0.00, 'vvvvvvvv');
-
--- --------------------------------------------------------
-
---
--- Structure de la table `marche`
---
-
+-- Table structure for table `marche`
+DROP TABLE IF EXISTS `marche`;
 CREATE TABLE `marche` (
-  `idMarche` int(11) NOT NULL,
+  `idMarche` int(11) NOT NULL AUTO_INCREMENT,
   `idDemande` varchar(255) DEFAULT NULL,
+  `numeroBudget` varchar(100) DEFAULT NULL,
   `montantEstime` int(11) DEFAULT NULL,
   `modePassation` varchar(50) DEFAULT NULL,
   `justificationChoix` text DEFAULT NULL,
@@ -227,76 +256,70 @@ CREATE TABLE `marche` (
   `statut` varchar(50) DEFAULT NULL,
   `dateCloture` date DEFAULT NULL,
   `cloturePar` varchar(100) DEFAULT NULL,
-  `commentaire` text DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `commentaire` text DEFAULT NULL,
+  PRIMARY KEY (`idMarche`),
+  KEY `idDemande` (`idDemande`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Déchargement des données de la table `marche`
---
+-- Dumping data for table `marche`
+INSERT INTO `marche` (`idMarche`, `idDemande`, `numeroBudget`, `montantEstime`, `modePassation`, `justificationChoix`, `seuilReglementaireApplique`, `dateSelection`, `validateur`, `statut`, `dateCloture`, `cloturePar`, `commentaire`) VALUES
+(1, '16', NULL, 1234567890, 'AO', NULL, 'Travaux - Admin (> 10M BIF)', '2026-05-03 22:00:00', NULL, 'suspendu', NULL, NULL, NULL),
+(2, '15', NULL, 3000000, 'AO', NULL, 'Travaux - Admin (> 10M BIF)', '2026-04-27 22:00:00', 'alain', 'cloture', '2026-05-01 22:00:00', 'bugaga', 'n sawa'),
+(3, '32,28,27,25,23,22,20,18,16,15', 'BUDGET-2026-F001', 798992, 'AO', NULL, 'Travaux - Admin (> 10M BIF)', '2026-05-13 22:00:00', 'alain', 'publie', NULL, NULL, NULL),
+(4, '28,27,25,23,22,20,18,16,15', 'BUDGET-2026-F001', 769992, 'AO', 'wertyuiop[', 'Travaux - Admin (> 10M BIF)', '2026-05-08 22:00:00', 'alain gushakakwimana', 'publie', NULL, NULL, NULL);
 
-INSERT INTO `marche` (`idMarche`, `idDemande`, `montantEstime`, `modePassation`, `justificationChoix`, `seuilReglementaireApplique`, `dateSelection`, `validateur`, `statut`, `dateCloture`, `cloturePar`, `commentaire`) VALUES
-(1, '16', 1234567890, 'AO', NULL, 'Travaux - Admin (> 10M BIF)', '2026-05-04', NULL, 'suspendu', NULL, NULL, NULL),
-(2, '15', 3000000, 'AO', NULL, 'Travaux - Admin (> 10M BIF)', '2026-04-28', 'alain', 'cloture', '2026-05-02', 'bugaga', 'n sawa');
-
--- --------------------------------------------------------
-
---
--- Structure de la table `notification`
---
-
+-- Table structure for table `notification`
+DROP TABLE IF EXISTS `notification`;
 CREATE TABLE `notification` (
-  `idNotification` int(11) NOT NULL,
+  `idNotification` int(11) NOT NULL AUTO_INCREMENT,
   `idMarche` int(11) DEFAULT NULL,
   `message` varchar(100) DEFAULT NULL,
   `dateEnvoi` date DEFAULT NULL,
-  `modeNotification` varchar(50) DEFAULT NULL
+  `modeNotification` varchar(50) DEFAULT NULL,
+  PRIMARY KEY (`idNotification`),
+  KEY `idMarche` (`idMarche`),
+  CONSTRAINT `notification_ibfk_1` FOREIGN KEY (`idMarche`) REFERENCES `marche` (`idMarche`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- --------------------------------------------------------
-
---
--- Structure de la table `paiement`
---
-
+-- Table structure for table `paiement`
+DROP TABLE IF EXISTS `paiement`;
 CREATE TABLE `paiement` (
-  `idPaiement` int(11) NOT NULL,
+  `idPaiement` int(11) NOT NULL AUTO_INCREMENT,
   `idReception` int(11) DEFAULT NULL,
   `montant` int(11) DEFAULT NULL,
-  `datePaiement` date DEFAULT NULL
+  `datePaiement` date DEFAULT NULL,
+  PRIMARY KEY (`idPaiement`),
+  KEY `idReception` (`idReception`),
+  CONSTRAINT `paiement_ibfk_1` FOREIGN KEY (`idReception`) REFERENCES `reception` (`idReception`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- --------------------------------------------------------
-
---
--- Structure de la table `reception`
---
-
+-- Table structure for table `reception`
+DROP TABLE IF EXISTS `reception`;
 CREATE TABLE `reception` (
-  `idReception` int(11) NOT NULL,
+  `idReception` int(11) NOT NULL AUTO_INCREMENT,
   `idExecution` int(11) DEFAULT NULL,
   `idContrat` int(11) DEFAULT NULL,
   `typeReception` varchar(50) DEFAULT NULL,
   `dateReception` date DEFAULT NULL,
   `conformite` varchar(50) DEFAULT NULL,
   `observation` text DEFAULT NULL,
-  `etat` varchar(50) DEFAULT NULL
+  `etat` varchar(50) DEFAULT NULL,
+  PRIMARY KEY (`idReception`),
+  KEY `idExecution` (`idExecution`),
+  KEY `idContrat` (`idContrat`),
+  CONSTRAINT `reception_ibfk_1` FOREIGN KEY (`idExecution`) REFERENCES `execution` (`idExecution`),
+  CONSTRAINT `reception_ibfk_2` FOREIGN KEY (`idContrat`) REFERENCES `contrat` (`idContrat`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- --------------------------------------------------------
-
---
--- Structure de la table `role`
---
-
+-- Table structure for table `role`
+DROP TABLE IF EXISTS `role`;
 CREATE TABLE `role` (
-  `idRole` int(11) NOT NULL,
-  `nomRole` varchar(50) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `idRole` int(11) NOT NULL AUTO_INCREMENT,
+  `nomRole` varchar(50) DEFAULT NULL,
+  PRIMARY KEY (`idRole`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Déchargement des données de la table `role`
---
-
+-- Dumping data for table `role`
 INSERT INTO `role` (`idRole`, `nomRole`) VALUES
 (1, 'Admin'),
 (2, 'raf'),
@@ -305,34 +328,24 @@ INSERT INTO `role` (`idRole`, `nomRole`) VALUES
 (5, 'cgmp'),
 (6, 'Receptioniste');
 
--- --------------------------------------------------------
-
---
--- Structure de la table `servicedemandeur`
---
-
+-- Table structure for table `servicedemandeur`
+DROP TABLE IF EXISTS `servicedemandeur`;
 CREATE TABLE `servicedemandeur` (
-  `idService` int(11) NOT NULL,
-  `nomService` varchar(100) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `idService` int(11) NOT NULL AUTO_INCREMENT,
+  `nomService` varchar(100) DEFAULT NULL,
+  PRIMARY KEY (`idService`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Déchargement des données de la table `servicedemandeur`
---
-
+-- Dumping data for table `servicedemandeur`
 INSERT INTO `servicedemandeur` (`idService`, `nomService`) VALUES
 (1, 'development'),
 (2, 'reseau'),
 (4, 'Maintenance');
 
--- --------------------------------------------------------
-
---
--- Structure de la table `soumissionnaire`
---
-
+-- Table structure for table `soumissionnaire`
+DROP TABLE IF EXISTS `soumissionnaire`;
 CREATE TABLE `soumissionnaire` (
-  `idOffre` int(11) NOT NULL,
+  `idOffre` int(11) NOT NULL AUTO_INCREMENT,
   `idMarche` int(11) DEFAULT NULL,
   `nomSoumissionnaire` varchar(100) DEFAULT NULL,
   `adresse` varchar(150) DEFAULT NULL,
@@ -340,300 +353,49 @@ CREATE TABLE `soumissionnaire` (
   `email` varchar(100) DEFAULT NULL,
   `referenceAppelOffre` varchar(100) DEFAULT NULL,
   `dateSoumission` date DEFAULT NULL,
-  `montantPropose` bigint(20) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `montantPropose` bigint(20) DEFAULT NULL,
+  `delaiLivraison` varchar(100) DEFAULT NULL,
+  `statut` varchar(50) DEFAULT 'en attente',
+  `motif` text DEFAULT NULL,
+  `demandeModification` tinyint(1) DEFAULT 0,
+  `autorisationModification` tinyint(1) DEFAULT 0,
+  `motifModification` text DEFAULT NULL,
+  PRIMARY KEY (`idOffre`),
+  KEY `idMarche` (`idMarche`),
+  CONSTRAINT `soumissionnaire_ibfk_1` FOREIGN KEY (`idMarche`) REFERENCES `marche` (`idMarche`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Déchargement des données de la table `soumissionnaire`
---
+-- Dumping data for table `soumissionnaire`
+INSERT INTO `soumissionnaire` (`idOffre`, `idMarche`, `nomSoumissionnaire`, `adresse`, `telephone`, `email`, `referenceAppelOffre`, `dateSoumission`, `montantPropose`, `delaiLivraison`, `statut`, `motif`, `demandeModification`, `autorisationModification`, `motifModification`) VALUES
+(3, 2, 'nayaho', 'mubimbi', ' elie', 'ucridegushakakwimana@gmail.com', 's/10/2026', '2026-05-10 22:00:00', 20000, NULL, 'en attente', NULL, 0, 1, 'twihwnz igiciroo'),
+(4, 1, 'mama', 'murwi', '67890345', 'mama@gmail.com', 's/56/067', '2026-05-11 22:00:00', 300000, NULL, 'en attente', NULL, 0, 0, NULL),
+(5, 3, 'Alain GUSHAKAKWIMANA', 'gasenyi', '67920912', 'alaineucridegushakakwimana@gmail.com', 'BUDGET-2026-F001', '2026-05-14 22:00:00', 99999999, NULL, 'en attente', NULL, 0, 0, NULL);
 
-INSERT INTO `soumissionnaire` (`idOffre`, `idMarche`, `nomSoumissionnaire`, `adresse`, `telephone`, `email`, `referenceAppelOffre`, `dateSoumission`, `montantPropose`) VALUES
-(3, 2, 'nayaho', 'mubimbi', ' elie', 'ucridegushakakwimana@gmail.com', 's/10/2026', '2026-05-11', 20000),
-(4, 1, 'mama', 'murwi', '67890345', 'mama@gmail.com', 's/56/067', '2026-05-12', 300000);
-
--- --------------------------------------------------------
-
---
--- Structure de la table `utilisateur`
---
-
+-- Table structure for table `utilisateur`
+DROP TABLE IF EXISTS `utilisateur`;
 CREATE TABLE `utilisateur` (
-  `idUser` int(11) NOT NULL,
+  `idUser` int(11) NOT NULL AUTO_INCREMENT,
   `idRole` int(11) DEFAULT NULL,
   `nom` varchar(100) DEFAULT NULL,
   `email` varchar(100) DEFAULT NULL,
   `password` varchar(255) DEFAULT NULL,
   `est_actif` tinyint(1) DEFAULT 1,
-  `idService` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `idService` int(11) DEFAULT NULL,
+  PRIMARY KEY (`idUser`),
+  KEY `idRole` (`idRole`),
+  KEY `fk_service` (`idService`),
+  CONSTRAINT `fk_service` FOREIGN KEY (`idService`) REFERENCES `servicedemandeur` (`idService`),
+  CONSTRAINT `utilisateur_ibfk_1` FOREIGN KEY (`idRole`) REFERENCES `role` (`idRole`)
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Déchargement des données de la table `utilisateur`
---
-
+-- Dumping data for table `utilisateur`
 INSERT INTO `utilisateur` (`idUser`, `idRole`, `nom`, `email`, `password`, `est_actif`, `idService`) VALUES
 (1, 1, 'Administrateur', 'admin@setic.local', '$2b$10$aN8aCjrpR5tslMvPxoYQSeNF9B2eib/KDSfFwEBj79yWYOUIszKnS', 1, NULL),
 (5, 1, 'Gushaka Alain', 'alaineucridegushakakwimana@gmail.com', '$2b$10$ICg.2BsGKClVRpbYrBlJoOZ7aSEjTCSITrqVCvZ2.BiwiCFa3TamO', 1, NULL),
 (6, 3, 'abby', 'abby@gmail.com', '$2b$10$6JBOQQzmIFI.XcDtmAcKWuP1i1RJNo5pmkMAF7rZxv6G2YTO.FkVy', 1, 1),
 (7, 5, 'noe', 'noe@gmail.com', '$2b$10$qvupbjzch6zb92c0DqpFI.iAYfS5AvK57lXHlgEj2ykero08x4yU2', 1, NULL),
 (8, 2, 'alain', 'a@gmail.com', '$2b$10$cV.2O3gk2SKidAiEOWI1IucG4e8bq.LFyYyEGMvKchQTO0IwtbkbS', 1, NULL),
-(9, 6, 'loraine', 'l@gmail.com', '$2b$10$uPckTIOBgSYbDubkT7s1v.MEso/p5exs5/UjKtcL3n.PKtm6H6X1u', 1, NULL);
+(9, 6, 'loraine', 'l@gmail.com', '$2b$10$uPckTIOBgSYbDubkT7s1v.MEso/p5exs5/UjKtcL3n.PKtm6H6X1u', 1, NULL),
+(10, 4, 'kagaga', 'k@gmail.com', '$2b$10$CScPXhgZon9ik.h2Bi0kduCxm0Dr57Pbc0QidWupxAiovoaCU9fzy', 1, NULL);
 
---
--- Index pour les tables déchargées
---
-
---
--- Index pour la table `article`
---
-ALTER TABLE `article`
-  ADD PRIMARY KEY (`idArticle`);
-
---
--- Index pour la table `budget`
---
-ALTER TABLE `budget`
-  ADD PRIMARY KEY (`idBudget`);
-
---
--- Index pour la table `contrat`
---
-ALTER TABLE `contrat`
-  ADD PRIMARY KEY (`idContrat`),
-  ADD UNIQUE KEY `idMarche` (`idMarche`);
-
---
--- Index pour la table `demande`
---
-ALTER TABLE `demande`
-  ADD PRIMARY KEY (`idDemande`),
-  ADD KEY `idService` (`idService`),
-  ADD KEY `fk_demande_user` (`idUser`),
-  ADD KEY `fk_demande_budget` (`idBudget`);
-
---
--- Index pour la table `execution`
---
-ALTER TABLE `execution`
-  ADD PRIMARY KEY (`idExecution`),
-  ADD KEY `idMarche` (`idMarche`);
-
---
--- Index pour la table `ligne_demande`
---
-ALTER TABLE `ligne_demande`
-  ADD PRIMARY KEY (`idLigne`),
-  ADD KEY `idDemande` (`idDemande`),
-  ADD KEY `idArticle` (`idArticle`);
-
---
--- Index pour la table `marche`
---
-ALTER TABLE `marche`
-  ADD PRIMARY KEY (`idMarche`),
-  ADD KEY `idDemande` (`idDemande`);
-
---
--- Index pour la table `notification`
---
-ALTER TABLE `notification`
-  ADD PRIMARY KEY (`idNotification`),
-  ADD KEY `idMarche` (`idMarche`);
-
---
--- Index pour la table `paiement`
---
-ALTER TABLE `paiement`
-  ADD PRIMARY KEY (`idPaiement`),
-  ADD KEY `idReception` (`idReception`);
-
---
--- Index pour la table `reception`
---
-ALTER TABLE `reception`
-  ADD PRIMARY KEY (`idReception`),
-  ADD KEY `idExecution` (`idExecution`),
-  ADD KEY `idContrat` (`idContrat`);
-
---
--- Index pour la table `role`
---
-ALTER TABLE `role`
-  ADD PRIMARY KEY (`idRole`);
-
---
--- Index pour la table `servicedemandeur`
---
-ALTER TABLE `servicedemandeur`
-  ADD PRIMARY KEY (`idService`);
-
---
--- Index pour la table `soumissionnaire`
---
-ALTER TABLE `soumissionnaire`
-  ADD PRIMARY KEY (`idOffre`),
-  ADD KEY `idMarche` (`idMarche`);
-
---
--- Index pour la table `utilisateur`
---
-ALTER TABLE `utilisateur`
-  ADD PRIMARY KEY (`idUser`),
-  ADD KEY `idRole` (`idRole`),
-  ADD KEY `fk_service` (`idService`);
-
---
--- AUTO_INCREMENT pour les tables déchargées
---
-
---
--- AUTO_INCREMENT pour la table `article`
---
-ALTER TABLE `article`
-  MODIFY `idArticle` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
-
---
--- AUTO_INCREMENT pour la table `budget`
---
-ALTER TABLE `budget`
-  MODIFY `idBudget` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
-
---
--- AUTO_INCREMENT pour la table `contrat`
---
-ALTER TABLE `contrat`
-  MODIFY `idContrat` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT pour la table `demande`
---
-ALTER TABLE `demande`
-  MODIFY `idDemande` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
-
---
--- AUTO_INCREMENT pour la table `execution`
---
-ALTER TABLE `execution`
-  MODIFY `idExecution` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT pour la table `ligne_demande`
---
-ALTER TABLE `ligne_demande`
-  MODIFY `idLigne` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=60;
-
---
--- AUTO_INCREMENT pour la table `marche`
---
-ALTER TABLE `marche`
-  MODIFY `idMarche` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
-
---
--- AUTO_INCREMENT pour la table `notification`
---
-ALTER TABLE `notification`
-  MODIFY `idNotification` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT pour la table `paiement`
---
-ALTER TABLE `paiement`
-  MODIFY `idPaiement` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT pour la table `reception`
---
-ALTER TABLE `reception`
-  MODIFY `idReception` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT pour la table `role`
---
-ALTER TABLE `role`
-  MODIFY `idRole` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
-
---
--- AUTO_INCREMENT pour la table `servicedemandeur`
---
-ALTER TABLE `servicedemandeur`
-  MODIFY `idService` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
-
---
--- AUTO_INCREMENT pour la table `soumissionnaire`
---
-ALTER TABLE `soumissionnaire`
-  MODIFY `idOffre` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
-
---
--- AUTO_INCREMENT pour la table `utilisateur`
---
-ALTER TABLE `utilisateur`
-  MODIFY `idUser` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
-
---
--- Contraintes pour les tables déchargées
---
-
---
--- Contraintes pour la table `contrat`
---
-ALTER TABLE `contrat`
-  ADD CONSTRAINT `contrat_ibfk_1` FOREIGN KEY (`idMarche`) REFERENCES `marche` (`idMarche`);
-
---
--- Contraintes pour la table `demande`
---
-ALTER TABLE `demande`
-  ADD CONSTRAINT `demande_ibfk_1` FOREIGN KEY (`idService`) REFERENCES `servicedemandeur` (`idService`),
-  ADD CONSTRAINT `fk_demande_budget` FOREIGN KEY (`idBudget`) REFERENCES `budget` (`idBudget`),
-  ADD CONSTRAINT `fk_demande_user` FOREIGN KEY (`idUser`) REFERENCES `utilisateur` (`idUser`);
-
---
--- Contraintes pour la table `execution`
---
-ALTER TABLE `execution`
-  ADD CONSTRAINT `execution_ibfk_1` FOREIGN KEY (`idMarche`) REFERENCES `marche` (`idMarche`);
-
---
--- Contraintes pour la table `ligne_demande`
---
-ALTER TABLE `ligne_demande`
-  ADD CONSTRAINT `ligne_demande_ibfk_1` FOREIGN KEY (`idDemande`) REFERENCES `demande` (`idDemande`) ON DELETE CASCADE,
-  ADD CONSTRAINT `ligne_demande_ibfk_2` FOREIGN KEY (`idArticle`) REFERENCES `article` (`idArticle`);
-
---
--- Contraintes pour la table `notification`
---
-ALTER TABLE `notification`
-  ADD CONSTRAINT `notification_ibfk_1` FOREIGN KEY (`idMarche`) REFERENCES `marche` (`idMarche`);
-
---
--- Contraintes pour la table `paiement`
---
-ALTER TABLE `paiement`
-  ADD CONSTRAINT `paiement_ibfk_1` FOREIGN KEY (`idReception`) REFERENCES `reception` (`idReception`);
-
---
--- Contraintes pour la table `reception`
---
-ALTER TABLE `reception`
-  ADD CONSTRAINT `reception_ibfk_1` FOREIGN KEY (`idExecution`) REFERENCES `execution` (`idExecution`),
-  ADD CONSTRAINT `reception_ibfk_2` FOREIGN KEY (`idContrat`) REFERENCES `contrat` (`idContrat`);
-
---
--- Contraintes pour la table `soumissionnaire`
---
-ALTER TABLE `soumissionnaire`
-  ADD CONSTRAINT `soumissionnaire_ibfk_1` FOREIGN KEY (`idMarche`) REFERENCES `marche` (`idMarche`);
-
---
--- Contraintes pour la table `utilisateur`
---
-ALTER TABLE `utilisateur`
-  ADD CONSTRAINT `fk_service` FOREIGN KEY (`idService`) REFERENCES `servicedemandeur` (`idService`),
-  ADD CONSTRAINT `utilisateur_ibfk_1` FOREIGN KEY (`idRole`) REFERENCES `role` (`idRole`);
-COMMIT;
-
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+SET FOREIGN_KEY_CHECKS=1;
