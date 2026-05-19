@@ -138,7 +138,12 @@ const Demande = {
         `;
 
         const [rows] = await db.query(query, [idService, idService]);
-
+        return rows.map(row => ({
+            ...row,
+            articles: row.articles
+                ? JSON.parse(`[${row.articles}]`)
+                : []
+        }));
     },
     
     // Récupérer par utilisateur (Strictement mes demandes)
