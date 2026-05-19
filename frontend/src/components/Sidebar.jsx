@@ -27,7 +27,7 @@ const Sidebar = ({ user }) => {
         ];
       case 'CHEF_SERVICE':
         return [
-          { name: 'Dashboard', path: '/chef', icon: Home },
+          { name: 'Dashboard', path: '/demandeur', icon: Home },
           { name: 'Mes Demandes', path: '/demandeur/demandes', icon: FileText },
         ];
       case 'CHEF_INSTITUTION':

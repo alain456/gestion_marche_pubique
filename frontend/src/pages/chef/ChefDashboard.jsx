@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { 
   Gavel, 
   FileText, 
@@ -20,10 +20,13 @@ import {
   PlusCircle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { AuthContext } from '../../contexts/AuthContext';
 import api from '../../services/api';
 
 const ChefDashboard = () => {
+  const { user } = useContext(AuthContext);
   const navigate = useNavigate();
+  const userRole = user?.role?.toUpperCase().replace(/\s+/g, '_') || '';
   const [marches, setMarches] = useState([]);
   const [demandes, setDemandes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -181,11 +184,13 @@ const ChefDashboard = () => {
             <div className="p-2 bg-primary text-white rounded-2xl shadow-lg shadow-blue-100">
               <Building className="h-7 w-7" />
             </div>
-            Chef d&apos;Institution
+            {userRole === 'CHEF_INSTITUTION' ? "Chef d'Institution" : "Chef de Service"}
           </h1>
           <p className="text-gray-500 mt-2 font-medium flex items-center gap-2">
             <ClipboardCheck className="h-4 w-4 text-emerald-500" />
-            Supervision et validation des marchés publics de l&apos;institution.
+            {userRole === 'CHEF_INSTITUTION' 
+              ? "Supervision et validation des marchés publics de l'institution."
+              : "Suivi et gestion des demandes d'achat de votre service."}
           </p>
         </div>
         <div className="flex items-center gap-3">
