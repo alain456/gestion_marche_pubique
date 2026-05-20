@@ -28,7 +28,7 @@ const RafDashboard = () => {
   const [paiements, setPaiements] = useState([]);
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [budgetStatus, setBudgetStatus] = useState(null);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDemandeIds, setSelectedDemandeIds] = useState([]);
 
@@ -94,15 +94,7 @@ const RafDashboard = () => {
       montantEstime: total || ''
     });
 
-    setBudgetStatus(null);
-    if (demande.idBudget) {
-      try {
-        const res = await api.get(`/budgets/status/${demande.idBudget}`);
-        setBudgetStatus(res.data);
-      } catch (err) {
-        console.error('Erreur budget status:', err);
-      }
-    }
+
     setShowBudgetModal(true);
   };
 
@@ -488,7 +480,7 @@ const RafDashboard = () => {
                               </div>
                               <div className="min-w-0 flex-1">
                                 <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                                  <span className="font-bold text-sm text-gray-800">{d.nomService || 'RAF'}</span>
+                                  <span className="font-bold text-sm text-gray-800">{d.nomService || d.roleDemandeur || 'Direction Générale'}</span>
                                   <span className="text-xs text-gray-400">{new Date(d.dateDemande).toLocaleDateString('fr-FR')}</span>
                                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
                                     d.priorite === 'Critique' ? 'bg-red-100 text-red-700' :
@@ -732,51 +724,10 @@ const RafDashboard = () => {
             <div className="space-y-4">
               <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 mb-4">
                 <p className="text-xs text-gray-400 uppercase font-bold">Demande sélectionnée</p>
-                <p className="text-sm font-bold text-gray-800">#{selectedDemande.idDemande} — {selectedDemande.nomService}</p>
+                <p className="text-sm font-bold text-gray-800">#{selectedDemande.idDemande} — {selectedDemande.nomService || selectedDemande.roleDemandeur || 'Direction Générale'}</p>
               </div>
 
-              {/* Infos Budget Real-time */}
-              {budgetStatus && (
-                <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-2xl space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Enveloppe Budgétaire</span>
-                    <span className="text-xs font-mono font-bold text-indigo-700">{budgetStatus.numeroBudget}</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-[9px] text-indigo-400 font-bold uppercase">Alloué</p>
-                      <p className="text-xs font-bold text-indigo-900">{Number(budgetStatus.montantAlloue).toLocaleString()} FBU</p>
-                    </div>
-                    <div>
-                      <p className="text-[9px] text-indigo-400 font-bold uppercase">Consommé</p>
-                      <p className="text-xs font-bold text-indigo-900">{Number(budgetStatus.montantConsomme).toLocaleString()} FBU</p>
-                    </div>
-                  </div>
-                  
-                  {/* Barre de progression visuelle */}
-                  <div className="mt-2 h-2 w-full bg-indigo-200/50 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full transition-all duration-1000 ${
-                        (budgetStatus.montantConsomme / budgetStatus.montantAlloue) > 0.9 ? 'bg-red-500' : 
-                        (budgetStatus.montantConsomme / budgetStatus.montantAlloue) > 0.7 ? 'bg-amber-500' : 'bg-emerald-500'
-                      }`}
-                      style={{ width: `${Math.min((budgetStatus.montantConsomme / budgetStatus.montantAlloue) * 100, 100)}%` }}
-                    ></div>
-                  </div>
-
-                  <div className="pt-2 border-t border-indigo-100 flex justify-between items-end">
-                    <div>
-                      <p className="text-[9px] text-indigo-600 font-black uppercase">Solde Restant</p>
-                      <p className={`text-sm font-black ${budgetStatus.montantAlloue - budgetStatus.montantConsomme < budgetForm.montantEstime ? 'text-red-600' : 'text-emerald-600'}`}>
-                        {(budgetStatus.montantAlloue - budgetStatus.montantConsomme).toLocaleString()} FBU
-                      </p>
-                    </div>
-                    {budgetStatus.montantAlloue - budgetStatus.montantConsomme < budgetForm.montantEstime && (
-                      <span className="px-2 py-0.5 bg-red-100 text-red-600 rounded text-[10px] font-bold animate-pulse">Solde insuffisant</span>
-                    )}
-                  </div>
-                </div>
-              )}
+              {/* Infos Budget Real-time (Retiré à la demande de l'utilisateur) */}
 
               <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Exercice Budgétaire</label>
@@ -923,7 +874,7 @@ const RafDashboard = () => {
               <div>
                 <h3 className="text-xl font-bold text-gray-900">Détails de la Demande #{selectedDemande.idDemande}</h3>
                 <div className="flex flex-col mt-1">
-                  <p className="text-sm font-medium text-gray-700">Service : <span className="font-bold text-primary">{selectedDemande.nomService || 'RAF'}</span></p>
+                  <p className="text-sm font-medium text-gray-700">Origine : <span className="font-bold text-primary">{selectedDemande.nomService || selectedDemande.roleDemandeur || 'Direction Générale'}</span></p>
                   <p className="text-xs text-gray-500 italic">Chef responsable : {selectedDemande.nomChef || 'N/A'}</p>
                 </div>
               </div>

@@ -117,6 +117,8 @@ const Demande = {
             SELECT 
                 d.*,
                 da.numeroBudget,
+                u.nom as nomDemandeur,
+                r.nomRole as roleDemandeur,
                 GROUP_CONCAT(
                     JSON_OBJECT(
                         'idLigne', l.idLigne,
@@ -132,6 +134,8 @@ const Demande = {
             LEFT JOIN budget da ON d.idBudget = da.idBudget
             LEFT JOIN ligne_demande l ON d.idDemande = l.idDemande
             LEFT JOIN article a ON l.idArticle = a.idArticle
+            LEFT JOIN utilisateur u ON d.idUser = u.idUser
+            LEFT JOIN role r ON u.idRole = r.idRole
             WHERE (d.idService = ? OR (? IS NULL AND d.idService IS NULL))
             GROUP BY d.idDemande
             ORDER BY d.dateDemande DESC
@@ -152,6 +156,8 @@ const Demande = {
             SELECT 
                 d.*,
                 da.numeroBudget,
+                u.nom as nomDemandeur,
+                r.nomRole as roleDemandeur,
                 GROUP_CONCAT(
                     JSON_OBJECT(
                         'idLigne', l.idLigne,
@@ -167,6 +173,8 @@ const Demande = {
             LEFT JOIN budget da ON d.idBudget = da.idBudget
             LEFT JOIN ligne_demande l ON d.idDemande = l.idDemande
             LEFT JOIN article a ON l.idArticle = a.idArticle
+            LEFT JOIN utilisateur u ON d.idUser = u.idUser
+            LEFT JOIN role r ON u.idRole = r.idRole
             WHERE d.idUser = ?
             GROUP BY d.idDemande
             ORDER BY d.dateDemande DESC

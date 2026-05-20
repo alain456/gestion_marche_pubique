@@ -20,6 +20,7 @@ const Sidebar = ({ user }) => {
       case 'ADMIN':
         return [
           { name: 'Dashboard', path: '/admin', icon: Home },
+          { name: 'Mes Demandes', path: '/demandeur/demandes', icon: FileText },
           { name: 'Utilisateurs', path: '/admin/users', icon: Users },
           { name: 'Rôles', path: '/admin/roles', icon: Settings },
           { name: 'Services', path: '/admin/services', icon: Building2 },

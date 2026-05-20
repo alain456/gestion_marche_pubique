@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Users, Shield, Activity } from 'lucide-react';
 import api from '../../services/api';
@@ -69,6 +69,12 @@ const AdminDashboard = () => {
       <div className="bg-surface rounded-xl shadow-sm border border-gray-100 p-6">
         <h2 className="text-lg font-semibold text-gray-800 mb-4">Actions Rapides</h2>
         <div className="flex flex-col gap-3 sm:flex-row">
+          <Link
+            to="/demandeur/demandes"
+            className="inline-flex items-center justify-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition"
+          >
+            Passer une commande
+          </Link>
           <Link
             to="/admin/users"
             className="inline-flex items-center justify-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-800 transition"

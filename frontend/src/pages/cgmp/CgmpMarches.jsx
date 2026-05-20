@@ -665,7 +665,7 @@ const CgmpMarches = () => {
                 className="px-10 py-3 bg-primary text-white rounded-2xl hover:bg-blue-800 transition-all font-bold shadow-lg shadow-primary/20 flex items-center gap-2"
                >
                  <PlusCircle className="h-5 w-5" />
-                 Publier le Marché
+                Enregistrer le Marché
                </button>
             </div>
           </form>

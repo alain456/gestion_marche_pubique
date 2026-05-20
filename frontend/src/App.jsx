@@ -92,7 +92,7 @@ const App = () => {
             <Route path="/reception/soumissions" element={<ReceptionSoumissions />} />
           </Route>
 
-          <Route element={<ProtectedRoute allowedRoles={['DEMANDEUR', 'CHEF_SERVICE', 'CHEF_INSTITUTION', 'RAF']} />}>
+          <Route element={<ProtectedRoute allowedRoles={['DEMANDEUR', 'CHEF_SERVICE', 'CHEF_INSTITUTION', 'RAF', 'ADMIN']} />}>
             <Route path="/demandeur" element={<DemandeurDashboard />} />
             <Route path="/demandeur/demandes" element={<DemandeurDemandes />} />
           </Route>

@@ -427,7 +427,7 @@ const RafBudgets = () => {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex flex-col">
-                            <span className="font-medium text-gray-900">{demande.nomService}</span>
+                            <span className="font-medium text-gray-900">{demande.nomService || demande.roleDemandeur || 'Direction Générale'}</span>
                             <span className={`text-[9px] font-black uppercase mt-1 px-2 py-0.5 rounded-full w-fit ${
                               demande.priorite === 'Critique' ? 'bg-red-100 text-red-700' :
                               demande.priorite === 'Urgente' ? 'bg-amber-100 text-amber-700' :

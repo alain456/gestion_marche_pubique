@@ -9,6 +9,7 @@ const DemandeurDemandes = () => {
   const [demandes, setDemandes] = useState([]);
   const [articles, setArticles] = useState([]);
   const [budgets, setBudgets] = useState([]);
+  const [servicesList, setServicesList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatut, setFilterStatut] = useState('');
@@ -71,10 +72,17 @@ const DemandeurDemandes = () => {
     } catch (err) { console.error(err); }
   };
 
+  const loadServices = async () => {
+    try {
+      const res = await api.get('/services');
+      setServicesList(res.data);
+    } catch (err) { console.error(err); }
+  };
+
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      await Promise.all([loadDemandes(), loadArticles(), loadBudgets()]);
+      await Promise.all([loadDemandes(), loadArticles(), loadBudgets(), loadServices()]);
       setLoading(false);
     };
     init();
@@ -108,8 +116,8 @@ const DemandeurDemandes = () => {
     setError('');
     setMessage('');
 
-    if (!user?.idService && userRole !== 'RAF') {
-      setError('ID service manquant.');
+    if (!form.idService && userRole !== 'RAF' && userRole !== 'ADMIN' && userRole !== 'CHEF_INSTITUTION' && userRole !== 'CGMP') {
+      setError('Service Demandeur requis.');
       return;
     }
 
@@ -261,7 +269,13 @@ const DemandeurDemandes = () => {
   };
 
   const userRole = user?.role?.toUpperCase().replace(/\s+/g, '_');
-  const isChef = userRole === 'CHEF_SERVICE' || userRole === 'CHEF_INSTITUTION' || userRole === 'RAF';
+  const isChef = userRole === 'CHEF_SERVICE' || userRole === 'CHEF_INSTITUTION' || userRole === 'RAF' || userRole === 'ADMIN';
+
+  const getBackPath = () => {
+    if (userRole === 'ADMIN') return '/admin';
+    if (userRole === 'CHEF_SERVICE' || userRole === 'CHEF_INSTITUTION' || userRole === 'RAF') return '/chef';
+    return '/demandeur';
+  };
 
   const filteredDemandes = demandes.filter((d) => {
     const searchLower = searchTerm.toLowerCase();
@@ -311,7 +325,7 @@ const DemandeurDemandes = () => {
         </div>
         <div className="flex gap-3">
           <Link 
-            to={isChef ? '/chef' : '/demandeur'} 
+            to={getBackPath()} 
             className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition border border-gray-300"
           >
             <ArrowLeft className="h-4 w-4" /> Retour
@@ -333,6 +347,23 @@ const DemandeurDemandes = () => {
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            {['ADMIN', 'RAF', 'CHEF_INSTITUTION', 'CGMP'].includes(userRole) && (
+              <div className="space-y-2">
+                <label className="text-sm font-black text-gray-700 uppercase tracking-wider flex items-center gap-2">
+                  <User className="h-4 w-4 text-primary" /> Service Demandeur (Optionnel)
+                </label>
+                <select 
+                  value={form.idService || ''} 
+                  onChange={(e) => setForm({...form, idService: e.target.value})}
+                  className="w-full rounded-xl border-gray-200 bg-surface py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 transition-all shadow-sm"
+                >
+                  <option value="">-- Mon Rôle ({userRole}) --</option>
+                  {servicesList.map(s => (
+                    <option key={s.idService} value={s.idService}>{s.nomService}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="space-y-2">
               <label className="text-sm font-black text-gray-700 uppercase tracking-wider flex items-center gap-2">
                 <Package className="h-4 w-4 text-primary" /> Ligne Budgétaire (Conteneur)
