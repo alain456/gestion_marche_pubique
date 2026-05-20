@@ -482,11 +482,17 @@ const RafBudgets = () => {
                 ) : (
                   filteredBudgets.map((budget) => {
                     const stats = getBudgetStats(budget.idBudget);
+                    const isMontantValide = budget.montantEstime && budget.montantEstime > 0;
+                    const ratio = isMontantValide ? (stats.consumed / budget.montantEstime) : 0;
+                    const pourcentage = isMontantValide ? (ratio * 100).toFixed(0) : 0;
+                    
+                    const progressColor = ratio > 0.9 ? 'bg-red-500 text-red-500' : ratio > 0.7 ? 'bg-amber-500 text-amber-500' : 'bg-emerald-500 text-emerald-500';
+
                     return (
                       <tr key={budget.idBudget} className="hover:bg-gray-50/50 transition">
                         <td className="px-6 py-4">
                           <div className="flex flex-col">
-                            <span className="font-black text-gray-900">{budget.numeroBudget}</span>
+                            <span className="font-black text-gray-900">{budget.numeroBudget || 'Non spécifié'}</span>
                             <span className="text-[10px] text-gray-400">ID: #{budget.idBudget}</span>
                           </div>
                         </td>
@@ -496,40 +502,36 @@ const RafBudgets = () => {
                             budget.typeBudget === 'travaux' ? 'bg-amber-100 text-amber-700' :
                             'bg-emerald-100 text-emerald-700'
                           }`}>
-                            {budget.typeBudget}
+                            {budget.typeBudget || 'N/A'}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-sm font-medium text-gray-600">
-                          {budget.exerciceBudgetaire}
+                          {budget.exerciceBudgetaire || 'N/A'}
                         </td>
                         <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs font-bold">{stats.count}</span>
-                            <div className="flex gap-1">
-                              <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" title={`${stats.valid} validées`}></div>
-                              <div className="h-1.5 w-1.5 rounded-full bg-amber-500" title={`${stats.pending} en attente`}></div>
+                          <div className="flex flex-col gap-1">
+                            <span className="text-sm font-bold text-gray-700">{stats.count} Total</span>
+                            <div className="flex items-center gap-2 text-[10px] font-medium">
+                              <span className="text-emerald-600 flex items-center gap-1"><div className="h-1.5 w-1.5 rounded-full bg-emerald-500"></div> {stats.valid} Valide</span>
+                              <span className="text-amber-600 flex items-center gap-1"><div className="h-1.5 w-1.5 rounded-full bg-amber-500"></div> {stats.pending} En attente</span>
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex flex-col gap-1.5 min-w-[150px]">
                             <div className="flex justify-between items-end">
-                              <span className="text-xs font-black text-primary">{budget.montantEstime?.toLocaleString()} Fbu</span>
-                              <span className={`text-[10px] font-black uppercase ${
-                                (stats.consumed / budget.montantEstime) > 0.9 ? 'text-red-500' : 
-                                (stats.consumed / budget.montantEstime) > 0.7 ? 'text-amber-500' : 'text-emerald-500'
-                              }`}>
-                                {((stats.consumed / budget.montantEstime) * 100).toFixed(0)}%
+                              <span className="text-xs font-black text-primary">
+                                {isMontantValide ? budget.montantEstime.toLocaleString() + ' Fbu' : 'Non défini'}
+                              </span>
+                              <span className={`text-[10px] font-black uppercase ${progressColor.split(' ')[1]}`}>
+                                {pourcentage}%
                               </span>
                             </div>
                             {/* Barre de progression */}
                             <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
                               <div 
-                                className={`h-full transition-all duration-1000 ${
-                                  (stats.consumed / budget.montantEstime) > 0.9 ? 'bg-red-500' : 
-                                  (stats.consumed / budget.montantEstime) > 0.7 ? 'bg-amber-500' : 'bg-emerald-500'
-                                }`}
-                                style={{ width: `${Math.min((stats.consumed / budget.montantEstime) * 100, 100)}%` }}
+                                className={`h-full transition-all duration-1000 ${progressColor.split(' ')[0]}`}
+                                style={{ width: `${Math.min(ratio * 100, 100)}%` }}
                               ></div>
                             </div>
                             <span className="text-[10px] text-gray-400 font-bold italic">
