@@ -20,6 +20,8 @@ import CgmpBudgets from './pages/cgmp/CgmpBudgets';
 import ReceptionDashboard from './pages/reception/ReceptionDashboard';
 import ReceptionSoumissions from './pages/reception/ReceptionSoumissions';
 import CgmpSoumissions from './pages/cgmp/CgmpSoumissions';
+import AdminUserPermissions from './pages/admin/AdminUserPermissions';
+import AdminPermissions from './pages/admin/AdminPermissions';
 const Unauthorized = () => <div className="p-8 text-red-600 font-bold">Accès non autorisé</div>;
 
 // Composant pour rediriger l'utilisateur vers son dashboard par défaut
@@ -63,37 +65,82 @@ const App = () => {
           
           <Route path="/" element={<RootRedirect />} />
 
+          {/* Admin Dashboard - Seulement pour le rôle ADMIN */}
           <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
             <Route path="/admin" element={<AdminDashboard />} />
+          </Route>
+
+          {/* Utilisateurs - Permission requise */}
+          <Route element={<ProtectedRoute requiredPermission={['GERER_UTILISATEURS', 'VOIR_UTILISATEURS']} />}>
             <Route path="/admin/users" element={<AdminUsers />} />
+          </Route>
+
+          {/* Rôles - Permission requise */}
+          <Route element={<ProtectedRoute requiredPermission="GERER_ROLES_PERMISSIONS" />}>
             <Route path="/admin/roles" element={<AdminRoles />} />
+            <Route path="/admin/permissions" element={<AdminPermissions />} />
+          </Route>
+
+          {/* Attribution des permissions — réservé à l'administrateur */}
+          <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+            <Route path="/admin/user-permissions" element={<AdminUserPermissions />} />
+          </Route>
+
+          {/* Services - Permission requise */}
+          <Route element={<ProtectedRoute requiredPermission="GERER_SERVICES" />}>
             <Route path="/admin/services" element={<AdminServices />} />
+          </Route>
+
+          {/* Articles - Permission requise */}
+          <Route element={<ProtectedRoute requiredPermission="GERER_ARTICLES" />}>
             <Route path="/admin/articles" element={<AdminArticles />} />
           </Route>
 
+          {/* === Dashboards (Basés sur les Rôles) === */}
           <Route element={<ProtectedRoute allowedRoles={['CHEF_INSTITUTION', 'CHEF_SERVICE']} />}>
             <Route path="/chef" element={<ChefDashboard />} />
           </Route>
 
           <Route element={<ProtectedRoute allowedRoles={['RAF']} />}>
             <Route path="/raf" element={<RafDashboard />} />
-            <Route path="/raf/budgets" element={<RafBudgets />} />
+            <Route path="/raf/demandes-systeme" element={<RafDashboard />} />
+            <Route path="/raf/mes-demandes" element={<RafDashboard />} />
           </Route>
 
           <Route element={<ProtectedRoute allowedRoles={['CGMP']} />}>
             <Route path="/cgmp" element={<CgmpDashboard />} />
-            <Route path="/cgmp/marches" element={<CgmpMarches />} />
-            <Route path="/cgmp/budgets" element={<CgmpBudgets />} />
-            <Route path="/cgmp/soumissionnaires" element={<CgmpSoumissions />} />
           </Route>
 
           <Route element={<ProtectedRoute allowedRoles={['RECEPTIONISTE', 'RECEPTIONNISTE']} />}>
             <Route path="/reception" element={<ReceptionDashboard />} />
-            <Route path="/reception/soumissions" element={<ReceptionSoumissions />} />
           </Route>
 
           <Route element={<ProtectedRoute allowedRoles={['DEMANDEUR', 'CHEF_SERVICE', 'CHEF_INSTITUTION', 'RAF', 'ADMIN']} />}>
             <Route path="/demandeur" element={<DemandeurDashboard />} />
+          </Route>
+
+          {/* === Pages Fonctionnelles (Basées sur les Permissions) === */}
+          <Route element={<ProtectedRoute requiredPermission={['VALIDER_BUDGET_DEMANDE', 'VOIR_BUDGETS', 'GERER_BUDGETS']} />}>
+            <Route path="/raf/budgets" element={<RafBudgets />} />
+          </Route>
+
+          <Route element={<ProtectedRoute requiredPermission={['VOIR_MARCHES', 'GERER_MARCHES']} />}>
+            <Route path="/cgmp/marches" element={<CgmpMarches />} />
+          </Route>
+
+          <Route element={<ProtectedRoute requiredPermission={['AJUSTER_DEMANDE_CGMP', 'VOIR_TOUTES_DEMANDES']} />}>
+            <Route path="/cgmp/budgets" element={<CgmpBudgets />} />
+          </Route>
+
+          <Route element={<ProtectedRoute requiredPermission={['GERER_SOUMISSIONS']} />}>
+            <Route path="/cgmp/soumissionnaires" element={<CgmpSoumissions />} />
+          </Route>
+
+          <Route element={<ProtectedRoute requiredPermission={['ENREGISTRER_EXECUTION', 'GERER_SOUMISSIONS']} />}>
+            <Route path="/reception/soumissions" element={<ReceptionSoumissions />} />
+          </Route>
+
+          <Route element={<ProtectedRoute requiredPermission={['CREER_DEMANDE', 'DEMANDE_CREATE', 'VOIR_MES_DEMANDES', 'DEMANDE_READ_OWN', 'VOIR_TOUTES_DEMANDES', 'DEMANDE_READ_ALL']} />}>
             <Route path="/demandeur/demandes" element={<DemandeurDemandes />} />
           </Route>
 

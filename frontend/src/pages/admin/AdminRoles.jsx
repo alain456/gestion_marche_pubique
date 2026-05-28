@@ -16,9 +16,10 @@ import {
 
 const AdminRoles = () => {
   const [roles, setRoles] = useState([]);
+  const [allPermissions, setAllPermissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [form, setForm] = useState({ idRole: null, nomRole: '' });
+  const [form, setForm] = useState({ idRole: null, nomRole: '', permissions: [] });
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
@@ -32,17 +33,26 @@ const AdminRoles = () => {
     }
   };
 
+  const loadPermissions = async () => {
+    try {
+      const response = await api.get('/permissions');
+      setAllPermissions(response.data);
+    } catch (err) {
+      console.error('Erreur lors du chargement des permissions', err);
+    }
+  };
+
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      await loadRoles();
+      await Promise.all([loadRoles(), loadPermissions()]);
       setLoading(false);
     };
     init();
   }, []);
 
   const resetForm = () => {
-    setForm({ idRole: null, nomRole: '' });
+    setForm({ idRole: null, nomRole: '', permissions: [] });
     setMessage('');
     setError('');
   };
@@ -58,17 +68,24 @@ const AdminRoles = () => {
     }
 
     try {
+      let roleIdToUpdate = form.idRole;
       if (form.idRole) {
         await api.put('/users/roles', {
           idRole: form.idRole,
           nomRole: form.nomRole,
         });
-        setMessage('Rôle mis à jour avec succès.');
       } else {
-        await api.post('/users/roles', { nomRole: form.nomRole });
-        setMessage('Rôle créé avec succès.');
+        const res = await api.post('/users/roles', { nomRole: form.nomRole });
+        roleIdToUpdate = res.data.insertId;
       }
 
+      if (roleIdToUpdate) {
+        await api.post(`/permissions/role/${roleIdToUpdate}`, {
+          permissionIds: form.permissions
+        });
+      }
+
+      setMessage(form.idRole ? 'Rôle et permissions mis à jour avec succès.' : 'Rôle créé avec succès.');
       resetForm();
       loadRoles();
     } catch (err) {
@@ -77,11 +94,28 @@ const AdminRoles = () => {
     }
   };
 
-  const handleEdit = (role) => {
-    setForm({ idRole: role.idRole, nomRole: role.nomRole });
+  const handleEdit = async (role) => {
+    setForm({ idRole: role.idRole, nomRole: role.nomRole, permissions: [] });
     setMessage('');
     setError('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    try {
+      const response = await api.get(`/permissions/role/${role.idRole}`);
+      const rolePerms = response.data.map(p => p.idPermission);
+      setForm(prev => ({ ...prev, permissions: rolePerms }));
+    } catch (err) {
+      console.error("Erreur récupération permissions", err);
+    }
+  };
+
+  const handleCheckboxChange = (idPermission) => {
+    setForm(prev => {
+      const newPerms = prev.permissions.includes(idPermission)
+        ? prev.permissions.filter(id => id !== idPermission)
+        : [...prev.permissions, idPermission];
+      return { ...prev, permissions: newPerms };
+    });
   };
 
   const handleDelete = async (idRole) => {
@@ -260,6 +294,33 @@ const AdminRoles = () => {
                   <ArrowRight className="h-2 w-2" />
                   Utilisez des minuscules et des underscores (ex: role_nom)
                 </p>
+              </div>
+
+              <div className="pt-4 border-t border-gray-100">
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 ml-1 flex items-center justify-between">
+                  Permissions du rôle
+                  <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full normal-case font-semibold text-[10px]">
+                    {form.permissions.length} sélectionnée(s)
+                  </span>
+                </label>
+                <div className="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+                  {allPermissions.map(perm => (
+                    <label key={perm.idPermission} className="flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 border border-transparent hover:border-gray-100 transition-colors cursor-pointer group">
+                      <div className="flex items-center h-5 mt-0.5">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 text-primary rounded border-gray-300 focus:ring-primary cursor-pointer"
+                          checked={form.permissions.includes(perm.idPermission)}
+                          onChange={() => handleCheckboxChange(perm.idPermission)}
+                        />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-semibold text-gray-900 group-hover:text-primary transition-colors">{perm.codePermission}</span>
+                        <span className="text-xs text-gray-500 mt-0.5">{perm.description}</span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
               </div>
 
               <div className="flex gap-3 pt-4">

@@ -139,6 +139,7 @@ const AdminUsers = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+
   const handleDelete = async (idUser) => {
     if (!window.confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.')) return;
     try {
@@ -449,6 +450,7 @@ const AdminUsers = () => {
                   </div>
                 </div>
               </div>
+
 
               <div className="flex gap-3 pt-4">
                 <button

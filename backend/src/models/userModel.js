@@ -85,6 +85,95 @@ const User = {
     findAllRoles: async () => {
         const [rows] = await db.query(`SELECT idRole, nomRole FROM role`);
         return rows;
+    },
+
+    // --- Méthodes Permissions ---
+    // Récupérer toutes les permissions
+    findAllPermissions: async () => {
+        const [rows] = await db.query(`SELECT * FROM permission ORDER BY codePermission`);
+        return rows;
+    },
+
+    // Récupérer les permissions d'un rôle
+    findPermissionsByRole: async (idRole) => {
+        const [rows] = await db.query(`
+            SELECT p.* 
+            FROM permission p
+            JOIN role_permission rp ON p.idPermission = rp.idPermission
+            WHERE rp.idRole = ?
+        `, [idRole]);
+        return rows;
+    },
+
+    // Récupérer les permissions individuelles d'un utilisateur
+    findPermissionsByUser: async (idUser) => {
+        const [rows] = await db.query(`
+            SELECT p.* 
+            FROM permission p
+            JOIN utilisateur_permission up ON p.idPermission = up.idPermission
+            WHERE up.idUser = ?
+        `, [idUser]);
+        return rows;
+    },
+
+    // Récupérer toutes les permissions d'un utilisateur (rôle + individuelles)
+    findAllPermissionsForUser: async (idUser, idRole) => {
+        const [rows] = await db.query(`
+            SELECT p.codePermission
+            FROM permission p
+            JOIN role_permission rp ON p.idPermission = rp.idPermission
+            WHERE rp.idRole = ?
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM utilisateur_permission up
+                  WHERE up.idUser = ?
+                    AND up.idPermission = p.idPermission
+                    AND up.typePermission = 'REVOKE'
+              )
+            UNION
+            SELECT p.codePermission
+            FROM permission p
+            JOIN utilisateur_permission up ON p.idPermission = up.idPermission
+            WHERE up.idUser = ?
+              AND up.typePermission = 'GRANT'
+        `, [idRole, idUser, idUser]);
+        return rows.map(row => row.codePermission);
+    },
+
+    // Ajouter une permission individuelle à un utilisateur
+    addUserPermission: async (idUser, idPermission) => {
+        const [result] = await db.query(
+            `INSERT INTO utilisateur_permission (idUser, idPermission) VALUES (?, ?)`,
+            [idUser, idPermission]
+        );
+        return result;
+    },
+
+    // Supprimer une permission individuelle d'un utilisateur
+    removeUserPermission: async (idUser, idPermission) => {
+        const [result] = await db.query(
+            `DELETE FROM utilisateur_permission WHERE idUser = ? AND idPermission = ?`,
+            [idUser, idPermission]
+        );
+        return result;
+    },
+
+    // Ajouter une permission à un rôle
+    addRolePermission: async (idRole, idPermission) => {
+        const [result] = await db.query(
+            `INSERT INTO role_permission (idRole, idPermission) VALUES (?, ?)`,
+            [idRole, idPermission]
+        );
+        return result;
+    },
+
+    // Supprimer une permission d'un rôle
+    removeRolePermission: async (idRole, idPermission) => {
+        const [result] = await db.query(
+            `DELETE FROM role_permission WHERE idRole = ? AND idPermission = ?`,
+            [idRole, idPermission]
+        );
+        return result;
     }
 };
 

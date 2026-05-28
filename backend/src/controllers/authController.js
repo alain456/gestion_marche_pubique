@@ -6,7 +6,6 @@ const jwt = require('jsonwebtoken');
 // login
 exports.login = async (req, res) => {
     const { email, password } = req.body;
-    console.log('Login attempt:', { email, password });
     
     if(!email || !password){
         return res.status(400).json({ message: "Veuillez fournir un email et un mot de passe" });
@@ -30,6 +29,8 @@ exports.login = async (req, res) => {
             return res.status(403).json({ message: "Votre compte est inactif, consultez votre Administrateur" });
         }
 
+        const permissions = await User.findAllPermissionsForUser(user.idUser, user.idRole);
+
         // Utiliser 'idUser' pour être cohérent avec le Middleware et la DB
         const token = jwt.sign(
             { idUser: user.idUser, role: user.nomRole }, 
@@ -44,11 +45,41 @@ exports.login = async (req, res) => {
                 nom: user.nom,
                 email: user.email, 
                 role: user.nomRole,
+                idRole: user.idRole,
                 idService: user.idService,
-                nomService: user.nomService
+                nomService: user.nomService,
+                permissions: permissions
             } 
         });
 
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Erreur serveur" });
+    }
+};
+
+// Rafraîchir la session (permissions à jour sans se reconnecter)
+exports.refreshSession = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.idUser);
+        if (!user) {
+            return res.status(404).json({ message: "Utilisateur non trouvé." });
+        }
+
+        const permissions = await User.findAllPermissionsForUser(req.user.idUser, req.user.idRole);
+
+        res.json({
+            user: {
+                idUser: user.idUser,
+                nom: user.nom,
+                email: user.email,
+                role: user.nomRole,
+                idRole: req.user.idRole,
+                idService: user.idService,
+                nomService: user.nomService,
+                permissions
+            }
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Erreur serveur" });

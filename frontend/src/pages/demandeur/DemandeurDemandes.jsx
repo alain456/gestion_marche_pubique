@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
-import { PlusCircle, ArrowLeft, Search, Trash2, ListPlus, Pencil, Save, Send, Package, MessageSquare, Info, Eye, Clock, Gavel, History, User, XCircle } from 'lucide-react';
+import { PlusCircle, ArrowLeft, Search, Trash2, ListPlus, Pencil, Save, Send, Package, MessageSquare, Info, Eye, Clock, Gavel, History, User, XCircle, Building } from 'lucide-react';
 
 import api from '../../services/api';
 import { AuthContext } from '../../contexts/AuthContext';
@@ -27,6 +27,12 @@ const DemandeurDemandes = () => {
   const [historyLoading, setHistoryLoading] = useState(false);
 
   const { user } = useContext(AuthContext);
+  const hasPerm = (code) => user?.permissions?.includes(code);
+  const canCreateDemande = hasPerm('CREER_DEMANDE') || hasPerm('DEMANDE_CREATE');
+  const canReadOwnDemandes = hasPerm('VOIR_MES_DEMANDES') || hasPerm('DEMANDE_READ_OWN');
+  const canReadAllDemandes = hasPerm('VOIR_TOUTES_DEMANDES') || hasPerm('DEMANDE_READ_ALL');
+  const canUpdateDemande = hasPerm('MODIFIER_DEMANDE') || hasPerm('DEMANDE_UPDATE');
+  const canDeleteDemande = hasPerm('SUPPRIMER_DEMANDE') || hasPerm('DEMANDE_DELETE');
 
   // Liste des articles ajoutés à la demande actuelle
   const [selectedItems, setSelectedItems] = useState([]);
@@ -48,11 +54,16 @@ const DemandeurDemandes = () => {
 
   const loadDemandes = async () => {
     try {
-      const res = await api.get('/demandes?mesdemandes=true');
+      if (!canReadOwnDemandes && !canReadAllDemandes) {
+        setDemandes([]);
+        return;
+      }
+      const url = canReadAllDemandes ? '/demandes' : '/demandes?mesdemandes=true';
+      const res = await api.get(url);
       setDemandes(res.data);
     } catch (err) {
       console.error('Erreur chargement demandes:', err);
-      setError('Impossible de charger les demandes.');
+      setError('Impossible de charger vos demandes.');
     }
   };
 
@@ -273,13 +284,14 @@ const DemandeurDemandes = () => {
 
   const getBackPath = () => {
     if (userRole === 'ADMIN') return '/admin';
-    if (userRole === 'CHEF_SERVICE' || userRole === 'CHEF_INSTITUTION' || userRole === 'RAF') return '/chef';
+    if (userRole === 'RAF') return '/raf';
+    if (userRole === 'CHEF_SERVICE' || userRole === 'CHEF_INSTITUTION') return '/chef';
     return '/demandeur';
   };
 
   const filteredDemandes = demandes.filter((d) => {
     const searchLower = searchTerm.toLowerCase();
-    const matchSearch = !searchTerm || 
+    const matchSearch = !searchTerm ||
       d.nomService?.toLowerCase().includes(searchLower) ||
       d.articles.some(a => a.nomArticle?.toLowerCase().includes(searchLower)) ||
       d.idDemande.toString().includes(searchLower);
@@ -298,6 +310,8 @@ const DemandeurDemandes = () => {
     };
     return styles[statut] || 'bg-gray-100 text-gray-800';
   };
+
+  const hasVoirToutes = canReadAllDemandes;
 
   if (loading) {
     return (
@@ -330,9 +344,11 @@ const DemandeurDemandes = () => {
           >
             <ArrowLeft className="h-4 w-4" /> Retour
           </Link>
-          <button onClick={() => { setShowForm(!showForm); if(!showForm) resetForm(); }} className="inline-flex items-center gap-2 px-5 py-2 bg-primary text-white rounded-lg shadow-sm">
-            <PlusCircle className="h-5 w-5" /> {showForm ? 'Fermer' : 'Nouvelle commande'}
-          </button>
+          {canCreateDemande && (
+            <button onClick={() => { setShowForm(!showForm); if(!showForm) resetForm(); }} className="inline-flex items-center gap-2 px-5 py-2 bg-primary text-white rounded-lg shadow-sm">
+              <PlusCircle className="h-5 w-5" /> {showForm ? 'Fermer' : 'Nouvelle commande'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -569,6 +585,16 @@ const DemandeurDemandes = () => {
                     <div className="flex flex-col items-center gap-1 shrink-0">
                       <span className="text-xs font-mono text-gray-400 bg-gray-100 px-2 py-0.5 rounded">#{demande.idDemande}</span>
                       <span className="text-[10px] text-gray-400">{new Date(demande.dateDemande).toLocaleDateString('fr-FR')}</span>
+                      {hasVoirToutes && Number(demande.idUser) === Number(user.idUser) && (
+                        <span className="text-[8px] font-black uppercase tracking-widest text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20 mt-1">
+                          Ma création
+                        </span>
+                      )}
+                      {hasVoirToutes && Number(demande.idUser) !== Number(user.idUser) && Number(demande.idService) === Number(user.idService) && (
+                        <span className="text-[8px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 mt-1 text-center">
+                          Mon service
+                        </span>
+                      )}
                     </div>
                     <div className="min-w-0 flex-1">
                       {/* Budget + Type */}
@@ -576,6 +602,16 @@ const DemandeurDemandes = () => {
                         <span className="text-sm font-bold text-blue-700">{demande.numeroBudget || '— Budget'}</span>
                         {!isChef && (
                           <span className="text-[10px] capitalize bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">{demande.typeMarche}</span>
+                        )}
+                        {hasVoirToutes && (
+                          <>
+                            <span className="text-[10px] bg-blue-50 text-blue-600 border border-blue-100 px-1.5 py-0.5 rounded font-bold flex items-center gap-1 uppercase tracking-tighter">
+                              <Building className="h-3 w-3" /> {demande.nomService || 'Service Inconnu'}
+                            </span>
+                            <span className="text-[10px] bg-gray-100 text-gray-600 border border-gray-200 px-1.5 py-0.5 rounded font-bold flex items-center gap-1">
+                              <User className="h-3 w-3" /> {demande.nomDemandeur || 'Inconnu'}
+                            </span>
+                          </>
                         )}
                       </div>
                       {/* Articles */}
@@ -644,7 +680,7 @@ const DemandeurDemandes = () => {
                       <button onClick={() => setViewingDemande(demande)} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg border border-blue-100 transition" title="Visualiser">
                         <Eye className="h-4 w-4" />
                       </button>
-                      {(demande.statut === 'Brouillon' || demande.statut === 'En attente' || demande.statut === 'Rejete') && (
+                      {canUpdateDemande && (demande.statut === 'Brouillon' || demande.statut === 'En attente' || demande.statut === 'Rejete') && (
                         <button onClick={() => reprendreDemande(demande)} className="p-1.5 text-amber-500 hover:bg-amber-50 rounded-lg border border-amber-100 transition" title="Modifier">
                           <Pencil className="h-4 w-4" />
                         </button>
@@ -654,7 +690,7 @@ const DemandeurDemandes = () => {
                           Soumettre
                         </button>
                       )}
-                      {(demande.statut === 'Brouillon' || demande.statut === 'En attente' || demande.statut === 'Rejete') && (
+                      {canDeleteDemande && (demande.statut === 'Brouillon' || demande.statut === 'En attente' || demande.statut === 'Rejete') && (
                         <button onClick={() => handleDeleteDemande(demande.idDemande)} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg border border-red-100 transition" title="Supprimer">
                           <Trash2 className="h-4 w-4" />
                         </button>

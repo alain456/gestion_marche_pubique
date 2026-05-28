@@ -87,6 +87,12 @@ const AdminDashboard = () => {
           >
             Gérer les rôles
           </Link>
+          <Link
+            to="/admin/user-permissions"
+            className="inline-flex items-center justify-center px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition"
+          >
+            Attribuer des permissions
+          </Link>
         </div>
       </div>
     </div>

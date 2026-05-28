@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   CreditCard, 
@@ -22,8 +22,10 @@ import { AuthContext } from '../../contexts/AuthContext';
 const RafDashboard = () => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState('demandes');
   const [demandes, setDemandes] = useState([]);
+  const [mesDemandes, setMesDemandes] = useState([]);
   const [receptions, setReceptions] = useState([]);
   const [paiements, setPaiements] = useState([]);
   const [offers, setOffers] = useState([]);
@@ -58,29 +60,73 @@ const RafDashboard = () => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
+  const hasPermission = (perm) => user?.permissions?.includes(perm);
+  const canViewDemandes = hasPermission('VOIR_TOUTES_DEMANDES') || hasPermission('DEMANDE_READ_ALL') || hasPermission('VALIDER_BUDGET_DEMANDE');
+  const canViewMyDemandes = hasPermission('VOIR_MES_DEMANDES') || hasPermission('DEMANDE_READ_OWN') || hasPermission('CREER_DEMANDE') || hasPermission('DEMANDE_CREATE');
+  const canViewPaiements = hasPermission('VOIR_PAIEMENTS') || hasPermission('EFFECTUER_PAIEMENT');
+  const canViewReceptions = hasPermission('VOIR_RECEPTIONS');
+  const canViewOffers = hasPermission('GERER_SOUMISSIONS') || hasPermission('VOIR_MARCHES');
+  const canUsePaiementsTab = canViewPaiements && canViewReceptions;
+  const demandeScope = location.pathname === '/raf/mes-demandes' ? 'mine' : 'all';
+
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [demRes, recRes, paiRes, offRes] = await Promise.all([
-        api.get('/demandes'),
-        api.get('/receptions'),
-        api.get('/paiements'),
-        api.get('/soumissions')
-      ]);
-      setDemandes(demRes.data);
-      setReceptions(recRes.data);
-      setPaiements(paiRes.data);
-      setOffers(offRes.data);
-    } catch {
-      console.error('Erreur chargement données RAF');
+      const requests = [];
+      if (canViewDemandes) requests.push(api.get('/demandes'));
+      if (canViewMyDemandes) requests.push(api.get('/demandes?mesdemandes=true'));
+      if (canViewReceptions) requests.push(api.get('/receptions'));
+      if (canViewPaiements) requests.push(api.get('/paiements'));
+      if (canViewOffers) requests.push(api.get('/soumissions'));
+
+      const responses = await Promise.all(requests);
+      let idx = 0;
+
+      if (canViewDemandes) setDemandes(responses[idx++].data);
+      else setDemandes([]);
+
+      if (canViewMyDemandes) setMesDemandes(responses[idx++].data);
+      else setMesDemandes([]);
+
+      if (canViewReceptions) setReceptions(responses[idx++].data);
+      else setReceptions([]);
+
+      if (canViewPaiements) setPaiements(responses[idx++].data);
+      else setPaiements([]);
+
+      if (canViewOffers) setOffers(responses[idx++].data);
+      else setOffers([]);
+    } catch (err) {
+      console.error('Erreur chargement données RAF', err);
+      setError("Certaines données n'ont pas pu être chargées selon les permissions.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    // Eviter les boucles de navigation: une seule redirection de garde selon permissions
+    if (demandeScope === 'all' && !canViewDemandes && canViewMyDemandes && location.pathname !== '/raf/mes-demandes') {
+      navigate('/raf/mes-demandes', { replace: true });
+      return;
+    }
+    if (demandeScope === 'mine' && !canViewMyDemandes && canViewDemandes && location.pathname !== '/raf/demandes-systeme') {
+      navigate('/raf/demandes-systeme', { replace: true });
+    }
+  }, [demandeScope, canViewDemandes, canViewMyDemandes, location.pathname, navigate]);
+
+  useEffect(() => {
+    if (!canUsePaiementsTab && activeTab === 'paiements') {
+      setActiveTab('demandes');
+    }
+    if (!canViewOffers && activeTab === 'modifications') {
+      setActiveTab('demandes');
+    }
+  }, [canUsePaiementsTab, canViewOffers, activeTab]);
+
+  useEffect(() => {
     fetchData();
-  }, []);
+  }, [user?.idUser, user?.permissions]);
 
   const openBudgetModal = async (demande) => {
     if (demande.alerteRaf === 0) {
@@ -213,7 +259,8 @@ const RafDashboard = () => {
     }
   };
 
-  const filteredDemandes = demandes.filter(d => 
+  const demandesSource = demandeScope === 'mine' ? mesDemandes : demandes;
+  const filteredDemandes = demandesSource.filter(d => 
     (d.statut === 'En attente' || d.statut === 'Valide' || d.statut === 'Rejete' || d.statut === 'Inclus dans Marché') && 
     (d.nomService?.toLowerCase().includes(searchTerm.toLowerCase()) || 
      d.idDemande.toString().includes(searchTerm))
@@ -322,7 +369,7 @@ const RafDashboard = () => {
           </div>
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase">En attente</p>
-            <p className="text-xl font-bold text-gray-900">{demandes.filter(d => d.statut === 'En attente').length}</p>
+            <p className="text-xl font-bold text-gray-900">{demandesSource.filter(d => d.statut === 'En attente').length}</p>
           </div>
         </div>
         <div className="bg-surface p-5 rounded-2xl border border-emerald-100 shadow-sm flex items-center gap-4">
@@ -331,7 +378,7 @@ const RafDashboard = () => {
           </div>
           <div>
             <p className="text-xs font-bold text-emerald-400 uppercase">Validées</p>
-            <p className="text-xl font-bold text-emerald-700">{demandes.filter(d => d.statut === 'Valide' || d.statut === 'Inclus dans Marché').length}</p>
+            <p className="text-xl font-bold text-emerald-700">{demandesSource.filter(d => d.statut === 'Valide' || d.statut === 'Inclus dans Marché').length}</p>
           </div>
         </div>
         <div className="bg-surface p-5 rounded-2xl border border-red-100 shadow-sm flex items-center gap-4">
@@ -340,27 +387,31 @@ const RafDashboard = () => {
           </div>
           <div>
             <p className="text-xs font-bold text-red-400 uppercase">Rejetées</p>
-            <p className="text-xl font-bold text-red-700">{demandes.filter(d => d.statut === 'Rejete').length}</p>
+            <p className="text-xl font-bold text-red-700">{demandesSource.filter(d => d.statut === 'Rejete').length}</p>
           </div>
         </div>
-        <div className="bg-surface p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
-            <TrendingUp className="h-6 w-6" />
+        {canViewPaiements && (
+          <div className="bg-surface p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+            <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
+              <TrendingUp className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-gray-400 uppercase">Paiements</p>
+              <p className="text-xl font-bold text-gray-900">{paiements.length}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs font-bold text-gray-400 uppercase">Paiements</p>
-            <p className="text-xl font-bold text-gray-900">{paiements.length}</p>
+        )}
+        {canViewReceptions && (
+          <div className="bg-surface p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+            <div className="p-3 bg-purple-50 text-purple-600 rounded-xl">
+              <CreditCard className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-gray-400 uppercase">Réceptions</p>
+              <p className="text-xl font-bold text-gray-900">{receptions.length}</p>
+            </div>
           </div>
-        </div>
-        <div className="bg-surface p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-purple-50 text-purple-600 rounded-xl">
-            <CreditCard className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="text-xs font-bold text-gray-400 uppercase">Réceptions</p>
-            <p className="text-xl font-bold text-gray-900">{receptions.length}</p>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Onglets */}
@@ -371,23 +422,52 @@ const RafDashboard = () => {
         >
           Validation Budgétaire
         </button>
-        <button 
-          onClick={() => setActiveTab('paiements')}
-          className={`px-6 py-3 text-sm font-bold transition-all border-b-2 ${activeTab === 'paiements' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-        >
-          Paiements & Facturation
-        </button>
-        <button 
-          onClick={() => setActiveTab('modifications')}
-          className={`px-6 py-3 text-sm font-bold transition-all border-b-2 ${activeTab === 'modifications' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-        >
-          Modifications Offres {offers.filter(o => o.demandeModification === 1).length > 0 && <span className="ml-2 bg-amber-500 text-white px-2 py-0.5 rounded-full text-[10px] animate-pulse">{offers.filter(o => o.demandeModification === 1).length}</span>}
-        </button>
+        {canUsePaiementsTab && (
+          <button 
+            onClick={() => setActiveTab('paiements')}
+            className={`px-6 py-3 text-sm font-bold transition-all border-b-2 ${activeTab === 'paiements' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+          >
+            Paiements & Facturation
+          </button>
+        )}
+        {canViewOffers && (
+          <button 
+            onClick={() => setActiveTab('modifications')}
+            className={`px-6 py-3 text-sm font-bold transition-all border-b-2 ${activeTab === 'modifications' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+          >
+            Modifications Offres {offers.filter(o => o.demandeModification === 1).length > 0 && <span className="ml-2 bg-amber-500 text-white px-2 py-0.5 rounded-full text-[10px] animate-pulse">{offers.filter(o => o.demandeModification === 1).length}</span>}
+          </button>
+        )}
       </div>
 
       {/* Contenu de l'onglet Demandes */}
       {activeTab === 'demandes' && (
         <div className="space-y-6">
+          {(canViewDemandes || canViewMyDemandes) && (
+            <div className="bg-surface rounded-xl border border-gray-100 p-3 flex flex-wrap items-center gap-2">
+              {canViewDemandes && (
+                <button
+                  onClick={() => navigate('/raf/demandes-systeme')}
+                  className={`px-3 py-2 rounded-lg text-xs font-bold transition ${
+                    demandeScope === 'all' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  Toutes les demandes (système)
+                </button>
+              )}
+              {canViewMyDemandes && (
+                <button
+                  onClick={() => navigate('/raf/mes-demandes')}
+                  className={`px-3 py-2 rounded-lg text-xs font-bold transition ${
+                    demandeScope === 'mine' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  Mes demandes (personnelles)
+                </button>
+              )}
+            </div>
+          )}
+
           {Object.entries(groupedDemandes).length === 0 ? (
             <div className="bg-surface rounded-2xl border border-gray-100 shadow-sm p-12 text-center text-gray-400">
               Aucune demande trouvée.
@@ -581,7 +661,7 @@ const RafDashboard = () => {
       )}
 
       {/* Contenu de l'onglet Paiements */}
-      {activeTab === 'paiements' && (
+      {activeTab === 'paiements' && canUsePaiementsTab && (
         <div className="space-y-6">
           <div className="bg-surface rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="p-6 border-b border-gray-50 flex justify-between items-center">
@@ -657,7 +737,7 @@ const RafDashboard = () => {
       )}
 
       {/* Contenu de l'onglet Modifications Offres */}
-      {activeTab === 'modifications' && (
+      {activeTab === 'modifications' && canViewOffers && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="p-6 border-b border-gray-50 flex justify-between items-center">
             <h2 className="font-bold text-gray-800">Demandes de Modification d&apos;Offres</h2>

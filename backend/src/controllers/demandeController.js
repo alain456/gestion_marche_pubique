@@ -178,15 +178,18 @@ exports.getAllDemandes = async (req, res) => {
         let rows;
 
         const userRole = role ? role.toUpperCase() : '';
+        const hasVoirToutesDemandes = req.user.permissions &&
+            (req.user.permissions.includes('VOIR_TOUTES_DEMANDES') || req.user.permissions.includes('DEMANDE_READ_ALL'));
+
         // Si mesDemandes=true est spécifié, on ne voit QUE ses propres créations (idUser)
         if (mesDemandes) {
             rows = await Demande.findByUser(req.user.idUser);
         } 
-        // Sinon, si c'est un ADMIN, RAF ou CGMP, il voit tout
-        else if (userRole === 'ADMIN' || userRole === 'RAF' || userRole === 'CGMP' || userRole === 'CHEF_INSTITUTION') {
+        // Sinon, si l'utilisateur a la permission de tout voir ou a un rôle global
+        else if (hasVoirToutesDemandes || userRole === 'ADMIN' || userRole === 'RAF' || userRole === 'CGMP' || userRole === 'CHEF_INSTITUTION') {
             rows = await Demande.findAll();
         } 
-        // Sinon (DEMANDEUR, CHEF_SERVICE), il ne voit que son service
+        // Sinon (DEMANDEUR, CHEF_SERVICE sans permission globale), il ne voit que son service
         else {
             rows = await Demande.findByService(idService);
         }

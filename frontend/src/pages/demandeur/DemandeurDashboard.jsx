@@ -13,8 +13,9 @@ const DemandeurDashboard = () => {
   useEffect(() => {
     const fetchDemandes = async () => {
       try {
-        // Récupérer les demandes du service de l'utilisateur
-        const res = await api.get('/demandes?mesdemandes=true');
+        const hasVoirToutes = user?.permissions?.includes('VOIR_TOUTES_DEMANDES');
+        const url = hasVoirToutes ? '/demandes' : '/demandes?mesdemandes=true';
+        const res = await api.get(url);
         setDemandes(res.data);
       } catch (err) {
         console.error('Erreur lors de la récupération des demandes:', err);
@@ -23,7 +24,7 @@ const DemandeurDashboard = () => {
       }
     };
     fetchDemandes();
-  }, []);
+  }, [user]);
 
   const handleMarkAsRead = async (idDemande) => {
     try {

@@ -13,8 +13,8 @@ exports.createUser = async (req, res) => {
 
     try {
         const hash = await bcrypt.hash(password, 10);
-        await User.create({ nom, email, password: hash, idRole, idService: idService || null });
-        res.json({ message: "Utilisateur créé avec succès" });
+        const result = await User.create({ nom, email, password: hash, idRole, idService: idService || null });
+        res.json({ message: "Utilisateur créé avec succès", insertId: result.insertId });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Erreur serveur" });
@@ -95,8 +95,8 @@ exports.createRole = async (req, res) => {
         return res.status(400).json({ message: "Veuillez fournir un nom de role" });
     }
     try {
-        await User.createRole(nomRole);
-        res.json({ message: "Role créé avec succès" });
+        const result = await User.createRole(nomRole);
+        res.json({ message: "Role créé avec succès", insertId: result.insertId });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Erreur serveur lors de la création du rôle" });
