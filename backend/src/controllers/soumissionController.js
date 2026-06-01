@@ -94,12 +94,44 @@ exports.getSoumissionnairesByMarche = async (req, res) => {
 // Mettre à jour une offre
 exports.updateSoumission = async (req, res) => {
     const { idOffre } = req.params;
+    const { 
+        idMarche, 
+        nomSoumissionnaire, 
+        telephone, 
+        email, 
+        dateSoumission, 
+        montantPropose 
+    } = req.body;
+
     try {
         await Soumission.update(idOffre, req.body);
         
         // Si c'était une modification autorisée, on réinitialise les drapeaux
         if (req.body.autorisationModification) {
             await Soumission.resetModificationFlags(idOffre);
+        }
+
+        // Envoi de l'email de confirmation de mise à jour si l'email est fourni
+        if (email && nomSoumissionnaire && montantPropose) {
+            try {
+                const subject = "Mise à jour de votre offre - SETIC";
+                const text = `Bonjour ${nomSoumissionnaire},\n\n` +
+                             `Nous vous informons que votre offre a été mise à jour avec succès par notre service de réception.\n\n` +
+                             `DÉTAILS MIS À JOUR :\n` +
+                             `---------------------------\n` +
+                             `N° Offre : #${idOffre}\n` +
+                             `Marché : #${idMarche || 'N/A'}\n` +
+                             `Téléphone enregistré : ${telephone || 'N/A'}\n` +
+                             `Montant proposé : ${Number(montantPropose).toLocaleString()} FBU\n` +
+                             `Date : ${dateSoumission ? new Date(dateSoumission).toLocaleDateString() : 'N/A'}\n\n` +
+                             `Ihinduka ry'offre yawe ryabaye enregistre neza muri SETIC.\n\n` +
+                             `Cordialement,\n` +
+                             `L'équipe SETIC - Gestion des Marchés Publics`;
+                
+                await sendEmail(email, subject, text);
+            } catch (emailError) {
+                console.error("Erreur lors de l'envoi de l'email de mise à jour:", emailError);
+            }
         }
 
         res.json({ message: "Offre mise à jour avec succès" });
