@@ -7,8 +7,8 @@ router.use(verifyToken);
 
 // Définition des routes pour les demandes
 router.post('/', requirePermission(['DEMANDE_CREATE', 'CREER_DEMANDE']), demandeController.createDemande);
-router.get('/', requirePermission(['DEMANDE_READ_OWN', 'DEMANDE_READ_ALL', 'VOIR_MES_DEMANDES', 'VOIR_TOUTES_DEMANDES', 'AJUSTER_DEMANDE_CGMP', 'VALIDER_BUDGET_DEMANDE']), demandeController.getAllDemandes);
-router.get('/service/:idService', requirePermission(['DEMANDE_READ_OWN', 'DEMANDE_READ_ALL', 'VOIR_MES_DEMANDES', 'VOIR_TOUTES_DEMANDES', 'AJUSTER_DEMANDE_CGMP', 'VALIDER_BUDGET_DEMANDE']), demandeController.getDemandesByService);
+router.get('/', requirePermission(['DEMANDE_READ_OWN', 'DEMANDE_READ_ALL', 'VOIR_MES_DEMANDES', 'VOIR_TOUTES_DEMANDES', 'AJUSTER_DEMANDE_CGMP', 'VALIDER_BUDGET_DEMANDE', 'VOIR_MARCHES', 'GERER_MARCHES']), demandeController.getAllDemandes);
+router.get('/service/:idService', requirePermission(['DEMANDE_READ_OWN', 'DEMANDE_READ_ALL', 'VOIR_MES_DEMANDES', 'VOIR_TOUTES_DEMANDES', 'AJUSTER_DEMANDE_CGMP', 'VALIDER_BUDGET_DEMANDE', 'VOIR_MARCHES', 'GERER_MARCHES']), demandeController.getDemandesByService);
 router.put('/:id', requirePermission(['DEMANDE_UPDATE', 'MODIFIER_DEMANDE']), demandeController.updateDemande);
 router.put('/:id/cgmp-update', requirePermission('AJUSTER_DEMANDE_CGMP'), demandeController.updateDemandeByCgmp);
 router.put('/:id/statut', requirePermission(['VALIDER_BUDGET_DEMANDE', 'AJUSTER_DEMANDE_CGMP', 'DEMANDE_UPDATE', 'MODIFIER_DEMANDE']), demandeController.updateStatut);

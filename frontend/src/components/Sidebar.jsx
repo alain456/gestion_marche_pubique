@@ -51,7 +51,7 @@ const Sidebar = ({ user }) => {
     if ((has('EFFECTUER_PAIEMENT') || has('VOIR_PAIEMENTS')) && has('VOIR_RECEPTIONS')) {
       links.push({ name: 'Paiements', path: '/raf', icon: CreditCard });
     }
-    if (has('VOIR_MARCHES') || has('GERER_MARCHES')) {
+    if ((has('VOIR_MARCHES') || has('GERER_MARCHES')) && role !== 'RECEPTIONISTE' && role !== 'RECEPTIONNISTE') {
       links.push({ name: 'Marchés', path: '/cgmp/marches', icon: FileText });
       links.push({ name: 'Paramétrage Seuils', path: '/cgmp/seuils', icon: Gavel });
     }
