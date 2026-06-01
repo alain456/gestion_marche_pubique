@@ -126,17 +126,18 @@ const App = () => {
 
           <Route element={<ProtectedRoute requiredPermission={['VOIR_MARCHES', 'GERER_MARCHES']} />}>
             <Route path="/cgmp/marches" element={<CgmpMarches />} />
+            <Route path="/cgmp/seuils" element={<CgmpMarches />} />
           </Route>
 
           <Route element={<ProtectedRoute requiredPermission={['AJUSTER_DEMANDE_CGMP', 'VOIR_TOUTES_DEMANDES']} />}>
             <Route path="/cgmp/budgets" element={<CgmpBudgets />} />
           </Route>
 
-          <Route element={<ProtectedRoute requiredPermission={['GERER_SOUMISSIONS']} />}>
+          <Route element={<ProtectedRoute requiredPermission={['VOIR_MARCHES', 'GERER_SOUMISSIONS']} allowedRoles={['CGMP']} />}>
             <Route path="/cgmp/soumissionnaires" element={<CgmpSoumissions />} />
           </Route>
 
-          <Route element={<ProtectedRoute requiredPermission={['ENREGISTRER_EXECUTION', 'GERER_SOUMISSIONS']} />}>
+          <Route element={<ProtectedRoute allowedRoles={['RECEPTIONISTE', 'RECEPTIONNISTE']} />}>
             <Route path="/reception/soumissions" element={<ReceptionSoumissions />} />
           </Route>
 

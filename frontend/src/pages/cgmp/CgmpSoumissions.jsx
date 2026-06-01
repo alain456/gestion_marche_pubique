@@ -10,8 +10,7 @@ import {
   TrendingUp,
   CheckCircle,
   XCircle,
-  AlertCircle,
-  MessageSquare
+  AlertCircle
 } from 'lucide-react';
 
 const CgmpSoumissions = () => {
@@ -25,10 +24,6 @@ const CgmpSoumissions = () => {
   const [selectedMarketId, setSelectedMarketId] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
   
-  const [showMotifModal, setShowMotifModal] = useState(false);
-  const [currentOffer, setCurrentOffer] = useState(null);
-  const [motif, setMotif] = useState('');
-
   const fetchData = async () => {
     try {
       const [marchesRes, soumissionsRes] = await Promise.all([
@@ -49,23 +44,6 @@ const CgmpSoumissions = () => {
   useEffect(() => {
     fetchData();
   }, []);
-
-  const handleStatusUpdate = async (idOffre, newStatus, rejectionMotif = null) => {
-    try {
-      const offer = data.soumissions.find(s => s.idOffre === idOffre);
-      await api.put(`/soumissions/${idOffre}`, {
-        ...offer,
-        statut: newStatus,
-        motif: rejectionMotif
-      });
-      fetchData();
-      setShowMotifModal(false);
-      setMotif('');
-    } catch (err) {
-      console.error(err);
-      alert("Erreur lors de la mise à jour du statut");
-    }
-  };
 
   const filteredSoumissions = useMemo(() => {
     let result = [...data.soumissions];
@@ -121,9 +99,9 @@ const CgmpSoumissions = () => {
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
             <Users className="text-primary h-8 w-8" />
-            Analyse des Offres
+            Soumissionnaires
           </h1>
-          <p className="text-gray-500 mt-2">Examen et validation de la conformité des soumissions.</p>
+          <p className="text-gray-500 mt-2">Consultation des offres enregistrées par le réceptionniste.</p>
         </div>
 
         <div className="flex flex-wrap gap-3">
@@ -236,7 +214,7 @@ const CgmpSoumissions = () => {
                 <th className="px-8 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Marché</th>
                 <th className="px-8 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Montant</th>
                 <th className="px-8 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Statut</th>
-                <th className="px-8 py-5 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Actions</th>
+                <th className="px-8 py-5 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Consultation</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -274,38 +252,8 @@ const CgmpSoumissions = () => {
                         </div>
                       )}
                     </td>
-                    <td className="px-8 py-6 text-right whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-2">
-                        {s.statut === 'en attente' && (
-                          <>
-                            <button 
-                              onClick={() => handleStatusUpdate(s.idOffre, 'conforme')}
-                              className="p-2 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-100 transition-colors"
-                              title="Marquer comme conforme"
-                            >
-                              <CheckCircle size={18} />
-                            </button>
-                            <button 
-                              onClick={() => {
-                                setCurrentOffer(s);
-                                setShowMotifModal(true);
-                              }}
-                              className="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors"
-                              title="Rejeter l'offre"
-                            >
-                              <XCircle size={18} />
-                            </button>
-                          </>
-                        )}
-                        {s.statut !== 'en attente' && (
-                          <button 
-                            onClick={() => handleStatusUpdate(s.idOffre, 'en attente')}
-                            className="text-[10px] font-bold text-gray-400 hover:text-primary transition-colors"
-                          >
-                            RÉINITIALISER
-                          </button>
-                        )}
-                      </div>
+                    <td className="px-8 py-6 text-right whitespace-nowrap text-xs font-bold text-gray-400">
+                      Lecture seule
                     </td>
                   </tr>
                 ))
@@ -314,46 +262,6 @@ const CgmpSoumissions = () => {
           </table>
         </div>
       </div>
-
-      {/* Modal Motif de Rejet */}
-      {showMotifModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
-          <div className="bg-surface rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300">
-            <div className="p-6 bg-red-600 text-white flex justify-between items-center">
-              <h2 className="text-xl font-bold">Rejeter l'Offre</h2>
-              <button onClick={() => setShowMotifModal(false)} className="hover:bg-surface/10 p-2 rounded-full transition-colors">
-                <XCircle className="h-6 w-6" />
-              </button>
-            </div>
-            <div className="p-8 space-y-4">
-              <p className="text-gray-600 text-sm">
-                Veuillez indiquer la raison du rejet pour l'offre de <strong>{currentOffer?.nomSoumissionnaire}</strong>.
-              </p>
-              <textarea 
-                value={motif}
-                onChange={(e) => setMotif(e.target.value)}
-                className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-red-200 outline-none transition-all text-sm h-32"
-                placeholder="Ex: Dossier technique incomplet, caution de soumission manquante..."
-              />
-              <div className="flex justify-end gap-3 pt-2">
-                <button 
-                  onClick={() => setShowMotifModal(false)}
-                  className="px-6 py-2.5 text-gray-500 font-bold text-sm"
-                >
-                  Annuler
-                </button>
-                <button 
-                  onClick={() => handleStatusUpdate(currentOffer.idOffre, 'rejete', motif)}
-                  disabled={!motif.trim()}
-                  className="px-8 py-2.5 bg-red-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-red-200 disabled:opacity-50"
-                >
-                  Confirmer le Rejet
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

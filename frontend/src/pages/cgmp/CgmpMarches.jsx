@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, Fragment } from 'react';
+import { useLocation } from 'react-router-dom';
 import api from '../../services/api';
 import { 
   FileText, 
@@ -24,7 +25,17 @@ import {
   Users
 } from 'lucide-react';
 
+const SEUIL_RULES_STORAGE_KEY = 'cgmp_seuil_rules_v1';
+const DEFAULT_SEUIL_RULES = [
+  { id: 1, typeMarche: 'travaux', min: 10000000, max: null, modePassation: 'AO', label: 'Travaux (>= 10 000 000 BIF)' },
+  { id: 2, typeMarche: 'fourniture', min: 5000000, max: null, modePassation: 'AO', label: 'Fourniture (>= 5 000 000 BIF)' },
+  { id: 3, typeMarche: 'service', min: 5000000, max: null, modePassation: 'AO', label: 'Service (>= 5 000 000 BIF)' }
+];
+
+const normalizeTypeMarche = (value) => (value || '').toString().trim().toLowerCase();
+
 const CgmpMarches = () => {
+  const location = useLocation();
   const [marches, setMarches] = useState([]);
   const [groupedDemands, setGroupedDemands] = useState([]); // Nouveau nom pour plus de clarté
   const [allDemands, setAllDemands] = useState([]); // Pour retrouver les articles des marchés existants
@@ -72,12 +83,37 @@ const CgmpMarches = () => {
   const [expandedMarches, setExpandedMarches] = useState({});
   const [showComparison, setShowComparison] = useState(false);
   const [comparisonMarche, setComparisonMarche] = useState(null);
+  const [showRulesConfig, setShowRulesConfig] = useState(false);
+  const [seuilRules, setSeuilRules] = useState(DEFAULT_SEUIL_RULES);
 
   // États pour les filtres
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterYear, setFilterYear] = useState('');
+
+  useEffect(() => {
+    try {
+      const rawRules = localStorage.getItem(SEUIL_RULES_STORAGE_KEY);
+      if (!rawRules) return;
+      const parsed = JSON.parse(rawRules);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        setSeuilRules(parsed);
+      }
+    } catch (e) {
+      console.error('Impossible de charger les règles de seuil:', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(SEUIL_RULES_STORAGE_KEY, JSON.stringify(seuilRules));
+  }, [seuilRules]);
+
+  useEffect(() => {
+    if (location.pathname === '/cgmp/seuils') {
+      setShowRulesConfig(true);
+    }
+  }, [location.pathname]);
 
   const fetchData = async () => {
     try {
@@ -189,6 +225,90 @@ const CgmpMarches = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const selectedTypeMarche = normalizeTypeMarche(selectedDemand?.typeMarche);
+  const currentMontant = Number(form.montantEstime || 0);
+
+  const matchingRule = useMemo(() => {
+    if (!selectedTypeMarche || !currentMontant || currentMontant <= 0) return null;
+    return seuilRules.find((rule) => {
+      const sameType = normalizeTypeMarche(rule.typeMarche) === selectedTypeMarche;
+      const minOk = currentMontant >= Number(rule.min || 0);
+      const maxOk = rule.max === null || rule.max === '' || Number.isNaN(Number(rule.max))
+        ? true
+        : currentMontant <= Number(rule.max);
+      return sameType && minOk && maxOk;
+    }) || null;
+  }, [seuilRules, selectedTypeMarche, currentMontant]);
+
+  useEffect(() => {
+    if (!matchingRule) {
+      setForm((prev) => ({
+        ...prev,
+        modePassation: '',
+        seuilReglementaireApplique: ''
+      }));
+      return;
+    }
+    setForm((prev) => ({
+      ...prev,
+      modePassation: matchingRule.modePassation || '',
+      seuilReglementaireApplique: matchingRule.label || ''
+    }));
+  }, [matchingRule]);
+
+  const updateSeuilRule = (id, field, value) => {
+    setSeuilRules((prev) => prev.map((rule) => {
+      if (rule.id !== id) return rule;
+      if (field === 'min' || field === 'max') {
+        return { ...rule, [field]: value === '' ? null : Number(value) };
+      }
+      return { ...rule, [field]: value };
+    }));
+  };
+
+  const updateTypeMarche = normalizeTypeMarche(selectedMarche?.typeMarche);
+  const updateMontant = Number(updateForm.montantEstime || 0);
+
+  const updateMatchingRule = useMemo(() => {
+    if (!updateTypeMarche || !updateMontant || updateMontant <= 0) return null;
+    return seuilRules.find((rule) => {
+      const sameType = normalizeTypeMarche(rule.typeMarche) === updateTypeMarche;
+      const minOk = updateMontant >= Number(rule.min || 0);
+      const maxOk = rule.max === null || rule.max === '' || Number.isNaN(Number(rule.max))
+        ? true
+        : updateMontant <= Number(rule.max);
+      return sameType && minOk && maxOk;
+    }) || null;
+  }, [seuilRules, updateTypeMarche, updateMontant]);
+
+  useEffect(() => {
+    if (showDetails && updateForm.montantEstime) {
+      if (!updateMatchingRule) {
+        setUpdateForm((prev) => ({
+          ...prev,
+          modePassation: ''
+        }));
+      } else {
+        setUpdateForm((prev) => ({
+          ...prev,
+          modePassation: updateMatchingRule.modePassation || ''
+        }));
+      }
+    }
+  }, [updateMatchingRule, showDetails, updateForm.montantEstime]);
+
+  const addSeuilRule = () => {
+    const nextId = (seuilRules[seuilRules.length - 1]?.id || 0) + 1;
+    setSeuilRules((prev) => ([
+      ...prev,
+      { id: nextId, typeMarche: 'travaux', min: 0, max: null, modePassation: 'AO', label: 'Nouvelle règle' }
+    ]));
+  };
+
+  const removeSeuilRule = (id) => {
+    setSeuilRules((prev) => prev.filter((rule) => rule.id !== id));
+  };
+
   const handleStartEditArticles = (demand) => {
     setEditingDemand(demand);
     setEditingArticles(demand.articles.map(a => ({ ...a })));
@@ -243,6 +363,11 @@ const CgmpMarches = () => {
     e.preventDefault();
     setError('');
     setMessage('');
+
+    if (!matchingRule) {
+      setError("Aucune règle CGMP ne correspond à ce type de marché et ce montant. Configurez les seuils d'abord.");
+      return;
+    }
 
     try {
       await api.post('/marches', form);
@@ -458,6 +583,93 @@ const CgmpMarches = () => {
         </div>
       </div>
 
+      {/* Configuration CGMP des règles de passation */}
+      <section className="bg-surface rounded-3xl border border-gray-100 shadow-sm p-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-bold text-gray-900">Paramétrage CGMP des seuils</h3>
+            <p className="text-sm text-gray-500">Définissez les modes de passation par type de marché et intervalle de montant.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowRulesConfig((prev) => !prev)}
+            className="text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 transition"
+          >
+            {showRulesConfig ? 'Masquer config seuils' : 'Configurer seuils dynamiques'}
+          </button>
+        </div>
+
+        {showRulesConfig && (
+          <div className="pt-4">
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 space-y-3">
+              <p className="text-xs text-gray-600">
+                Le système applique automatiquement la première règle qui correspond au type de marché et au montant.
+              </p>
+              {seuilRules.map((rule) => (
+                <div key={rule.id} className="grid grid-cols-1 md:grid-cols-6 gap-2 items-end">
+                  <select
+                    value={rule.typeMarche}
+                    onChange={(e) => updateSeuilRule(rule.id, 'typeMarche', e.target.value)}
+                    className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm"
+                  >
+                    <option value="travaux">Travaux</option>
+                    <option value="fourniture">Fourniture</option>
+                    <option value="service">Service</option>
+                  </select>
+                  <input
+                    type="number"
+                    value={rule.min ?? ''}
+                    onChange={(e) => updateSeuilRule(rule.id, 'min', e.target.value)}
+                    placeholder="Montant min"
+                    className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm"
+                  />
+                  <input
+                    type="number"
+                    value={rule.max ?? ''}
+                    onChange={(e) => updateSeuilRule(rule.id, 'max', e.target.value)}
+                    placeholder="Montant max (vide = infini)"
+                    className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm"
+                  />
+                  <select
+                    value={rule.modePassation}
+                    onChange={(e) => updateSeuilRule(rule.id, 'modePassation', e.target.value)}
+                    className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm"
+                  >
+                    <option value="AO">Appel d&apos;Offres</option>
+                    <option value="AOR">Appel d&apos;Offres Restreint</option>
+                    <option value="PVN">Procédure avec Négociation</option>
+                    <option value="GG">Gré à Gré</option>
+                    <option value="DC">Dialogue compétitif</option>
+                    <option value="PA">Procédure adaptée</option>
+                  </select>
+                  <input
+                    type="text"
+                    value={rule.label}
+                    onChange={(e) => updateSeuilRule(rule.id, 'label', e.target.value)}
+                    placeholder="Libellé seuil"
+                    className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeSeuilRule(rule.id)}
+                    className="px-3 py-2 rounded-xl border border-red-200 bg-red-50 text-red-600 text-sm font-semibold"
+                  >
+                    Supprimer
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={addSeuilRule}
+                className="px-4 py-2 rounded-xl border border-primary/30 bg-primary/10 text-primary text-sm font-semibold"
+              >
+                + Ajouter une règle
+              </button>
+            </div>
+          </div>
+        )}
+      </section>
+
       {/* Formulaire de création de marché */}
       {showForm && (
         <section className="bg-surface rounded-3xl border border-gray-100 shadow-xl overflow-hidden animate-in zoom-in-95 duration-300">
@@ -477,7 +689,8 @@ const CgmpMarches = () => {
               <XCircle className="h-6 w-6" />
             </button>
           </div>
-          
+
+
           <form onSubmit={handleSubmit} className="p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Reference du marché</label>
@@ -516,7 +729,8 @@ const CgmpMarches = () => {
                   required
                   value={form.modePassation}
                   onChange={(e) => setForm({...form, modePassation: e.target.value})}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all appearance-none"
+                  disabled
+                  className="w-full pl-10 pr-4 py-3 bg-gray-100 border border-gray-100 rounded-2xl outline-none transition-all appearance-none cursor-not-allowed"
                 >
                   <option value="">Sélectionner...</option>
                   <option value="AO">Appel d&apos;Offres</option>
@@ -533,23 +747,24 @@ const CgmpMarches = () => {
               <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Seuil Règlementaire Appliqué</label>
               <div className="relative">
                 <Info className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <select
+                <input
                   required
                   value={form.seuilReglementaireApplique}
                   onChange={(e) => setForm({...form, seuilReglementaireApplique: e.target.value})}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all appearance-none"
-                >
-                  <option value="">Sélectionner un seuil...</option>
-                  <optgroup label="Administrations Centrales / Entr. Publiques">
-                    <option value="Travaux - Admin (> 10M BIF)">Travaux (≥ 10 000 000 BIF)</option>
-                    <option value="Fournitures/Services - Admin (> 5M BIF)">Fournitures/Services (≥ 5 000 000 BIF)</option>
-                  </optgroup>
-                  <optgroup label="Communes (Collectivités)">
-                    <option value="Travaux - Communes (> 12M BIF)">Travaux (≥ 12 000 000 BIF)</option>
-                    <option value="Fournitures/Services - Communes (> 10M BIF)">Fournitures/Services (≥ 10 000 000 BIF)</option>
-                  </optgroup>
-                </select>
+                  readOnly
+                  className="w-full pl-10 pr-4 py-3 bg-gray-100 border border-gray-100 rounded-2xl outline-none transition-all cursor-not-allowed"
+                  placeholder="Calculé automatiquement par les règles dynamiques"
+                />
               </div>
+              <p className="text-[11px] text-gray-500">
+                Type: <span className="font-semibold">{selectedTypeMarche || '—'}</span> ·
+                Montant: <span className="font-semibold"> {currentMontant ? currentMontant.toLocaleString() : '0'} FBU</span>
+              </p>
+              {!matchingRule && (
+                <p className="text-[11px] text-red-600 font-semibold">
+                  Aucune règle active pour ce type/montant. Configurez les seuils CGMP.
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -761,8 +976,10 @@ const CgmpMarches = () => {
                       <select
                         value={updateForm.modePassation || ''}
                         onChange={(e) => setUpdateForm({...updateForm, modePassation: e.target.value})}
-                        className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all appearance-none"
+                        disabled
+                        className="w-full pl-10 pr-4 py-3 bg-gray-100 border border-gray-100 rounded-2xl outline-none transition-all appearance-none cursor-not-allowed"
                       >
+                        <option value="">Sélectionner...</option>
                         <option value="AO">Appel d&apos;Offres</option>
                         <option value="AOR">Appel d&apos;Offres Restreint</option>
                         <option value="PVN">Procédure avec Négociation</option>
@@ -771,6 +988,11 @@ const CgmpMarches = () => {
                         <option value="PA">Procedure adapte</option>
                       </select>
                     </div>
+                    {!updateMatchingRule && showDetails && (
+                      <p className="text-[11px] text-red-600 font-semibold mt-1">
+                        Aucune règle active pour ce type/montant. Configurez les seuils CGMP.
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -992,25 +1214,55 @@ const CgmpMarches = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Statut du Marché</label>
-                      <div className="relative">
-                        <Info className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        <select
-                          value={updateForm.statut}
-                          onChange={(e) => setUpdateForm({...updateForm, statut: e.target.value})}
-                          className={`w-full pl-10 pr-4 py-3 border rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all appearance-none font-bold ${
-                            updateForm.statut === 'cloture' ? 'bg-gray-100 text-gray-600 border-gray-200' :
-                            updateForm.statut === 'publie' ? 'bg-blue-50 text-blue-700 border-blue-100' :
-                            updateForm.statut === 'attribution' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-                            updateForm.statut === 'en attente' ? 'bg-amber-50 text-amber-700 border-amber-100' :
-                            'bg-gray-50 text-primary border-gray-100'
-                          }`}
-                        >
-                          <option value="en attente">Phase de Préparation (Modifiable)</option>
-                          <option value="publie">Marché Publié</option>
-                          <option value="attribution">Marché Attribué</option>
-                          <option value="suspendu">Marché Suspendu</option>
-                          <option value="cloture">Marché Clôturé</option>
-                        </select>
+                      <div className="flex items-center gap-2">
+                        {(() => {
+                          const flow = [
+                            { value: 'en attente', label: 'Phase de Préparation (Modifiable)', color: 'bg-amber-50 text-amber-700 border-amber-200' },
+                            { value: 'publie', label: 'Marché Publié', color: 'bg-blue-50 text-blue-700 border-blue-200' },
+                            { value: 'attribution', label: 'Marché Attribué', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+                            { value: 'cloture', label: 'Marché Clôturé', color: 'bg-gray-100 text-gray-600 border-gray-200' }
+                          ];
+                          // Si le statut est "suspendu" on le traite à part
+                          const currentIdx = updateForm.statut === 'suspendu' ? 0 : flow.findIndex(s => s.value === updateForm.statut);
+                          const idx = currentIdx >= 0 ? currentIdx : 0;
+                          const currentStep = flow[idx];
+                          
+                          const nextIdx = idx < flow.length - 1 ? idx + 1 : idx;
+                          const prevIdx = idx > 0 ? idx - 1 : 0;
+
+                          return (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => setUpdateForm({...updateForm, statut: flow[prevIdx].value})}
+                                disabled={idx === 0}
+                                className={`px-4 py-3 rounded-2xl border transition-all font-bold text-sm shadow-sm ${idx === 0 ? 'bg-gray-50 text-gray-400 border-gray-100 cursor-not-allowed' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50 hover:text-primary'}`}
+                                title="Statut précédent"
+                              >
+                                &larr; Retour
+                              </button>
+                              
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (idx < flow.length - 1) {
+                                    setUpdateForm({...updateForm, statut: flow[nextIdx].value});
+                                  }
+                                }}
+                                disabled={idx === flow.length - 1}
+                                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 border rounded-2xl transition-all font-bold text-sm shadow-sm ${
+                                  updateForm.statut === 'suspendu' ? 'bg-red-50 text-red-700 border-red-200' : currentStep.color
+                                } ${idx !== flow.length - 1 ? 'hover:opacity-80 cursor-pointer' : 'cursor-default'}`}
+                              >
+                                <Info className="h-4 w-4" />
+                                {updateForm.statut === 'suspendu' ? 'Marché Suspendu (Cliquez pour relancer)' : currentStep.label}
+                                {idx < flow.length - 1 && updateForm.statut !== 'suspendu' && (
+                                  <span className="ml-2 text-[10px] uppercase opacity-70 border-l border-current pl-2">Passer à {flow[nextIdx].label}</span>
+                                )}
+                              </button>
+                            </>
+                          );
+                        })()}
                       </div>
                     </div>
 

@@ -6,7 +6,7 @@ import Sidebar from './Sidebar';
 import PropTypes from 'prop-types';
 
 const ProtectedRoute = ({ allowedRoles, requiredPermission }) => {
-  const { user, loading, hasPermission } = useContext(AuthContext);
+  const { user, loading, hasPermission } = useContext(AuthContext) || {};
 
   if (loading) {
     return <div className="h-screen w-full flex items-center justify-center text-primary">Chargement...</div>;

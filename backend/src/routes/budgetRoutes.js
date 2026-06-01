@@ -10,11 +10,11 @@ router.get('/ouverts', budgetController.getBudgetsOuverts);
 
 // Gestion des lignes budgétaires (conteneurs)
 router.get('/', requirePermission(['VOIR_BUDGETS', 'GERER_BUDGETS', 'AJUSTER_DEMANDE_CGMP', 'VOIR_TOUTES_DEMANDES', 'VALIDER_BUDGET_DEMANDE']), budgetController.getBudgets);
-router.get('/next-number/:exercice/:type', requirePermission('GERER_BUDGETS'), budgetController.getNextBudgetNumber);
-router.post('/', requirePermission('GERER_BUDGETS'), budgetController.createBudget);
-router.put('/:id', requirePermission('GERER_BUDGETS'), budgetController.updateBudget);
-router.delete('/:id', requirePermission('GERER_BUDGETS'), budgetController.deleteBudget);
-router.patch('/:id/status', requirePermission('GERER_BUDGETS'), budgetController.toggleBudgetStatus);
+router.get('/next-number/:exercice/:type', requirePermission(['GERER_BUDGETS', 'AJUSTER_DEMANDE_CGMP']), budgetController.getNextBudgetNumber);
+router.post('/', requirePermission(['GERER_BUDGETS', 'AJUSTER_DEMANDE_CGMP']), budgetController.createBudget);
+router.put('/:id', requirePermission(['GERER_BUDGETS', 'AJUSTER_DEMANDE_CGMP']), budgetController.updateBudget);
+router.delete('/:id', requirePermission(['GERER_BUDGETS', 'AJUSTER_DEMANDE_CGMP']), budgetController.deleteBudget);
+router.patch('/:id/status', requirePermission(['GERER_BUDGETS', 'AJUSTER_DEMANDE_CGMP']), budgetController.toggleBudgetStatus);
 router.get('/status/:id', requirePermission('VOIR_BUDGETS'), budgetController.getBudgetStatus);
 
 // Validation budgétaire des demandes

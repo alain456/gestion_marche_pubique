@@ -53,14 +53,15 @@ const Sidebar = ({ user }) => {
     }
     if (has('VOIR_MARCHES') || has('GERER_MARCHES')) {
       links.push({ name: 'Marchés', path: '/cgmp/marches', icon: FileText });
+      links.push({ name: 'Paramétrage Seuils', path: '/cgmp/seuils', icon: Gavel });
     }
     if (has('AJUSTER_DEMANDE_CGMP')) {
-      links.push({ name: 'Enveloppes Budgétaires', path: '/cgmp/budgets', icon: CreditCard });
+      links.push({ name: 'Lignes Budgétaires', path: '/cgmp/budgets', icon: CreditCard });
     }
-    if (has('GERER_SOUMISSIONS')) {
+    if (role === 'CGMP' && (has('VOIR_MARCHES') || has('GERER_SOUMISSIONS'))) {
       links.push({ name: 'Soumissionnaires', path: '/cgmp/soumissionnaires', icon: ClipboardList });
     }
-    if (has('ENREGISTRER_EXECUTION') || has('GERER_SOUMISSIONS')) {
+    if ((role === 'RECEPTIONISTE' || role === 'RECEPTIONNISTE') && has('ENREGISTRER_EXECUTION')) {
       links.push({ name: 'Enregistrement Offres', path: '/reception/soumissions', icon: FileText });
     }
     if (has('GERER_UTILISATEURS') || has('VOIR_UTILISATEURS')) {

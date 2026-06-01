@@ -48,8 +48,7 @@ const DemandeurDemandes = () => {
   const [form, setForm] = useState({
     idService: user?.idService || '',
     typeMarche: '',
-    idBudget: '',
-    priorite: 'Normale'
+    idBudget: ''
   });
 
   const loadDemandes = async () => {
@@ -100,7 +99,7 @@ const DemandeurDemandes = () => {
   }, [user]);
 
   const resetForm = () => {
-    setForm({ idService: user?.idService || '', typeMarche: '', idBudget: '', priorite: 'Normale' });
+    setForm({ idService: user?.idService || '', typeMarche: '', idBudget: '' });
     setSelectedItems([]);
     setCurrentItem({ idArticle: '', quantite: '', description: '', montant: '' });
     setEditingId(null);
@@ -154,7 +153,6 @@ const DemandeurDemandes = () => {
       const payload = {
         idService: form.idService ? parseInt(form.idService) : null,
         typeMarche: form.typeMarche,
-        priorite: form.priorite,
         statut: statut,
         articles: finalItems,
         idBudget: parseInt(form.idBudget),
@@ -239,8 +237,7 @@ const DemandeurDemandes = () => {
     setForm({
       idService: demande.idService || '',
       idBudget: demande.idBudget || '',
-      typeMarche: demande.typeMarche ? demande.typeMarche.toLowerCase() : '',
-      priorite: demande.priorite || 'Normale'
+      typeMarche: demande.typeMarche ? demande.typeMarche.toLowerCase() : ''
     });
     setSelectedItems(demande.articles.map(art => ({
       idArticle: art.idArticle,
@@ -405,20 +402,6 @@ const DemandeurDemandes = () => {
                 disabled 
                 className="w-full rounded-xl border-gray-100 bg-gray-50 py-3 px-4 text-sm font-bold text-gray-500 uppercase tracking-tight shadow-inner" 
               />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-black text-gray-700 uppercase tracking-wider flex items-center gap-2">
-                <Clock className="h-4 w-4 text-primary" /> Niveau de Priorité
-              </label>
-              <select 
-                value={form.priorite} 
-                onChange={(e) => setForm({...form, priorite: e.target.value})}
-                className="w-full rounded-xl border-gray-200 bg-surface py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 transition-all shadow-sm"
-              >
-                <option value="Normale">Normale</option>
-                <option value="Urgente">Urgente</option>
-                <option value="Critique">Critique</option>
-              </select>
             </div>
           </div>
 

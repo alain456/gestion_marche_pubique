@@ -2,7 +2,16 @@ import React, { createContext, useState, useEffect, useCallback, useRef } from '
 import api from '../services/api';
 import { PERMISSIONS_CHANNEL } from '../utils/permissionsSync';
 
-export const AuthContext = createContext();
+const defaultAuthContext = {
+  user: null,
+  loading: true,
+  login: async () => ({ success: false, message: 'Auth provider not ready' }),
+  logout: () => {},
+  hasPermission: () => false,
+  refreshSession: async () => {}
+};
+
+export const AuthContext = createContext(defaultAuthContext);
 
 const PERMISSIONS_POLL_MS = 8000;
 
@@ -121,7 +130,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={{ user, login, logout, loading, hasPermission, refreshSession }}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };
