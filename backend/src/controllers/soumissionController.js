@@ -104,11 +104,60 @@ exports.updateSoumission = async (req, res) => {
     } = req.body;
 
     try {
+        // Charger l'ancienne offre pour comparer et tracer les modifications
+        const oldOffre = await Soumission.findById(idOffre);
+
+        // Calcul des changements pour l'historique et l'email
+        const changements = [];
+        if (oldOffre) {
+            const oldNom = oldOffre.nomSoumissionnaire || '';
+            const newNom = nomSoumissionnaire || oldNom;
+            if (oldNom !== newNom) changements.push(`Nom: '${oldNom}' -> '${newNom}'`);
+            
+            const oldMontant = oldOffre.montantPropose || 0;
+            const newMontant = montantPropose || oldMontant;
+            if (Number(oldMontant) !== Number(newMontant)) changements.push(`Montant: ${oldMontant} -> ${newMontant}`);
+            
+            const oldTel = oldOffre.telephone || '';
+            const newTel = telephone || oldTel;
+            if (oldTel !== newTel) changements.push(`Tel: '${oldTel}' -> '${newTel}'`);
+            
+            const oldMail = oldOffre.email || '';
+            const newMail = email || oldMail;
+            if (oldMail !== newMail) changements.push(`Email: '${oldMail}' -> '${newMail}'`);
+        }
+        const detailsChangementText = changements.length > 0 ? changements.join(', ') : 'Aucun changement détecté';
+        const emailChangementsText = changements.length > 0 ? `- ${changements.join('\n- ')}` : 'Mise à jour générale du dossier sans modification des champs principaux.';
+
         await Soumission.update(idOffre, req.body);
         
         // Si c'était une modification autorisée, on réinitialise les drapeaux
         if (req.body.autorisationModification) {
             await Soumission.resetModificationFlags(idOffre);
+
+            // --- Historique détaillé des modifications (non-bloquant) ---
+            try {
+                if (oldOffre && oldOffre.idMarche) {
+                    const Marche = require('../models/marcheModel');
+                    const Demande = require('../models/demandeModel');
+                    const marche = await Marche.findById(oldOffre.idMarche);
+                    
+                    if (marche && marche.idDemande) {
+                        await Demande.addHistory(null, {
+                            idDemande: marche.idDemande,
+                            action: "Modification d'offre effectuée",
+                            statutPrecedent: marche.statut,
+                            nouveauStatut: marche.statut,
+                            idUtilisateur: req.user.idUser,
+                            nomUtilisateur: req.user.nom,
+                            roleUtilisateur: req.user.role,
+                            motif: `Le réceptionniste a modifié l'offre #${idOffre}. Motif initial de la demande: ${oldOffre.motifModification || 'Non spécifié'}. Changements apportés: ${detailsChangementText}`
+                        });
+                    }
+                }
+            } catch (histErr) {
+                console.error("[Historique] Erreur de traçabilité de modification d'offre:", histErr.message);
+            }
         }
 
         // Envoi de l'email de confirmation de mise à jour si l'email est fourni
@@ -117,7 +166,10 @@ exports.updateSoumission = async (req, res) => {
                 const subject = "Mise à jour de votre offre - SETIC";
                 const text = `Bonjour ${nomSoumissionnaire},\n\n` +
                              `Nous vous informons que votre offre a été mise à jour avec succès par notre service de réception.\n\n` +
-                             `DÉTAILS MIS À JOUR :\n` +
+                             `MODIFICATIONS APPORTÉES :\n` +
+                             `---------------------------\n` +
+                             `${emailChangementsText}\n\n` +
+                             `DÉTAILS ACTUELS DE L'OFFRE :\n` +
                              `---------------------------\n` +
                              `N° Offre : #${idOffre}\n` +
                              `Marché : #${idMarche || 'N/A'}\n` +
@@ -147,6 +199,32 @@ exports.requestModification = async (req, res) => {
     const { motifModification } = req.body;
     try {
         await Soumission.requestModification(idOffre, motifModification);
+        
+        // --- Historique (non-bloquant) ---
+        try {
+            const offre = await Soumission.findById(idOffre);
+            if (offre && offre.idMarche) {
+                const Marche = require('../models/marcheModel');
+                const Demande = require('../models/demandeModel');
+                const marche = await Marche.findById(offre.idMarche);
+                
+                if (marche && marche.idDemande) {
+                    await Demande.addHistory(null, {
+                        idDemande: marche.idDemande,
+                        action: "Demande de modification d'offre",
+                        statutPrecedent: marche.statut,
+                        nouveauStatut: marche.statut,
+                        idUtilisateur: req.user.idUser,
+                        nomUtilisateur: req.user.nom,
+                        roleUtilisateur: req.user.role,
+                        motif: `Demande de modification pour l'offre #${idOffre} (${offre.nomSoumissionnaire}): ${motifModification}`
+                    });
+                }
+            }
+        } catch (histErr) {
+            console.error("[Historique] Erreur non-bloquante lors de la demande de modification:", histErr.message);
+        }
+
         res.json({ message: "Demande de modification envoyée au RAF." });
     } catch (error) {
         console.error(error);
@@ -159,6 +237,32 @@ exports.authorizeModification = async (req, res) => {
     const { idOffre } = req.params;
     try {
         await Soumission.authorizeModification(idOffre);
+        
+        // --- Historique (non-bloquant) ---
+        try {
+            const offre = await Soumission.findById(idOffre);
+            if (offre) {
+                const Marche = require('../models/marcheModel');
+                const Demande = require('../models/demandeModel');
+                const marche = await Marche.findById(offre.idMarche);
+                
+                if (marche && marche.idDemande) {
+                    await Demande.addHistory(null, {
+                        idDemande: marche.idDemande,
+                        action: "Autorisation de modification d'offre",
+                        statutPrecedent: marche.statut,
+                        nouveauStatut: marche.statut,
+                        idUtilisateur: req.user.idUser,
+                        nomUtilisateur: req.user.nom,
+                        roleUtilisateur: req.user.role,
+                        motif: `Le RAF a autorisé la modification de l'offre #${idOffre} (${offre.nomSoumissionnaire}) pour le réceptionniste.`
+                    });
+                }
+            }
+        } catch (histErr) {
+            console.error("[Historique] Erreur non-bloquante lors de l'autorisation de modification:", histErr.message);
+        }
+
         res.json({ message: "Modification autorisée pour le réceptionniste." });
     } catch (error) {
         console.error(error);

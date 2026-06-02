@@ -65,7 +65,7 @@ const RafDashboard = () => {
   const canViewMyDemandes = hasPermission('VOIR_MES_DEMANDES') || hasPermission('DEMANDE_READ_OWN') || hasPermission('CREER_DEMANDE') || hasPermission('DEMANDE_CREATE');
   const canViewPaiements = hasPermission('VOIR_PAIEMENTS') || hasPermission('EFFECTUER_PAIEMENT');
   const canViewReceptions = hasPermission('VOIR_RECEPTIONS');
-  const canViewOffers = hasPermission('GERER_SOUMISSIONS') || hasPermission('VOIR_MARCHES');
+  const canViewOffers = hasPermission('GERER_SOUMISSIONS') || hasPermission('VOIR_MARCHES') || hasPermission('GERER_BUDGETS');
   const canUsePaiementsTab = canViewPaiements && canViewReceptions;
   const demandeScope = location.pathname === '/raf/mes-demandes' ? 'mine' : 'all';
 

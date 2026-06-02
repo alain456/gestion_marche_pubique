@@ -23,6 +23,13 @@ const Soumission = {
         return result;
     },
 
+    // Trouver une offre par ID
+    findById: async (idOffre) => {
+        const query = `SELECT * FROM soumissionnaire WHERE idOffre = ?`;
+        const [rows] = await db.query(query, [idOffre]);
+        return rows[0];
+    },
+
     // Lister les offres d'un marché spécifique (triées par montant croissant)
     findByMarche: async (idMarche) => {
         const query = `SELECT * FROM soumissionnaire WHERE idMarche = ? ORDER BY montantPropose ASC`;
