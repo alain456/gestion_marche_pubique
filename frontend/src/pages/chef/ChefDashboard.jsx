@@ -30,7 +30,8 @@ const ChefDashboard = () => {
   const [marches, setMarches] = useState([]);
   const [demandes, setDemandes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('marches');
+  const hasVoirMarches = user?.permissions?.includes('VOIR_MARCHES') || user?.permissions?.includes('GERER_MARCHES');
+  const [activeTab, setActiveTab] = useState(hasVoirMarches ? 'marches' : 'demandes');
   const [selectedMarche, setSelectedMarche] = useState(null);
   const [selectedDemande, setSelectedDemande] = useState(null);
   const [showOffresModal, setShowOffresModal] = useState(false);
@@ -48,17 +49,25 @@ const ChefDashboard = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [marchesRes, demandesRes, servicesRes] = await Promise.all([
-        api.get('/marches'),
+      const reqs = [
         api.get('/demandes'),
         api.get('/services')
-      ]);
-      setMarches(marchesRes.data);
-      setDemandes(demandesRes.data);
-      setServices(servicesRes.data);
+      ];
+      if (hasVoirMarches) {
+        reqs.push(api.get('/marches'));
+      }
+      
+      const res = await Promise.all(reqs);
+      setDemandes(res[0].data);
+      setServices(res[1].data);
+      if (hasVoirMarches) {
+        setMarches(res[2].data);
+      } else {
+        setMarches([]);
+      }
     } catch (err) {
-      console.error('Erreur chargement marchés:', err);
-      setError('Impossible de charger les marchés.');
+      console.error('Erreur chargement données:', err);
+      setError('Impossible de charger les données.');
     } finally {
       setLoading(false);
     }
@@ -212,15 +221,17 @@ const ChefDashboard = () => {
 
       {/* Tabs */}
       <div className="flex border-b border-gray-100 gap-8">
-        <button 
-          onClick={() => setActiveTab('marches')}
-          className={`pb-4 text-sm font-black uppercase tracking-widest transition-all relative ${
-            activeTab === 'marches' ? 'text-primary' : 'text-gray-400 hover:text-gray-600'
-          }`}
-        >
-          Suivi des Marchés
-          {activeTab === 'marches' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full animate-in slide-in-from-bottom-1" />}
-        </button>
+        {hasVoirMarches && (
+          <button 
+            onClick={() => setActiveTab('marches')}
+            className={`pb-4 text-sm font-black uppercase tracking-widest transition-all relative ${
+              activeTab === 'marches' ? 'text-primary' : 'text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            Suivi des Marchés
+            {activeTab === 'marches' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full animate-in slide-in-from-bottom-1" />}
+          </button>
+        )}
         <button 
           onClick={() => setActiveTab('demandes')}
           className={`pb-4 text-sm font-black uppercase tracking-widest transition-all relative ${

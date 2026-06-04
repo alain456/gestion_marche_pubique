@@ -7,8 +7,7 @@ import {
   User, 
   MapPin, 
   Phone, 
-  Mail, 
-  DollarSign, 
+  Mail,  
   Calendar,
   CheckCircle,
   XCircle,
@@ -67,6 +66,25 @@ const ReceptionSoumissions = () => {
       setLoading(false);
     }
   };
+
+  // Seuls les marchés publiés ou en attribution peuvent recevoir des offres
+  // ET dont la dateLimite n'est pas dépassée (si elle est définie)
+  const activeMarches = marches.filter(m => {
+    const isActiveStatus = m.statut === 'publie' || m.statut === 'attribution';
+    const isNotExpired = !m.dateLimite || new Date(m.dateLimite) > new Date();
+    return isActiveStatus && isNotExpired;
+  });
+
+  // En mode édition, on s'assure que le marché déjà lié à l'offre apparaît toujours dans la liste
+  const marchesForSelect = isEditing && form.idMarche
+    ? [
+        ...activeMarches,
+        ...marches.filter(m =>
+          m.idMarche.toString() === form.idMarche.toString() &&
+          !activeMarches.find(a => a.idMarche === m.idMarche)
+        )
+      ]
+    : activeMarches;
 
   useEffect(() => {
     fetchData();
@@ -260,26 +278,39 @@ const ReceptionSoumissions = () => {
         <form onSubmit={handleSubmit} className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* ... (le reste du formulaire reste identique) ... */}
           <div className="md:col-span-2 space-y-2">
-            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Marché Concerné</label>
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
+              Marché Concerné
+              {!isEditing && activeMarches.length === 0 && (
+                <span className="ml-2 text-red-400 normal-case font-normal">(Aucun marché actif disponible)</span>
+              )}
+            </label>
             <div className="relative">
               <Hash className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
               <select
                 required
-                className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none transition-all font-bold text-gray-800 appearance-none"
+                disabled={isEditing}
+                className={`w-full pl-12 pr-4 py-4 border border-gray-100 rounded-2xl outline-none transition-all font-bold appearance-none ${
+                  isEditing
+                    ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
+                    : 'bg-gray-50 text-gray-800'
+                }`}
                 value={form.idMarche}
                 onChange={(e) => {
                   const selectedId = e.target.value;
-                  const selectedMarche = marches.find(m => m.idMarche.toString() === selectedId);
+                  const selectedMarche = marchesForSelect.find(m => m.idMarche.toString() === selectedId);
                   setForm({
-                    ...form, 
-                    idMarche: selectedId, 
-                    referenceAppelOffre: selectedMarche ? (selectedMarche.numeroBudget || selectedId) : ''
+                    ...form,
+                    idMarche: selectedId,
+                    referenceAppelOffre: selectedMarche ? (selectedMarche.numeroBudget || `AO-${selectedId}`) : ''
                   });
                 }}
               >
                 <option value="">Sélectionnez le marché...</option>
-                {marches.map(m => (
-                  <option key={m.idMarche} value={m.idMarche}>ID: {m.idMarche} - {m.modePassation}</option>
+                {marchesForSelect.map(m => (
+                  <option key={m.idMarche} value={m.idMarche}>
+                    Marché #{m.idMarche} — {m.numeroBudget || 'Sans réf.'} ({m.modePassation})
+                    {(m.statut !== 'publie' && m.statut !== 'attribution') ? ' ⚠️ marché non actif' : ''}
+                  </option>
                 ))}
               </select>
             </div>
@@ -345,7 +376,7 @@ const ReceptionSoumissions = () => {
           <div className="space-y-2">
             <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Montant (FBU)</label>
             <div className="relative">
-              <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <p className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400">FBU</p>
               <input
                 type="number"
                 required
@@ -388,20 +419,18 @@ const ReceptionSoumissions = () => {
             <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Référence Appel d&apos;Offre</label>
             <div className="relative">
               <Hash className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <select
+              <input
+                type="text"
+                readOnly
                 required
-                className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none appearance-none font-bold text-gray-800"
+                className="w-full pl-12 pr-4 py-4 bg-gray-100 border border-gray-100 rounded-2xl outline-none cursor-not-allowed font-bold text-primary"
                 value={form.referenceAppelOffre}
-                onChange={(e) => setForm({...form, referenceAppelOffre: e.target.value})}
-              >
-                <option value="">Sélectionnez la référence...</option>
-                {marches.map(m => (
-                  <option key={m.idMarche} value={m.numeroBudget || m.idMarche}>
-                    {m.numeroBudget || `Marché #${m.idMarche}`}
-                  </option>
-                ))}
-              </select>
+                placeholder="Sélectionnez un marché actif ci-dessus..."
+              />
             </div>
+            <p className="text-[11px] text-gray-400 ml-1">
+              La référence est automatiquement liée au marché sélectionné ci-dessus.
+            </p>
           </div>
 
           <div className="md:col-span-2 pt-4 flex gap-4">

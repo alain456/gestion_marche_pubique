@@ -395,13 +395,13 @@ CREATE TABLE `utilisateur` (
 
 -- Dumping data for table `utilisateur`
 INSERT INTO `utilisateur` (`idUser`, `idRole`, `nom`, `email`, `password`, `est_actif`, `idService`) VALUES
-(1, 1, 'Administrateur', 'admin@setic.local', '$2b$10$aN8aCjrpR5tslMvPxoYQSeNF9B2eib/KDSfFwEBj79yWYOUIszKnS', 1, NULL),
-(5, 1, 'Gushaka Alain', 'alaineucridegushakakwimana@gmail.com', '$2b$10$ICg.2BsGKClVRpbYrBlJoOZ7aSEjTCSITrqVCvZ2.BiwiCFa3TamO', 1, NULL),
-(6, 3, 'abby', 'abby@gmail.com', '$2b$10$6JBOQQzmIFI.XcDtmAcKWuP1i1RJNo5pmkMAF7rZxv6G2YTO.FkVy', 1, 1),
-(7, 5, 'noe', 'noe@gmail.com', '$2b$10$qvupbjzch6zb92c0DqpFI.iAYfS5AvK57lXHlgEj2ykero08x4yU2', 1, NULL),
-(8, 2, 'alain', 'a@gmail.com', '$2b$10$cV.2O3gk2SKidAiEOWI1IucG4e8bq.LFyYyEGMvKchQTO0IwtbkbS', 1, NULL),
-(9, 6, 'loraine', 'l@gmail.com', '$2b$10$uPckTIOBgSYbDubkT7s1v.MEso/p5exs5/UjKtcL3n.PKtm6H6X1u', 1, NULL),
-(10, 4, 'kagaga', 'k@gmail.com', '$2b$10$CScPXhgZon9ik.h2Bi0kduCxm0Dr57Pbc0QidWupxAiovoaCU9fzy', 1, NULL),
+(1, 1, 'Administrateur', 'admin@setic.local', '$2b$10$wlF33vyURiQWRaAY5YZupetzuUHin0zejRJad0wngwEa2lgkHROOS', 1, NULL),
+(5, 1, 'Gushaka Alain', 'alaineucridegushakakwimana@gmail.com', '$2b$10$ZWuZBHKlgCunShL/A8/nYO4m4ttuCQaX97iQhVCShBVCS.z5qae32', 1, NULL),
+(6, 3, 'abby', 'abby@gmail.com', '$2b$10$/fUmL5T7EXJYIVVmi0TmUOb65Rl2/.VnQ60SWAayqa/iZO5W8S3cq', 1, 1),
+(7, 5, 'noe', 'noe@gmail.com', '$2b$10$Acqm/GNrQyiYpiXPrONwiOY9S.vVsd.Ok3pF0dSQD/.OpG8rg20IW', 1, NULL),
+(8, 2, 'alain', 'a@gmail.com', '$2b$10$wl30l8jkPWS1w1j/9BkZhejinle3buPY8OLzMoPPawXyEDmCfhYlK', 1, NULL),
+(9, 6, 'loraine', 'l@gmail.com', '$2b$10$NFnWr3XQBa2txpqvU3r04ON1ytxS7QilG8pxyrFcBAOoZP1UFc52S', 1, NULL),
+(10, 4, 'kagaga', 'k@gmail.com', '$2b$10$VwL105fIPMhhaFp84nKpN..Aj8hS/zryL.Y24IGuT7fvmFT5faIoq', 1, NULL),
 (11, 1, 'Brigitte Nahayo', 'brigittenahayo5@gmail.com', '$2b$10$qbodqQZbuNns4JkfUWh3yOIdrHE8w9KzvPQUl/ZFP6G3Nc0q5SbjW', 1, NULL),
 (12, 3, 'keza bella', 'kezabelle@gmail.com', '$2b$10$o6qD2npP91cwy9I/PqrEQOVxLsao7Zd3a/aOdOqJZmC5qPKxi4snK', 1, 4);
 

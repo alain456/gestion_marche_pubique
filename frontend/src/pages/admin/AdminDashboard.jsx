@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Users, Shield, Activity } from 'lucide-react';
 import api from '../../services/api';
@@ -70,6 +70,12 @@ const AdminDashboard = () => {
         <h2 className="text-lg font-semibold text-gray-800 mb-4">Actions Rapides</h2>
         <div className="flex flex-col gap-3 sm:flex-row">
           <Link
+            to="/demandeur/demandes"
+            className="inline-flex items-center justify-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition"
+          >
+            Passer une commande
+          </Link>
+          <Link
             to="/admin/users"
             className="inline-flex items-center justify-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-800 transition"
           >
@@ -80,6 +86,12 @@ const AdminDashboard = () => {
             className="inline-flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
           >
             Gérer les rôles
+          </Link>
+          <Link
+            to="/admin/user-permissions"
+            className="inline-flex items-center justify-center px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition"
+          >
+            Attribuer des permissions
           </Link>
         </div>
       </div>

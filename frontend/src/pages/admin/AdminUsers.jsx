@@ -12,7 +12,6 @@ import {
   ArrowLeft,
   CheckCircle,
   XCircle,
-  Key,
   Building,
   Eye,
   EyeOff
@@ -139,6 +138,7 @@ const AdminUsers = () => {
     setError('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
 
   const handleDelete = async (idUser) => {
     if (!window.confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.')) return;
@@ -385,7 +385,14 @@ const AdminUsers = () => {
                   Mot de passe {form.idUser && <span className="text-[10px] font-normal text-gray-400 normal-case">(Laisser vide pour ne pas changer)</span>}
                 </label>
                 <div className="relative">
-                  <Key className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none z-10"
+                    title={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                   <input
                     type={showPassword ? "text" : "password"}
                     placeholder={form.idUser ? "••••••••" : "Mot de passe sécurisé"}
@@ -395,15 +402,8 @@ const AdminUsers = () => {
                     onFocus={(e) => e.target.removeAttribute('readonly')}
                     readOnly
                     name="user_password_new"
-                    className="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm"
+                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
                 </div>
               </div>
 
@@ -450,6 +450,7 @@ const AdminUsers = () => {
                   </div>
                 </div>
               </div>
+
 
               <div className="flex gap-3 pt-4">
                 <button

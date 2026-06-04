@@ -23,6 +23,13 @@ const Soumission = {
         return result;
     },
 
+    // Trouver une offre par ID
+    findById: async (idOffre) => {
+        const query = `SELECT * FROM soumissionnaire WHERE idOffre = ?`;
+        const [rows] = await db.query(query, [idOffre]);
+        return rows[0];
+    },
+
     // Lister les offres d'un marché spécifique (triées par montant croissant)
     findByMarche: async (idMarche) => {
         const query = `SELECT * FROM soumissionnaire WHERE idMarche = ? ORDER BY montantPropose ASC`;
@@ -89,6 +96,27 @@ const Soumission = {
     delete: async (idOffre) => {
         const query = `DELETE FROM soumissionnaire WHERE idOffre = ?`;
         const [result] = await db.query(query, [idOffre]);
+        return result;
+    },
+
+    // Mettre à jour l'évaluation et le classement
+    updateEvaluation: async (idOffre, data) => {
+        const fields = [];
+        const values = [];
+        
+        for (const [key, value] of Object.entries(data)) {
+            if (value !== undefined) {
+                fields.push(`${key} = ?`);
+                values.push(value);
+            }
+        }
+        
+        if (fields.length === 0) return { affectedRows: 0 };
+        
+        const query = `UPDATE soumissionnaire SET ${fields.join(', ')} WHERE idOffre = ?`;
+        values.push(idOffre);
+        
+        const [result] = await db.query(query, values);
         return result;
     }
 };

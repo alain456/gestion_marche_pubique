@@ -5,8 +5,8 @@ import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import PropTypes from 'prop-types';
 
-const ProtectedRoute = ({ allowedRoles }) => {
-  const { user, loading } = useContext(AuthContext);
+const ProtectedRoute = ({ allowedRoles, requiredPermission }) => {
+  const { user, loading, hasPermission } = useContext(AuthContext) || {};
 
   if (loading) {
     return <div className="h-screen w-full flex items-center justify-center text-primary">Chargement...</div>;
@@ -16,10 +16,19 @@ const ProtectedRoute = ({ allowedRoles }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // Normalisation du rôle pour la comparaison (espaces -> underscores)
   const userRole = user.role.toUpperCase().replace(/\s+/g, '_');
 
-  if (allowedRoles && !allowedRoles.includes(userRole)) {
+  // Si une permission spécifique (ou un tableau de permissions) est requise, la vérifier
+  // Si des rôles sont aussi fournis, on accepte si l'un des deux passe.
+  if (requiredPermission) {
+    const permsToCheck = Array.isArray(requiredPermission) ? requiredPermission : [requiredPermission];
+    const hasAtLeastOne = permsToCheck.some(p => hasPermission(p));
+    const passesRole = allowedRoles && allowedRoles.includes(userRole);
+
+    if (!hasAtLeastOne && !passesRole) {
+      return <Navigate to="/unauthorized" replace />;
+    }
+  } else if (allowedRoles && !allowedRoles.includes(userRole)) {
     return <Navigate to="/unauthorized" replace />;
   }
 
@@ -39,7 +48,11 @@ const ProtectedRoute = ({ allowedRoles }) => {
 };
 
 ProtectedRoute.propTypes = {
-  allowedRoles: PropTypes.arrayOf(PropTypes.string)
+  allowedRoles: PropTypes.arrayOf(PropTypes.string),
+  requiredPermission: PropTypes.oneOfType([
+    PropTypes.string,
+    PropTypes.arrayOf(PropTypes.string)
+  ])
 };
 
 export default ProtectedRoute;

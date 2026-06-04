@@ -7,12 +7,22 @@ import {
   Building, 
   Calendar,
   FileText,
-  TrendingUp,
   CheckCircle,
   XCircle,
   AlertCircle,
-  MessageSquare
+  Eye,
+  MapPin,
+  Phone,
+  Mail,
+  Clock,
+  X,
+  Settings,
+  Star,
+  Calculator
 } from 'lucide-react';
+
+import CriteresModal from './CriteresModal';
+import EvalModal from './EvalModal';
 
 const CgmpSoumissions = () => {
   const [data, setData] = useState({
@@ -24,11 +34,14 @@ const CgmpSoumissions = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMarketId, setSelectedMarketId] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
+  const [selectedOffer, setSelectedOffer] = useState(null);
+  const [showModal, setShowModal] = useState(false);
   
-  const [showMotifModal, setShowMotifModal] = useState(false);
-  const [currentOffer, setCurrentOffer] = useState(null);
-  const [motif, setMotif] = useState('');
-
+  const [showCriteresModal, setShowCriteresModal] = useState(false);
+  const [showEvalModal, setShowEvalModal] = useState(false);
+  const [targetOffer, setTargetOffer] = useState(null);
+  const [isRanking, setIsRanking] = useState(false);
+  
   const fetchData = async () => {
     try {
       const [marchesRes, soumissionsRes] = await Promise.all([
@@ -49,23 +62,6 @@ const CgmpSoumissions = () => {
   useEffect(() => {
     fetchData();
   }, []);
-
-  const handleStatusUpdate = async (idOffre, newStatus, rejectionMotif = null) => {
-    try {
-      const offer = data.soumissions.find(s => s.idOffre === idOffre);
-      await api.put(`/soumissions/${idOffre}`, {
-        ...offer,
-        statut: newStatus,
-        motif: rejectionMotif
-      });
-      fetchData();
-      setShowMotifModal(false);
-      setMotif('');
-    } catch (err) {
-      console.error(err);
-      alert("Erreur lors de la mise à jour du statut");
-    }
-  };
 
   const filteredSoumissions = useMemo(() => {
     let result = [...data.soumissions];
@@ -112,6 +108,25 @@ const CgmpSoumissions = () => {
     return result;
   }, [data.soumissions, period, searchQuery, selectedMarketId, selectedStatus]);
 
+  const selectedMarket = useMemo(() => {
+    if (selectedMarketId === 'all') return null;
+    return data.marches.find(m => m.idMarche.toString() === selectedMarketId);
+  }, [selectedMarketId, data.marches]);
+
+  const handleRank = async () => {
+    if (!selectedMarketId || selectedMarketId === 'all') return;
+    setIsRanking(true);
+    try {
+      await api.post(`/marches/${selectedMarketId}/rank`);
+      fetchData();
+      alert("Mieux-disant identifié : offre la plus proche du montant estimé du marché (≥ budget, dans la tolérance autorisée).");
+    } catch (err) {
+      alert(err.response?.data?.message || "Erreur lors du calcul du classement.");
+    } finally {
+      setIsRanking(false);
+    }
+  };
+
   if (loading) return <div className="p-8 text-center text-gray-500 animate-pulse">Chargement des soumissions...</div>;
 
   return (
@@ -121,9 +136,9 @@ const CgmpSoumissions = () => {
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
             <Users className="text-primary h-8 w-8" />
-            Analyse des Offres
+            Soumissionnaires
           </h1>
-          <p className="text-gray-500 mt-2">Examen et validation de la conformité des soumissions.</p>
+          <p className="text-gray-500 mt-2">Consultation des offres enregistrées par le réceptionniste.</p>
         </div>
 
         <div className="flex flex-wrap gap-3">
@@ -137,7 +152,9 @@ const CgmpSoumissions = () => {
             >
               <option value="all">Tous les marchés</option>
               {data.marches.map(m => (
-                <option key={m.idMarche} value={m.idMarche}>Marché #{m.idMarche}</option>
+                <option key={m.idMarche} value={m.idMarche}>
+                  Marché #{m.idMarche} — {m.numeroBudget || 'Sans réf.'}
+                </option>
               ))}
             </select>
           </div>
@@ -169,6 +186,26 @@ const CgmpSoumissions = () => {
             />
           </div>
 
+          {/* Boutons d'Action Conditionnels */}
+          {selectedMarketId !== 'all' && (
+            <div className="flex gap-2 border-l border-gray-200 pl-3">
+              <button 
+                onClick={() => setShowCriteresModal(true)}
+                className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl text-sm font-bold hover:bg-gray-200 transition-colors flex items-center gap-2"
+              >
+                <Settings size={16} /> Paramètres Évaluation
+              </button>
+              
+              <button 
+                onClick={handleRank}
+                disabled={isRanking}
+                className="px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+              >
+                <Calculator size={16} /> {isRanking ? 'Calcul...' : 'Calculer Classement'}
+              </button>
+            </div>
+          )}
+
           {/* Bouton Reset */}
           {(searchQuery || selectedMarketId !== 'all' || period !== 'all' || selectedStatus !== 'all') && (
             <button 
@@ -178,7 +215,7 @@ const CgmpSoumissions = () => {
                 setPeriod('all');
                 setSelectedStatus('all');
               }}
-              className="px-4 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors"
+              className="px-4 py-2.5 bg-gray-50 text-gray-500 rounded-xl text-sm font-medium hover:bg-gray-100 transition-colors"
             >
               Réinitialiser
             </button>
@@ -236,6 +273,7 @@ const CgmpSoumissions = () => {
                 <th className="px-8 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Marché</th>
                 <th className="px-8 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Montant</th>
                 <th className="px-8 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Statut</th>
+                <th className="px-8 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Score</th>
                 <th className="px-8 py-5 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
@@ -274,37 +312,31 @@ const CgmpSoumissions = () => {
                         </div>
                       )}
                     </td>
-                    <td className="px-8 py-6 text-right whitespace-nowrap">
+                    <td className="px-8 py-6">
+                      <div className="font-bold text-gray-900">{s.scoreGlobal ? `${s.scoreGlobal} pts` : '-'}</div>
+                      {s.recommande === 1 && (
+                        <span className="flex items-center gap-1 text-[10px] bg-indigo-100 text-indigo-700 font-bold px-2 py-1 rounded-full mt-1 w-max">
+                          <Star size={12} className="fill-indigo-700" /> MIEUX DISANT
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-8 py-6 text-right whitespace-nowrap text-xs font-bold text-gray-400">
                       <div className="flex items-center justify-end gap-2">
-                        {s.statut === 'en attente' && (
-                          <>
-                            <button 
-                              onClick={() => handleStatusUpdate(s.idOffre, 'conforme')}
-                              className="p-2 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-100 transition-colors"
-                              title="Marquer comme conforme"
-                            >
-                              <CheckCircle size={18} />
-                            </button>
-                            <button 
-                              onClick={() => {
-                                setCurrentOffer(s);
-                                setShowMotifModal(true);
-                              }}
-                              className="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors"
-                              title="Rejeter l'offre"
-                            >
-                              <XCircle size={18} />
-                            </button>
-                          </>
-                        )}
-                        {s.statut !== 'en attente' && (
+                        {selectedMarketId !== 'all' && (
                           <button 
-                            onClick={() => handleStatusUpdate(s.idOffre, 'en attente')}
-                            className="text-[10px] font-bold text-gray-400 hover:text-primary transition-colors"
+                            onClick={() => { setTargetOffer(s); setShowEvalModal(true); }}
+                            className="px-3 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white rounded-xl transition-colors flex items-center gap-1"
+                            title="Évaluer"
                           >
-                            RÉINITIALISER
+                            <FileText size={16} /> Évaluer
                           </button>
                         )}
+                        <button 
+                          onClick={() => { setSelectedOffer(s); setShowModal(true); }}
+                          className="px-3 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl transition-colors flex items-center gap-1"
+                        >
+                          <Eye size={16} /> Détails
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -315,45 +347,114 @@ const CgmpSoumissions = () => {
         </div>
       </div>
 
-      {/* Modal Motif de Rejet */}
-      {showMotifModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
-          <div className="bg-surface rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300">
-            <div className="p-6 bg-red-600 text-white flex justify-between items-center">
-              <h2 className="text-xl font-bold">Rejeter l'Offre</h2>
-              <button onClick={() => setShowMotifModal(false)} className="hover:bg-surface/10 p-2 rounded-full transition-colors">
-                <XCircle className="h-6 w-6" />
+      {/* Modal Détails Soumissionnaire */}
+      {showModal && selectedOffer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="bg-surface rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-300">
+            {/* Header Modal */}
+            <div className="bg-primary px-8 py-6 flex items-center justify-between text-white">
+              <div>
+                <h3 className="text-xl font-bold flex items-center gap-2">
+                  <FileText className="h-6 w-6" />
+                  Détails de l&apos;Offre #{selectedOffer.idOffre}
+                </h3>
+                <p className="text-primary-100 text-sm mt-1">Marché concerné : #{selectedOffer.idMarche}</p>
+              </div>
+              <button 
+                onClick={() => setShowModal(false)}
+                className="bg-white/20 hover:bg-white/40 p-2 rounded-xl transition-colors"
+              >
+                <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="p-8 space-y-4">
-              <p className="text-gray-600 text-sm">
-                Veuillez indiquer la raison du rejet pour l'offre de <strong>{currentOffer?.nomSoumissionnaire}</strong>.
-              </p>
-              <textarea 
-                value={motif}
-                onChange={(e) => setMotif(e.target.value)}
-                className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-red-200 outline-none transition-all text-sm h-32"
-                placeholder="Ex: Dossier technique incomplet, caution de soumission manquante..."
-              />
-              <div className="flex justify-end gap-3 pt-2">
-                <button 
-                  onClick={() => setShowMotifModal(false)}
-                  className="px-6 py-2.5 text-gray-500 font-bold text-sm"
-                >
-                  Annuler
-                </button>
-                <button 
-                  onClick={() => handleStatusUpdate(currentOffer.idOffre, 'rejete', motif)}
-                  disabled={!motif.trim()}
-                  className="px-8 py-2.5 bg-red-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-red-200 disabled:opacity-50"
-                >
-                  Confirmer le Rejet
-                </button>
+
+            {/* Content Modal */}
+            <div className="p-8 space-y-8">
+              {/* Info Principale */}
+              <div className="flex items-start gap-4">
+                <div className="h-16 w-16 bg-gray-100 text-gray-400 rounded-2xl flex items-center justify-center shrink-0">
+                  <Building size={32} />
+                </div>
+                <div>
+                  <h4 className="text-2xl font-black text-gray-900">{selectedOffer.nomSoumissionnaire}</h4>
+                  <div className="flex flex-wrap items-center gap-4 mt-2">
+                    <span className="flex items-center gap-1 text-sm text-gray-500 bg-gray-50 px-3 py-1 rounded-lg">
+                      <Mail className="h-4 w-4" /> {selectedOffer.email || 'N/A'}
+                    </span>
+                    <span className="flex items-center gap-1 text-sm text-gray-500 bg-gray-50 px-3 py-1 rounded-lg">
+                      <Phone className="h-4 w-4" /> {selectedOffer.telephone || 'N/A'}
+                    </span>
+                  </div>
+                </div>
               </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {/* Montant */}
+                <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100">
+                  <p className="text-xs font-bold text-gray-400 uppercase mb-1">Montant Proposé</p>
+                  <p className="text-2xl font-black text-primary">{Number(selectedOffer.montantPropose).toLocaleString()} FBU</p>
+                </div>
+                
+                {/* Statut */}
+                <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100">
+                  <p className="text-xs font-bold text-gray-400 uppercase mb-1">Statut Actuel</p>
+                  <p className={`text-lg font-black uppercase ${
+                        selectedOffer.statut === 'conforme' ? 'text-emerald-600' :
+                        selectedOffer.statut === 'rejete' ? 'text-red-600' :
+                        'text-amber-600'
+                  }`}>
+                    {selectedOffer.statut}
+                  </p>
+                </div>
+
+                {/* Délai de livraison */}
+                <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100 flex flex-col justify-center">
+                  <p className="text-xs font-bold text-gray-400 uppercase mb-1 flex items-center gap-1"><Clock className="h-4 w-4"/> Délai de Livraison</p>
+                  <p className="text-sm font-bold text-gray-800">{selectedOffer.delaiLivraison || 'Non spécifié'}</p>
+                </div>
+
+                {/* Date soumission */}
+                <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100 flex flex-col justify-center">
+                  <p className="text-xs font-bold text-gray-400 uppercase mb-1 flex items-center gap-1"><Calendar className="h-4 w-4"/> Date de Dépôt</p>
+                  <p className="text-sm font-bold text-gray-800">{new Date(selectedOffer.dateSoumission).toLocaleDateString('fr-FR')}</p>
+                </div>
+              </div>
+
+              {/* Adresse complète */}
+              <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100">
+                <p className="text-xs font-bold text-gray-400 uppercase mb-1 flex items-center gap-1"><MapPin className="h-4 w-4"/> Adresse Physique</p>
+                <p className="text-sm font-bold text-gray-800">{selectedOffer.adresse || 'Non renseignée'}</p>
+              </div>
+            </div>
+            
+            {/* Footer Modal */}
+            <div className="bg-gray-50 px-8 py-4 border-t border-gray-100 flex justify-end">
+              <button 
+                onClick={() => setShowModal(false)}
+                className="px-6 py-2.5 bg-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-300 transition-colors"
+              >
+                Fermer
+              </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Modals d'Evaluation */}
+      <CriteresModal 
+        isOpen={showCriteresModal}
+        onClose={() => setShowCriteresModal(false)}
+        marketId={selectedMarketId}
+        existingCriteres={selectedMarket?.criteresEvaluation}
+        onSaveSuccess={fetchData}
+      />
+      <EvalModal
+        isOpen={showEvalModal}
+        onClose={() => setShowEvalModal(false)}
+        offer={targetOffer}
+        marketCriteres={selectedMarket?.criteresEvaluation}
+        onSaveSuccess={fetchData}
+      />
     </div>
   );
 };
