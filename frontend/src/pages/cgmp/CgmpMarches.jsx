@@ -24,7 +24,7 @@ import {
   Printer,
   Users
 } from 'lucide-react';
-
+import { analyzeMieuxDisant, isMieuxDisantOffer, DEFAULT_MAX_ECART_PERCENT } from '../../utils/mieuxDisant';
 
 const normalizeTypeMarche = (value) => (value || '').toString().trim().toLowerCase();
 
@@ -175,6 +175,16 @@ const CgmpMarches = () => {
       return matchSearch && matchType && matchStatus && matchYear;
     });
   }, [marches, searchQuery, filterType, filterStatus, filterYear]);
+
+  const soumissionsAnalysis = useMemo(() => {
+    if (!selectedMarche || marcheOffers.length === 0) return null;
+    return analyzeMieuxDisant(marcheOffers, selectedMarche.montantEstime);
+  }, [marcheOffers, selectedMarche]);
+
+  const comparisonAnalysis = useMemo(() => {
+    if (!comparisonMarche || marcheOffers.length === 0) return null;
+    return analyzeMieuxDisant(marcheOffers, comparisonMarche.montantEstime);
+  }, [marcheOffers, comparisonMarche]);
 
   useEffect(() => {
     fetchData();
@@ -1117,10 +1127,16 @@ const CgmpMarches = () => {
                   </div>
 
                   <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                      <Users className="h-5 w-5 text-primary" />
-                      Offres Reçues ({marcheOffers.length})
-                    </h3>
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                        <Users className="h-5 w-5 text-primary" />
+                        Offres Reçues ({marcheOffers.length})
+                      </h3>
+                      <p className="text-[11px] text-gray-500 mt-1">
+                        Mieux-disant = offre la plus proche du montant estimé ({Number(selectedMarche?.montantEstime || 0).toLocaleString()} FBU),
+                        sans être en dessous ni dépasser +{DEFAULT_MAX_ECART_PERCENT}%.
+                      </p>
+                    </div>
                     {marcheOffers.length >= 2 && (
                       <button 
                         onClick={() => handleShowComparison(selectedMarche)}
@@ -1148,12 +1164,16 @@ const CgmpMarches = () => {
                             <td colSpan="4" className="px-6 py-10 text-center text-gray-400 italic text-sm">Aucune offre déposée pour le moment.</td>
                           </tr>
                         ) : (
-                          marcheOffers.map((offer, idx) => (
-                            <tr key={offer.idOffre} className={`hover:bg-gray-50 transition-colors ${idx === 0 ? 'bg-emerald-50/30' : ''}`}>
+                          (soumissionsAnalysis?.ranked || marcheOffers.map(o => ({ offer: o }))).map((row, idx) => {
+                            const offer = row.offer || row;
+                            const isBest = isMieuxDisantOffer(offer.idOffre, soumissionsAnalysis);
+                            const ineligible = soumissionsAnalysis && row.isEligible === false;
+                            return (
+                            <tr key={offer.idOffre} className={`hover:bg-gray-50 transition-colors ${isBest ? 'bg-emerald-50/30' : ineligible ? 'bg-red-50/20' : ''}`}>
                               <td className="px-6 py-4">
                                 <div className="flex items-center gap-3">
-                                  {idx === 0 && (
-                                    <div className="h-6 w-6 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-sm" title="Meilleure offre">
+                                  {isBest && (
+                                    <div className="h-6 w-6 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-sm" title="Mieux-disant (plus proche du montant estimé)">
                                       <CheckCircle className="h-3 w-3" />
                                     </div>
                                   )}
@@ -1167,17 +1187,25 @@ const CgmpMarches = () => {
                                 {new Date(offer.dateSoumission).toLocaleDateString()}
                               </td>
                               <td className="px-6 py-4 text-right">
-                                <span className={`text-sm font-black ${idx === 0 ? 'text-emerald-600' : 'text-primary'}`}>
+                                <span className={`text-sm font-black ${isBest ? 'text-emerald-600' : 'text-primary'}`}>
                                   {Number(offer.montantPropose).toLocaleString()} FBU
                                 </span>
+                                {soumissionsAnalysis && (
+                                  <p className="text-[10px] text-gray-400 mt-0.5">
+                                    {row.isBelow ? 'Sous le budget estimé' : row.isTooHigh ? `> +${soumissionsAnalysis.maxEcartPercent}%` : `Écart ${row.diffPercent >= 0 ? '+' : ''}${row.diffPercent?.toFixed(1)}%`}
+                                  </p>
+                                )}
                               </td>
                               <td className="px-6 py-4 text-center">
-                                <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-[9px] font-bold uppercase">
-                                  Reçu
+                                <span className={`px-2 py-1 rounded-full text-[9px] font-bold uppercase ${
+                                  isBest ? 'bg-emerald-100 text-emerald-700' : ineligible ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600'
+                                }`}>
+                                  {isBest ? 'Mieux-disant' : ineligible ? 'Non admissible' : 'Reçu'}
                                 </span>
                               </td>
                             </tr>
-                          ))
+                          );
+                          })
                         )}
                       </tbody>
                     </table>
@@ -1913,16 +1941,13 @@ const CgmpMarches = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {marcheOffers
-                      .sort((a, b) => a.montantPropose - b.montantPropose)
-                      .map((offer, idx) => {
-                        const budget = Number(comparisonMarche.montantEstime);
-                        const price = Number(offer.montantPropose);
-                        const diff = ((price - budget) / budget) * 100;
-                        const isBest = idx === 0;
+                    {(comparisonAnalysis?.ranked || []).map((row, idx) => {
+                        const offer = row.offer;
+                        const isBest = isMieuxDisantOffer(offer.idOffre, comparisonAnalysis);
+                        const diff = row.diffPercent;
 
                         return (
-                          <tr key={offer.idOffre} className={`hover:bg-gray-50/50 transition-colors ${isBest ? 'bg-blue-50/30' : ''}`}>
+                          <tr key={offer.idOffre} className={`hover:bg-gray-50/50 transition-colors ${isBest ? 'bg-blue-50/30' : row.isEligible === false ? 'bg-red-50/20' : ''}`}>
                             <td className="px-4 py-6">
                               <div className={`h-8 w-8 rounded-full flex items-center justify-center font-black text-xs ${
                                 isBest ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-gray-100 text-gray-400'
@@ -1941,7 +1966,9 @@ const CgmpMarches = () => {
                             </td>
                             <td className="px-4 py-6 text-center">
                               <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${
-                                diff <= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+                                row.isBelow ? 'bg-red-100 text-red-700' :
+                                row.isTooHigh ? 'bg-amber-100 text-amber-700' :
+                                Math.abs(diff) <= 5 ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'
                               }`}>
                                 {diff > 0 ? '+' : ''}{diff.toFixed(1)}%
                               </span>
@@ -1954,10 +1981,15 @@ const CgmpMarches = () => {
                             </td>
                             <td className="px-4 py-6 text-center">
                               {isBest && (
-                                <div className="flex items-center justify-center gap-1.5 text-blue-600 animate-bounce">
+                                <div className="flex items-center justify-center gap-1.5 text-blue-600">
                                   <CheckCircle className="h-4 w-4" />
                                   <span className="text-[10px] font-black uppercase">Mieux-disant</span>
                                 </div>
+                              )}
+                              {!row.isEligible && !isBest && (
+                                <span className="text-[10px] font-bold text-red-500 uppercase">
+                                  {row.isBelow ? 'Sous budget' : 'Trop élevé'}
+                                </span>
                               )}
                             </td>
                           </tr>
@@ -1975,9 +2007,19 @@ const CgmpMarches = () => {
                   <div>
                     <h4 className="font-black text-blue-900 text-sm uppercase">Note d&apos;Analyse CGMP</h4>
                     <p className="text-xs text-blue-700 leading-relaxed mt-1">
-                      L&apos;offre de <strong>{marcheOffers[0]?.nomSoumissionnaire}</strong> est actuellement la plus avantageuse économiquement, 
-                      se situant à <strong>{Math.abs(((Number(marcheOffers[0]?.montantPropose) - Number(comparisonMarche.montantEstime)) / Number(comparisonMarche.montantEstime)) * 100).toFixed(1)}%</strong> 
-                      {Number(marcheOffers[0]?.montantPropose) <= Number(comparisonMarche.montantEstime) ? ' en dessous' : ' au-dessus'} de votre estimation budgétaire.
+                      {comparisonAnalysis?.best ? (
+                        <>
+                          Le mieux-disant est <strong>{comparisonAnalysis.best.offer.nomSoumissionnaire}</strong> avec{' '}
+                          <strong>{Number(comparisonAnalysis.best.price).toLocaleString()} FBU</strong>, soit l&apos;offre la plus proche du montant estimé (
+                          <strong>{Number(comparisonMarche.montantEstime).toLocaleString()} FBU</strong>
+                          {comparisonAnalysis.best.diffPercent === 0 ? ', montant égal' : `, écart ${comparisonAnalysis.best.diffPercent >= 0 ? '+' : ''}${comparisonAnalysis.best.diffPercent.toFixed(1)}%`}).
+                          Les offres en dessous du budget ou au-delà de +{DEFAULT_MAX_ECART_PERCENT}% ne sont pas retenues.
+                        </>
+                      ) : (
+                        <>
+                          Aucune offre admissible : chaque montant proposé doit être au moins égal au montant estimé et ne pas dépasser +{DEFAULT_MAX_ECART_PERCENT}% au-dessus du budget.
+                        </>
+                      )}
                     </p>
                   </div>
                 </div>

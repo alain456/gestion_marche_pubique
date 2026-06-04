@@ -119,7 +119,7 @@ const CgmpSoumissions = () => {
     try {
       await api.post(`/marches/${selectedMarketId}/rank`);
       fetchData();
-      alert("Le classement a été calculé avec succès. Le mieux-disant a été identifié.");
+      alert("Mieux-disant identifié : offre la plus proche du montant estimé du marché (≥ budget, dans la tolérance autorisée).");
     } catch (err) {
       alert(err.response?.data?.message || "Erreur lors du calcul du classement.");
     } finally {

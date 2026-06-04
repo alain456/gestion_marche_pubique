@@ -219,87 +219,83 @@ exports.updateCriteres = async (req, res) => {
     }
 };
 
-// Calculer le classement et recommander le mieux-disant
+// Calculer le classement et recommander le mieux-disant (proximité au montant estimé)
 exports.rankSoumissions = async (req, res) => {
     const { id } = req.params;
     
     try {
         const Soumission = require('../models/soumissionModel');
+        const { selectMieuxDisant } = require('../utils/mieuxDisant');
         const marche = await Marche.findById(id);
         if (!marche) return res.status(404).json({ message: "Marché non trouvé" });
-        
-        let criteres = marche.criteresEvaluation;
-        if (!criteres) return res.status(400).json({ message: "Les critères d'évaluation ne sont pas définis pour ce marché." });
-        if (typeof criteres === 'string') criteres = JSON.parse(criteres);
+
+        const montantEstime = Number(marche.montantEstime);
+        if (!montantEstime || montantEstime <= 0) {
+            return res.status(400).json({ message: "Le montant estimé du marché est requis pour identifier le mieux-disant." });
+        }
 
         const soumissions = await Soumission.findByMarche(id);
         if (!soumissions || soumissions.length === 0) {
             return res.status(400).json({ message: "Aucune offre à évaluer." });
         }
 
-        // Trouver le prix le plus bas parmi les offres conformes ou toutes les offres
         const validSoumissions = soumissions.filter(s => s.statut !== 'rejete');
-        if (validSoumissions.length === 0) return res.status(400).json({ message: "Aucune offre valide pour le classement." });
+        if (validSoumissions.length === 0) {
+            return res.status(400).json({ message: "Aucune offre valide pour le classement." });
+        }
 
-        const lowestPrice = Math.min(...validSoumissions.map(s => Number(s.montantPropose)));
-        const poidsPrix = Number(criteres.prix) || 0;
+        const analysis = selectMieuxDisant(validSoumissions, montantEstime);
 
         for (const s of validSoumissions) {
-            let scorePrix = 0;
-            if (Number(s.montantPropose) > 0) {
-                // Formule standard: (Prix le plus bas / Prix de l'offre) * Poids du prix
-                scorePrix = (lowestPrice / Number(s.montantPropose)) * poidsPrix;
-            }
+            const row = analysis.ranked.find(r => r.offer.idOffre === s.idOffre);
+            const proximityScore = row?.isEligible
+                ? Math.max(0, 100 - Math.abs(row.diffPercent))
+                : 0;
 
-            let notesTech = s.notesEvaluation;
-            if (typeof notesTech === 'string') notesTech = JSON.parse(notesTech);
-            notesTech = notesTech || {};
-
-            let scoreTech = 0;
-            for (const [key, val] of Object.entries(notesTech)) {
-                scoreTech += Number(val) || 0;
-            }
-
-            const scoreGlobal = scorePrix + scoreTech;
-            
             await Soumission.updateEvaluation(s.idOffre, {
-                scoreGlobal: scoreGlobal,
-                recommande: 0 // On réinitialise d'abord
+                scoreGlobal: proximityScore,
+                recommande: 0
             });
-            s.scoreGlobal = scoreGlobal; // Pour le tri en mémoire
         }
 
-        // Trier par score global (descendant)
-        validSoumissions.sort((a, b) => b.scoreGlobal - a.scoreGlobal);
-
-        // Le premier est recommandé
-        if (validSoumissions.length > 0) {
-            const best = validSoumissions[0];
-            await Soumission.updateEvaluation(best.idOffre, {
-                recommande: 1
+        if (!analysis.best) {
+            return res.status(400).json({
+                message: "Aucune offre admissible : le montant proposé doit être au moins égal au montant estimé et ne pas dépasser la tolérance maximale au-dessus du budget."
             });
-            
-            // Historique
-            if (marche.idDemande) {
-                const ids = marche.idDemande.toString().split(',');
-                for (const idD of ids) {
-                    const trimmedId = idD.trim();
-                    if (!trimmedId) continue;
-                    await Demande.addHistory(null, {
-                        idDemande: trimmedId,
-                        action: "Classement des offres calculé",
-                        statutPrecedent: marche.statut,
-                        nouveauStatut: marche.statut,
-                        idUtilisateur: req.user.idUser,
-                        nomUtilisateur: req.user.nom,
-                        roleUtilisateur: req.user.role,
-                        motif: `Le système a calculé les scores et recommandé l'offre #${best.idOffre} (${best.nomSoumissionnaire}) avec un score de ${best.scoreGlobal.toFixed(2)}.`
-                    });
-                }
+        }
+
+        const best = analysis.best.offer;
+        await Soumission.updateEvaluation(best.idOffre, { recommande: 1 });
+
+        if (marche.idDemande) {
+            const ids = marche.idDemande.toString().split(',');
+            for (const idD of ids) {
+                const trimmedId = idD.trim();
+                if (!trimmedId) continue;
+                await Demande.addHistory(null, {
+                    idDemande: trimmedId,
+                    action: "Classement des offres calculé",
+                    statutPrecedent: marche.statut,
+                    nouveauStatut: marche.statut,
+                    idUtilisateur: req.user.idUser,
+                    nomUtilisateur: req.user.nom,
+                    roleUtilisateur: req.user.role,
+                    motif: `Mieux-disant : offre #${best.idOffre} (${best.nomSoumissionnaire}) — ${Number(best.montantPropose).toLocaleString()} FBU, la plus proche du montant estimé (${montantEstime.toLocaleString()} FBU).`
+                });
             }
         }
 
-        res.json({ message: "Classement calculé avec succès. Le mieux-disant a été recommandé." });
+        res.json({
+            message: "Mieux-disant identifié : offre la plus proche du montant estimé du marché.",
+            mieuxDisant: {
+                idOffre: best.idOffre,
+                nomSoumissionnaire: best.nomSoumissionnaire,
+                montantPropose: best.montantPropose,
+                montantEstime,
+                ecart: analysis.best.diff,
+                ecartPercent: analysis.best.diffPercent
+            }
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Erreur lors du calcul du classement" });
