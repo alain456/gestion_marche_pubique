@@ -18,4 +18,7 @@ router.get('/marche/:idMarche', requirePermission(['VOIR_MARCHES', 'ENREGISTRER_
 router.post('/:idOffre/request-modification', requirePermission(['ENREGISTRER_EXECUTION', 'GERER_SOUMISSIONS']), soumissionController.requestModification);
 router.post('/:idOffre/authorize-modification', requirePermission(['GERER_SOUMISSIONS', 'GERER_BUDGETS']), soumissionController.authorizeModification);
 
+// Evaluation CGMP
+router.put('/:idOffre/evaluate', requirePermission(['GERER_SOUMISSIONS', 'VOIR_MARCHES']), soumissionController.evaluateSoumission);
+
 module.exports = router;

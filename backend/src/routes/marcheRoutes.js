@@ -10,6 +10,8 @@ router.post('/', requirePermission('GERER_MARCHES'), marcheController.createMarc
 router.get('/', requirePermission(['VOIR_MARCHES', 'GERER_MARCHES']), marcheController.getAllMarches);
 router.get('/:id', requirePermission(['VOIR_MARCHES', 'GERER_MARCHES']), marcheController.getMarcheById);
 router.put('/:id', requirePermission('GERER_MARCHES'), marcheController.updateMarche);
+router.put('/:id/criteres', requirePermission('GERER_MARCHES'), marcheController.updateCriteres);
+router.post('/:id/rank', requirePermission('GERER_MARCHES'), marcheController.rankSoumissions);
 router.delete('/:id', requirePermission('GERER_MARCHES'), marcheController.deleteMarche);
 
 module.exports = router;

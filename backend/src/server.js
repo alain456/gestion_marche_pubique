@@ -19,6 +19,7 @@ const serviceRoutes = require('./routes/serviceRoutes');
 const articleRoutes = require('./routes/articleRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const permissionRoutes = require('./routes/permissionRoutes');
+const seuilRoutes = require('./routes/seuilRoutes');
 
 const app = express();
 
@@ -38,6 +39,7 @@ app.use('/api/services', serviceRoutes);
 app.use('/api/articles', articleRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/permissions', permissionRoutes);
+app.use('/api/seuils', seuilRoutes);
 
 app.get('/api', (req, res) => {
     res.json({ message: "Bienvenue sur l'API de Gestion des Marchés Publics (SETIC) !" });

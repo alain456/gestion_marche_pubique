@@ -97,6 +97,27 @@ const Soumission = {
         const query = `DELETE FROM soumissionnaire WHERE idOffre = ?`;
         const [result] = await db.query(query, [idOffre]);
         return result;
+    },
+
+    // Mettre à jour l'évaluation et le classement
+    updateEvaluation: async (idOffre, data) => {
+        const fields = [];
+        const values = [];
+        
+        for (const [key, value] of Object.entries(data)) {
+            if (value !== undefined) {
+                fields.push(`${key} = ?`);
+                values.push(value);
+            }
+        }
+        
+        if (fields.length === 0) return { affectedRows: 0 };
+        
+        const query = `UPDATE soumissionnaire SET ${fields.join(', ')} WHERE idOffre = ?`;
+        values.push(idOffre);
+        
+        const [result] = await db.query(query, values);
+        return result;
     }
 };
 

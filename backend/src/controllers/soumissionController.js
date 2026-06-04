@@ -287,3 +287,27 @@ exports.deleteSoumission = async (req, res) => {
         res.status(500).json({ message: "Erreur lors de la suppression de l'offre" });
     }
 };
+
+// Evaluer une offre (CGMP)
+exports.evaluateSoumission = async (req, res) => {
+    const { idOffre } = req.params;
+    const { notesEvaluation } = req.body; // Objet JSON contenant les notes techniques
+
+    if (!notesEvaluation) {
+        return res.status(400).json({ message: "Les notes d'évaluation sont requises." });
+    }
+
+    try {
+        const offre = await Soumission.findById(idOffre);
+        if (!offre) return res.status(404).json({ message: "Offre non trouvée." });
+
+        await Soumission.updateEvaluation(idOffre, {
+            notesEvaluation: JSON.stringify(notesEvaluation)
+        });
+
+        res.json({ message: "Notes techniques enregistrées avec succès pour cette offre." });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Erreur lors de l'enregistrement de l'évaluation." });
+    }
+};

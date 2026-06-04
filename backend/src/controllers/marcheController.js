@@ -114,6 +114,13 @@ exports.updateMarche = async (req, res) => {
         return res.status(400).json({ message: `Statut invalide. Utilisez : ${STATUTS_VALIDES.join(', ')}.` });
     }
 
+    // Convertir dateLimite du format HTML (2026-06-03T10:30) vers MySQL (2026-06-03 10:30:00)
+    if (data.dateLimite && data.dateLimite.includes('T')) {
+        data.dateLimite = data.dateLimite.replace('T', ' ') + ':00';
+    } else if (data.dateLimite === '') {
+        data.dateLimite = null;
+    }
+
     try {
         const result = await Marche.update(id, data);
         
@@ -188,5 +195,113 @@ exports.deleteMarche = async (req, res) => {
         }
         console.error(error);
         res.status(500).json({ message: "Erreur lors de la suppression" });
+    }
+};
+
+// Définir les critères d'évaluation
+exports.updateCriteres = async (req, res) => {
+    const { id } = req.params;
+    const { criteres } = req.body;
+    
+    if (!criteres) {
+        return res.status(400).json({ message: "Les critères sont requis." });
+    }
+
+    try {
+        const result = await Marche.updateCriteres(id, JSON.stringify(criteres));
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: "Marché non trouvé" });
+        }
+        res.json({ message: "Critères d'évaluation définis avec succès." });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Erreur lors de la mise à jour des critères" });
+    }
+};
+
+// Calculer le classement et recommander le mieux-disant
+exports.rankSoumissions = async (req, res) => {
+    const { id } = req.params;
+    
+    try {
+        const Soumission = require('../models/soumissionModel');
+        const marche = await Marche.findById(id);
+        if (!marche) return res.status(404).json({ message: "Marché non trouvé" });
+        
+        let criteres = marche.criteresEvaluation;
+        if (!criteres) return res.status(400).json({ message: "Les critères d'évaluation ne sont pas définis pour ce marché." });
+        if (typeof criteres === 'string') criteres = JSON.parse(criteres);
+
+        const soumissions = await Soumission.findByMarche(id);
+        if (!soumissions || soumissions.length === 0) {
+            return res.status(400).json({ message: "Aucune offre à évaluer." });
+        }
+
+        // Trouver le prix le plus bas parmi les offres conformes ou toutes les offres
+        const validSoumissions = soumissions.filter(s => s.statut !== 'rejete');
+        if (validSoumissions.length === 0) return res.status(400).json({ message: "Aucune offre valide pour le classement." });
+
+        const lowestPrice = Math.min(...validSoumissions.map(s => Number(s.montantPropose)));
+        const poidsPrix = Number(criteres.prix) || 0;
+
+        for (const s of validSoumissions) {
+            let scorePrix = 0;
+            if (Number(s.montantPropose) > 0) {
+                // Formule standard: (Prix le plus bas / Prix de l'offre) * Poids du prix
+                scorePrix = (lowestPrice / Number(s.montantPropose)) * poidsPrix;
+            }
+
+            let notesTech = s.notesEvaluation;
+            if (typeof notesTech === 'string') notesTech = JSON.parse(notesTech);
+            notesTech = notesTech || {};
+
+            let scoreTech = 0;
+            for (const [key, val] of Object.entries(notesTech)) {
+                scoreTech += Number(val) || 0;
+            }
+
+            const scoreGlobal = scorePrix + scoreTech;
+            
+            await Soumission.updateEvaluation(s.idOffre, {
+                scoreGlobal: scoreGlobal,
+                recommande: 0 // On réinitialise d'abord
+            });
+            s.scoreGlobal = scoreGlobal; // Pour le tri en mémoire
+        }
+
+        // Trier par score global (descendant)
+        validSoumissions.sort((a, b) => b.scoreGlobal - a.scoreGlobal);
+
+        // Le premier est recommandé
+        if (validSoumissions.length > 0) {
+            const best = validSoumissions[0];
+            await Soumission.updateEvaluation(best.idOffre, {
+                recommande: 1
+            });
+            
+            // Historique
+            if (marche.idDemande) {
+                const ids = marche.idDemande.toString().split(',');
+                for (const idD of ids) {
+                    const trimmedId = idD.trim();
+                    if (!trimmedId) continue;
+                    await Demande.addHistory(null, {
+                        idDemande: trimmedId,
+                        action: "Classement des offres calculé",
+                        statutPrecedent: marche.statut,
+                        nouveauStatut: marche.statut,
+                        idUtilisateur: req.user.idUser,
+                        nomUtilisateur: req.user.nom,
+                        roleUtilisateur: req.user.role,
+                        motif: `Le système a calculé les scores et recommandé l'offre #${best.idOffre} (${best.nomSoumissionnaire}) avec un score de ${best.scoreGlobal.toFixed(2)}.`
+                    });
+                }
+            }
+        }
+
+        res.json({ message: "Classement calculé avec succès. Le mieux-disant a été recommandé." });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Erreur lors du calcul du classement" });
     }
 };

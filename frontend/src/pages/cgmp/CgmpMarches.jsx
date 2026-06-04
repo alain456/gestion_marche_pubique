@@ -25,12 +25,6 @@ import {
   Users
 } from 'lucide-react';
 
-const SEUIL_RULES_STORAGE_KEY = 'cgmp_seuil_rules_v1';
-const DEFAULT_SEUIL_RULES = [
-  { id: 1, typeMarche: 'travaux', min: 10000000, max: null, modePassation: 'AO', label: 'Travaux (>= 10 000 000 BIF)' },
-  { id: 2, typeMarche: 'fourniture', min: 5000000, max: null, modePassation: 'AO', label: 'Fourniture (>= 5 000 000 BIF)' },
-  { id: 3, typeMarche: 'service', min: 5000000, max: null, modePassation: 'AO', label: 'Service (>= 5 000 000 BIF)' }
-];
 
 const normalizeTypeMarche = (value) => (value || '').toString().trim().toLowerCase();
 
@@ -71,7 +65,8 @@ const CgmpMarches = () => {
     statut: '',
     dateCloture: '',
     cloturePar: '',
-    commentaire: ''
+    commentaire: '',
+    dateLimite: ''
   });
 
   const [showHistory, setShowHistory] = useState(false);
@@ -84,7 +79,7 @@ const CgmpMarches = () => {
   const [showComparison, setShowComparison] = useState(false);
   const [comparisonMarche, setComparisonMarche] = useState(null);
   const [showRulesConfig, setShowRulesConfig] = useState(false);
-  const [seuilRules, setSeuilRules] = useState(DEFAULT_SEUIL_RULES);
+  const [seuilRules, setSeuilRules] = useState([]);
 
   // États pour les filtres
   const [searchQuery, setSearchQuery] = useState('');
@@ -92,22 +87,25 @@ const CgmpMarches = () => {
   const [filterStatus, setFilterStatus] = useState('');
   const [filterYear, setFilterYear] = useState('');
 
-  useEffect(() => {
+  const fetchSeuils = async () => {
     try {
-      const rawRules = localStorage.getItem(SEUIL_RULES_STORAGE_KEY);
-      if (!rawRules) return;
-      const parsed = JSON.parse(rawRules);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        setSeuilRules(parsed);
-      }
-    } catch (e) {
-      console.error('Impossible de charger les règles de seuil:', e);
+      const res = await api.get('/seuils');
+      setSeuilRules(res.data.map(r => ({
+        id: r.idSeuil,
+        typeMarche: r.typeMarche,
+        min: r.montantMin,
+        max: r.montantMax,
+        modePassation: r.modePassation,
+        label: r.label
+      })));
+    } catch (err) {
+      console.error('Erreur chargement seuils:', err);
     }
-  }, []);
+  };
 
   useEffect(() => {
-    localStorage.setItem(SEUIL_RULES_STORAGE_KEY, JSON.stringify(seuilRules));
-  }, [seuilRules]);
+    fetchSeuils();
+  }, []);
 
   useEffect(() => {
     if (location.pathname === '/cgmp/seuils') {
@@ -256,7 +254,7 @@ const CgmpMarches = () => {
     }));
   }, [matchingRule]);
 
-  const updateSeuilRule = (id, field, value) => {
+  const handleSeuilChange = (id, field, value) => {
     setSeuilRules((prev) => prev.map((rule) => {
       if (rule.id !== id) return rule;
       if (field === 'min' || field === 'max') {
@@ -264,6 +262,23 @@ const CgmpMarches = () => {
       }
       return { ...rule, [field]: value };
     }));
+  };
+
+  const saveSeuilRule = async (rule) => {
+    try {
+      await api.put(`/seuils/${rule.id}`, {
+        typeMarche: rule.typeMarche,
+        montantMin: rule.min,
+        montantMax: rule.max,
+        modePassation: rule.modePassation,
+        label: rule.label
+      });
+      setMessage('Seuil enregistré avec succès.');
+      fetchSeuils();
+    } catch (err) {
+      console.error(err);
+      setError('Erreur lors de la sauvegarde du seuil.');
+    }
   };
 
   const updateTypeMarche = normalizeTypeMarche(selectedMarche?.typeMarche);
@@ -297,16 +312,30 @@ const CgmpMarches = () => {
     }
   }, [updateMatchingRule, showDetails, updateForm.montantEstime]);
 
-  const addSeuilRule = () => {
-    const nextId = (seuilRules[seuilRules.length - 1]?.id || 0) + 1;
-    setSeuilRules((prev) => ([
-      ...prev,
-      { id: nextId, typeMarche: 'travaux', min: 0, max: null, modePassation: 'AO', label: 'Nouvelle règle' }
-    ]));
+  const addSeuilRule = async () => {
+    try {
+      await api.post('/seuils', {
+        typeMarche: 'travaux', montantMin: 0, montantMax: null, modePassation: 'AO', label: 'Nouvelle règle'
+      });
+      fetchSeuils();
+      setMessage('Nouvelle règle ajoutée.');
+    } catch (err) {
+      console.error(err);
+      setError('Erreur lors de l\'ajout de la règle.');
+    }
   };
 
-  const removeSeuilRule = (id) => {
-    setSeuilRules((prev) => prev.filter((rule) => rule.id !== id));
+  const removeSeuilRule = async (id) => {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette règle de seuil ?')) {
+      try {
+        await api.delete(`/seuils/${id}`);
+        fetchSeuils();
+        setMessage('Règle supprimée avec succès.');
+      } catch (err) {
+        console.error(err);
+        setError('Erreur lors de la suppression de la règle.');
+      }
+    }
   };
 
   const handleStartEditArticles = (demand) => {
@@ -408,7 +437,8 @@ const CgmpMarches = () => {
       statut: marche.statut,
       dateCloture: marche.dateCloture ? new Date(marche.dateCloture).toISOString().split('T')[0] : '',
       cloturePar: marche.cloturePar || '',
-      commentaire: marche.commentaire || ''
+      commentaire: marche.commentaire || '',
+      dateLimite: marche.dateLimite ? new Date(new Date(marche.dateLimite).getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16) : ''
     });
 
       // Récupérer les articles
@@ -609,7 +639,7 @@ const CgmpMarches = () => {
                 <div key={rule.id} className="grid grid-cols-1 md:grid-cols-6 gap-2 items-end">
                   <select
                     value={rule.typeMarche}
-                    onChange={(e) => updateSeuilRule(rule.id, 'typeMarche', e.target.value)}
+                    onChange={(e) => handleSeuilChange(rule.id, 'typeMarche', e.target.value)}
                     className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm"
                   >
                     <option value="travaux">Travaux</option>
@@ -619,20 +649,20 @@ const CgmpMarches = () => {
                   <input
                     type="number"
                     value={rule.min ?? ''}
-                    onChange={(e) => updateSeuilRule(rule.id, 'min', e.target.value)}
+                    onChange={(e) => handleSeuilChange(rule.id, 'min', e.target.value)}
                     placeholder="Montant min"
                     className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm"
                   />
                   <input
                     type="number"
                     value={rule.max ?? ''}
-                    onChange={(e) => updateSeuilRule(rule.id, 'max', e.target.value)}
+                    onChange={(e) => handleSeuilChange(rule.id, 'max', e.target.value)}
                     placeholder="Montant max (vide = infini)"
                     className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm"
                   />
                   <select
                     value={rule.modePassation}
-                    onChange={(e) => updateSeuilRule(rule.id, 'modePassation', e.target.value)}
+                    onChange={(e) => handleSeuilChange(rule.id, 'modePassation', e.target.value)}
                     className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm"
                   >
                     <option value="AO">Appel d&apos;Offres</option>
@@ -645,17 +675,28 @@ const CgmpMarches = () => {
                   <input
                     type="text"
                     value={rule.label}
-                    onChange={(e) => updateSeuilRule(rule.id, 'label', e.target.value)}
+                    onChange={(e) => handleSeuilChange(rule.id, 'label', e.target.value)}
                     placeholder="Libellé seuil"
                     className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm"
                   />
-                  <button
-                    type="button"
-                    onClick={() => removeSeuilRule(rule.id)}
-                    className="px-3 py-2 rounded-xl border border-red-200 bg-red-50 text-red-600 text-sm font-semibold"
-                  >
-                    Supprimer
-                  </button>
+                  <div className="flex gap-1">
+                    <button
+                      type="button"
+                      onClick={() => saveSeuilRule(rule)}
+                      className="px-3 py-2 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-600 text-sm font-semibold hover:bg-emerald-100 flex-1"
+                      title="Enregistrer les modifications"
+                    >
+                      <Save size={16} className="mx-auto" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeSeuilRule(rule.id)}
+                      className="px-3 py-2 rounded-xl border border-red-200 bg-red-50 text-red-600 text-sm font-semibold hover:bg-red-100 flex-1"
+                      title="Supprimer la règle"
+                    >
+                      <XCircle size={16} className="mx-auto" />
+                    </button>
+                  </div>
                 </div>
               ))}
               <button
@@ -807,25 +848,7 @@ const CgmpMarches = () => {
               </div>
             </div> */}
 
-            <div className="space-y-2">
-              <label className="text-xs font-black text-gray-500 uppercase tracking-widest ml-1">État du Marché</label>
-              <div className="relative">
-                <Info className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <select
-                  value={form.statut}
-                  onChange={(e) => setForm({...form, statut: e.target.value})}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all appearance-none"
-                >
-                  <option value="">Sélectionner un statut...</option>
-                  {/* <option value="en attente">En attente</option> */}
-                  <option value="preparation">Phase de préparation</option>
-                  <option value="publie">Marche publié</option>
-                  <option value="attribution">Attribue</option>
-                  <option value="suspendu">Suspendu</option>
-                  <option value="cloture">Clôturé</option>
-                </select>
-              </div>
-            </div>
+           
 
             <div className="space-y-2">
               <label className="text-xs font-black text-gray-500 uppercase tracking-widest ml-1">Responsable de Clôture</label>
@@ -893,7 +916,7 @@ const CgmpMarches = () => {
           <div className="bg-surface rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden animate-in zoom-in-95 duration-300">
             <div className="p-6 bg-gray-900 text-white flex justify-between items-center">
               <div>
-                <h2 className="text-xl font-bold">Gestion du Marché1 #{selectedMarche?.idMarche}.......</h2>
+                <h2 className="text-xl font-bold">Gestion du Marché #{selectedMarche?.idMarche}</h2>
                 <p className="text-gray-400 text-sm">
                   Demande #{selectedMarche?.idDemande} — {selectedMarche?.nomService || selectedMarche?.roleDemandeur || 'Direction Générale'}
                   {selectedMarche?.nomDemandeur && ` (${selectedMarche.nomDemandeur})`}
@@ -1265,6 +1288,27 @@ const CgmpMarches = () => {
                         })()}
                       </div>
                     </div>
+
+                    {updateForm.statut === 'publie' && (
+                      <div className="space-y-2 md:col-span-2">
+                        <label className="text-xs font-bold text-blue-600 uppercase tracking-wider ml-1">
+                          Date Limite de Dépôt des Offres
+                        </label>
+                        <div className="relative animate-in fade-in zoom-in-95 duration-200">
+                          <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-400" />
+                          <input
+                            type="datetime-local"
+                            required
+                            value={updateForm.dateLimite}
+                            onChange={(e) => setUpdateForm({...updateForm, dateLimite: e.target.value})}
+                            className="w-full pl-10 pr-4 py-3 bg-blue-50/50 border border-blue-100 rounded-2xl focus:ring-2 focus:ring-blue-500/20 outline-none transition-all text-blue-900 font-bold"
+                          />
+                        </div>
+                        <p className="text-[11px] text-gray-400 ml-1">
+                          Une fois cette date passée, ce marché ne sera plus disponible pour de nouvelles soumissions.
+                        </p>
+                      </div>
+                    )}
 
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Date de Clôture</label>

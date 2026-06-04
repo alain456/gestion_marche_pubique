@@ -6,19 +6,19 @@ const Marche = {
         const { 
             idDemande, numeroBudget, montantEstime, modePassation, justificationChoix, 
             seuilReglementaireApplique, dateSelection, validateur, 
-            statut, dateCloture, cloturePar, commentaire 
+            statut, dateCloture, cloturePar, commentaire, dateLimite
         } = data;
 
         const query = `INSERT INTO marche (
             idDemande, numeroBudget, montantEstime, modePassation, justificationChoix, 
             seuilReglementaireApplique, dateSelection, validateur, 
-            statut, dateCloture, cloturePar, commentaire
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+            statut, dateCloture, cloturePar, commentaire, dateLimite
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
         const [result] = await db.query(query, [
             idDemande, numeroBudget, montantEstime, modePassation, justificationChoix, 
             seuilReglementaireApplique, dateSelection, validateur, 
-            statut, dateCloture, cloturePar, commentaire
+            statut, dateCloture, cloturePar, commentaire, dateLimite
         ]);
         return result;
     },
@@ -98,6 +98,13 @@ const Marche = {
     // Supprimer un marché
     delete: async (id) => {
         const [result] = await db.query('DELETE FROM marche WHERE idMarche = ?', [id]);
+        return result;
+    },
+
+    // Mettre à jour les critères d'évaluation
+    updateCriteres: async (id, criteresJSON) => {
+        const query = 'UPDATE marche SET criteresEvaluation = ? WHERE idMarche = ?';
+        const [result] = await db.query(query, [criteresJSON, id]);
         return result;
     }
 };
