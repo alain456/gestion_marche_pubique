@@ -110,12 +110,12 @@ INSERT INTO `demande` (`idDemande`, `idService`, `idUser`, `idBudget`, `typeMarc
 (26, 1, 6, 14, 'fourniture', 'Normale', '2026-05-07 11:58:50', 'En attente', NULL, NULL, NULL, '0.00', 0, 0, 0, 1, 1),
 (27, 1, 6, 14, 'fourniture', 'Normale', '2026-05-07 12:07:38', 'Inclus dans Marché', 'Inclus dans le Marché Public #4', NULL, NULL, '403994.00', 0, 0, 0, 1, 1),
 (28, 1, 6, 14, 'fourniture', 'Normale', '2026-05-07 12:16:15', 'Inclus dans Marché', 'Inclus dans le Marché Public #4', '2026-05-12 12:11:20', 'alain', '350000.00', 1, 0, 0, 0, 1),
-(29, 1, 6, 10, 'travaux', 'Normale', '2026-05-08 09:31:59', 'Inclus dans Marché', 'Inclus dans le Marché Public #5', '2026-05-13 08:48:54', 'alain', '135000.00', 1, 1, 0, 1, 1),
+(29, 1, 6, 10, 'travaux', 'Normale', '2026-05-08 09:31:59', 'Valide', 'vyakunze.....!', '2026-05-13 08:48:54', 'alain', '135000.00', 1, 1, 1, 1, 1),
 (30, 1, 6, 11, 'service', 'Normale', '2026-05-11 05:44:33', 'Valide', 'n sawa', '2026-05-13 11:42:23', 'alain', '90.00', 0, 0, 0, 1, 1),
 (31, 1, 6, 12, 'fourniture', 'Normale', '2026-05-12 05:05:31', 'En attente', NULL, NULL, NULL, '0.00', 0, 0, 0, 1, 1),
 (32, 1, 6, 14, 'fourniture', 'Normale', '2026-05-12 10:49:16', 'Inclus dans Marché', 'Inclus dans le Marché Public #3', '2026-05-13 09:11:14', 'alain', '29000.00', 0, 1, 0, 1, 1),
 (33, 1, 6, 13, 'travaux', 'Normale', '2026-05-12 11:52:53', 'Valide', 'c\'est bon vous avez bien fait..', '2026-05-12 12:25:31', 'alain', '30000.00', 1, 0, 1, 1, 1),
-(34, 1, 6, 10, 'travaux', 'Normale', '2026-05-12 12:35:55', 'Inclus dans Marché', 'Inclus dans le Marché Public #5', '2026-05-12 12:37:11', 'alain', '3000000.00', 1, 0, 0, 1, 1),
+(34, 1, 6, 10, 'travaux', 'Normale', '2026-05-12 12:35:55', 'Valide', 'twagabanije gatoyaaaaaa', '2026-05-12 12:37:11', 'alain', '3000000.00', 1, 0, 1, 1, 1),
 (35, 1, 6, 13, 'travaux', 'Normale', '2026-05-13 09:23:19', 'Valide', 'sorry twakuyeko 10k', '2026-05-13 09:24:24', 'alain', '160000.00', 1, 0, 0, 0, 1);
 
 -- Table structure for table `execution`
@@ -298,6 +298,49 @@ CREATE TABLE `paiement` (
   CONSTRAINT `paiement_ibfk_1` FOREIGN KEY (`idReception`) REFERENCES `reception` (`idReception`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- Table structure for table `permission`
+DROP TABLE IF EXISTS `permission`;
+CREATE TABLE `permission` (
+  `idPermission` int(11) NOT NULL AUTO_INCREMENT,
+  `codePermission` varchar(100) NOT NULL,
+  `description` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`idPermission`),
+  UNIQUE KEY `codePermission` (`codePermission`)
+) ENGINE=InnoDB AUTO_INCREMENT=3159 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Dumping data for table `permission`
+INSERT INTO `permission` (`idPermission`, `codePermission`, `description`) VALUES
+(4, 'CREER_DEMANDE', 'Créer une nouvelle demande d\'achat'),
+(5, 'VOIR_BUDGETS', 'Consulter les budgets disponibles'),
+(6, 'GERER_MARCHES', 'Gérer les marchés publics et leur exécution'),
+(7, 'VALIDER_RECEPTION', 'Valider la réception des articles d\'un marché'),
+(8, 'GERER_UTILISATEURS', 'Créer, modifier, désactiver ou supprimer des utilisateurs'),
+(9, 'VOIR_UTILISATEURS', 'Consulter la liste des utilisateurs du système'),
+(10, 'GERER_ROLES_PERMISSIONS', 'Créer/modifier des rôles et leurs permissions'),
+(11, 'GERER_SERVICES', 'Ajouter, modifier ou supprimer des services'),
+(12, 'GERER_ARTICLES', 'Gérer le catalogue des articles/produits'),
+(13, 'VOIR_STATISTIQUES', 'Accéder aux tableaux de bord et statistiques globales'),
+(15, 'VOIR_MES_DEMANDES', 'Consulter ses propres demandes ou celles de son service'),
+(16, 'VOIR_TOUTES_DEMANDES', 'Consulter l\'ensemble des demandes du système'),
+(17, 'MODIFIER_DEMANDE', 'Modifier une demande avant validation'),
+(18, 'SUPPRIMER_DEMANDE', 'Supprimer une demande non encore traitée'),
+(19, 'AJUSTER_DEMANDE_CGMP', 'Modifier les quantités ou montants des demandes validées'),
+(20, 'GERER_BUDGETS', 'Créer, allouer et modifier des lignes budgétaires'),
+(22, 'VALIDER_BUDGET_DEMANDE', 'Valider ou rejeter les demandes par rapport au budget'),
+(23, 'VOIR_MARCHES', 'Suivre l\'état d\'avancement des marchés publics'),
+(25, 'GERER_SOUMISSIONS', 'Ajouter des soumissionnaires et sélectionner un gagnant'),
+(26, 'CREER_CONTRAT', 'Rédiger le contrat pour le soumissionnaire sélectionné'),
+(27, 'VALIDER_CONTRAT', 'Éléctroniquement valider et signer le contrat'),
+(28, 'ENREGISTRER_EXECUTION', 'Saisir les détails de la livraison/exécution d\'un marché'),
+(30, 'VOIR_RECEPTIONS', 'Consulter l\'historique des réceptions'),
+(31, 'EFFECTUER_PAIEMENT', 'Ordonner le paiement final d\'un marché réceptionné'),
+(32, 'VOIR_PAIEMENTS', 'Consulter l\'historique des paiements effectués'),
+(1885, 'DEMANDE_CREATE', 'Créer une demande d\'achat (CRUD Demande)'),
+(1886, 'DEMANDE_READ_OWN', 'Lire ses propres demandes (CRUD Demande)'),
+(1887, 'DEMANDE_READ_ALL', 'Lire toutes les demandes du système (CRUD Demande)'),
+(1888, 'DEMANDE_UPDATE', 'Mettre à jour une demande (CRUD Demande)'),
+(1889, 'DEMANDE_DELETE', 'Supprimer une demande (CRUD Demande)');
+
 -- Table structure for table `reception`
 DROP TABLE IF EXISTS `reception`;
 CREATE TABLE `reception` (
@@ -333,6 +376,71 @@ INSERT INTO `role` (`idRole`, `nomRole`) VALUES
 (5, 'cgmp'),
 (6, 'Receptioniste');
 
+-- Table structure for table `role_permission`
+DROP TABLE IF EXISTS `role_permission`;
+CREATE TABLE `role_permission` (
+  `idRole` int(11) NOT NULL,
+  `idPermission` int(11) NOT NULL,
+  PRIMARY KEY (`idRole`,`idPermission`),
+  KEY `idPermission` (`idPermission`),
+  CONSTRAINT `role_permission_ibfk_1` FOREIGN KEY (`idRole`) REFERENCES `role` (`idRole`) ON DELETE CASCADE,
+  CONSTRAINT `role_permission_ibfk_2` FOREIGN KEY (`idPermission`) REFERENCES `permission` (`idPermission`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Dumping data for table `role_permission`
+INSERT INTO `role_permission` (`idRole`, `idPermission`) VALUES
+(1, 8),
+(1, 9),
+(1, 10),
+(1, 11),
+(1, 12),
+(2, 4),
+(2, 5),
+(2, 15),
+(2, 16),
+(2, 17),
+(2, 20),
+(2, 22),
+(2, 31),
+(2, 32),
+(2, 1885),
+(2, 1886),
+(2, 1887),
+(2, 1888),
+(3, 4),
+(3, 15),
+(3, 17),
+(3, 18),
+(3, 1885),
+(3, 1886),
+(3, 1888),
+(3, 1889),
+(4, 4),
+(4, 13),
+(4, 15),
+(4, 16),
+(4, 17),
+(4, 18),
+(4, 27),
+(4, 1885),
+(4, 1886),
+(4, 1887),
+(4, 1888),
+(4, 1889),
+(5, 5),
+(5, 6),
+(5, 16),
+(5, 19),
+(5, 23),
+(5, 25),
+(5, 26),
+(5, 1887),
+(6, 7),
+(6, 23),
+(6, 25),
+(6, 28),
+(6, 30);
+
 -- Table structure for table `servicedemandeur`
 DROP TABLE IF EXISTS `servicedemandeur`;
 CREATE TABLE `servicedemandeur` (
@@ -346,6 +454,24 @@ INSERT INTO `servicedemandeur` (`idService`, `nomService`) VALUES
 (1, 'development'),
 (2, 'reseau'),
 (4, 'Maintenance');
+
+-- Table structure for table `seuil_reglementaire`
+DROP TABLE IF EXISTS `seuil_reglementaire`;
+CREATE TABLE `seuil_reglementaire` (
+  `idSeuil` int(11) NOT NULL AUTO_INCREMENT,
+  `typeMarche` varchar(50) NOT NULL,
+  `montantMin` bigint(20) NOT NULL DEFAULT 0,
+  `montantMax` bigint(20) DEFAULT NULL,
+  `modePassation` varchar(50) NOT NULL,
+  `label` varchar(255) NOT NULL,
+  PRIMARY KEY (`idSeuil`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Dumping data for table `seuil_reglementaire`
+INSERT INTO `seuil_reglementaire` (`idSeuil`, `typeMarche`, `montantMin`, `montantMax`, `modePassation`, `label`) VALUES
+(2, 'fourniture', 1000000, 5000000, 'AO', 'Fourniture (>= 5 000 000 BIF)'),
+(3, 'service', 1, 100, 'GG', 'c\'est peu d\'argent'),
+(4, 'travaux', 1000000, 5000000, 'PVN', 'Nouvelle règle');
 
 -- Table structure for table `soumissionnaire`
 DROP TABLE IF EXISTS `soumissionnaire`;
@@ -404,5 +530,27 @@ INSERT INTO `utilisateur` (`idUser`, `idRole`, `nom`, `email`, `password`, `est_
 (10, 4, 'kagaga', 'k@gmail.com', '$2b$10$VwL105fIPMhhaFp84nKpN..Aj8hS/zryL.Y24IGuT7fvmFT5faIoq', 1, NULL),
 (11, 1, 'Brigitte Nahayo', 'brigittenahayo5@gmail.com', '$2b$10$qbodqQZbuNns4JkfUWh3yOIdrHE8w9KzvPQUl/ZFP6G3Nc0q5SbjW', 1, NULL),
 (12, 3, 'keza bella', 'kezabelle@gmail.com', '$2b$10$o6qD2npP91cwy9I/PqrEQOVxLsao7Zd3a/aOdOqJZmC5qPKxi4snK', 1, 4);
+
+-- Table structure for table `utilisateur_permission`
+DROP TABLE IF EXISTS `utilisateur_permission`;
+CREATE TABLE `utilisateur_permission` (
+  `idUser` int(11) NOT NULL,
+  `idPermission` int(11) NOT NULL,
+  `typePermission` enum('GRANT','REVOKE') NOT NULL DEFAULT 'GRANT',
+  PRIMARY KEY (`idUser`,`idPermission`),
+  KEY `idPermission` (`idPermission`),
+  CONSTRAINT `utilisateur_permission_ibfk_1` FOREIGN KEY (`idUser`) REFERENCES `utilisateur` (`idUser`) ON DELETE CASCADE,
+  CONSTRAINT `utilisateur_permission_ibfk_2` FOREIGN KEY (`idPermission`) REFERENCES `permission` (`idPermission`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Dumping data for table `utilisateur_permission`
+INSERT INTO `utilisateur_permission` (`idUser`, `idPermission`, `typePermission`) VALUES
+(6, 22, 'GRANT'),
+(6, 30, 'GRANT'),
+(8, 16, 'REVOKE'),
+(13, 17, 'REVOKE'),
+(13, 18, 'REVOKE'),
+(13, 1885, 'REVOKE'),
+(13, 1886, 'REVOKE');
 
 SET FOREIGN_KEY_CHECKS=1;
