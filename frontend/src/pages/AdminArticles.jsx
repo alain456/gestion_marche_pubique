@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from 'react';
+import api from '../services/api';
 
 const AdminArticles = () => {
     const [articles, setArticles] = useState([]);
@@ -7,14 +7,9 @@ const AdminArticles = () => {
     const [editingId, setEditingId] = useState(null);
     const [error, setError] = useState('');
 
-    // Configuration des headers avec le token
-    const config = {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-    };
-
     const fetchArticles = async () => {
         try {
-            const res = await axios.get('http://localhost:5000/api/articles', config);
+            const res = await api.get('/articles');
             setArticles(res.data);
         } catch (err) {
             setError(err.response?.data?.message || "Erreur de chargement");
@@ -27,9 +22,9 @@ const AdminArticles = () => {
         e.preventDefault();
         try {
             if (editingId) {
-                await axios.put(`http://localhost:5000/api/articles/${editingId}`, { nomArticle }, config);
+                await api.put(`/articles/${editingId}`, { nomArticle });
             } else {
-                await axios.post('http://localhost:5000/api/articles', { nomArticle }, config);
+                await api.post('/articles', { nomArticle });
             }
             setNomArticle('');
             setEditingId(null);
@@ -42,7 +37,7 @@ const AdminArticles = () => {
     const handleDelete = async (id) => {
         if (window.confirm("Supprimer cet article ?")) {
             try {
-                await axios.delete(`http://localhost:5000/api/articles/${id}`, config);
+                await api.delete(`/articles/${id}`);
                 fetchArticles();
             } catch (err) {
                 alert(err.response?.data?.message || "Erreur lors de la suppression");
@@ -58,12 +53,12 @@ const AdminArticles = () => {
 
             <form onSubmit={handleSubmit} className="mb-8 flex gap-2">
                 <input
-                    type="text"
-                    value={nomArticle}
-                    onChange={(e) => setNomArticle(e.target.value)}
-                    placeholder="Nom de l'article"
-                    className="border p-2 rounded w-full"
-                    required
+                     type="text"
+                     value={nomArticle}
+                     onChange={(e) => setNomArticle(e.target.value)}
+                     placeholder="Nom de l'article"
+                     className="border p-2 rounded w-full"
+                     required
                 />
                 <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">
                     {editingId ? 'Modifier' : 'Ajouter'}
@@ -79,7 +74,7 @@ const AdminArticles = () => {
                 <thead>
                     <tr className="bg-gray-100">
                         <th className="border p-2 text-left">ID</th>
-                        <th className="border p-2 text-left">Nom de l'Article</th>
+                        <th className="border p-2 text-left">Nom de l&apos;Article</th>
                         <th className="border p-2 text-center">Actions</th>
                     </tr>
                 </thead>
