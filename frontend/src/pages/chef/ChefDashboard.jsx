@@ -17,7 +17,11 @@ import {
   Filter,
   Search,
   ListFilter,
-  PlusCircle
+  PlusCircle,
+  PackageOpen,
+  TrendingUp,
+  RefreshCw,
+  DollarSign
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
@@ -29,6 +33,8 @@ const ChefDashboard = () => {
   const userRole = user?.role?.toUpperCase().replace(/\s+/g, '_') || '';
   const [marches, setMarches] = useState([]);
   const [demandes, setDemandes] = useState([]);
+  const [allOffres, setAllOffres] = useState([]);
+  const [offresRefreshing, setOffresRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const hasVoirMarches = user?.permissions?.includes('VOIR_MARCHES') || user?.permissions?.includes('GERER_MARCHES');
   const [activeTab, setActiveTab] = useState(hasVoirMarches ? 'marches' : 'demandes');
@@ -45,6 +51,7 @@ const ChefDashboard = () => {
   const [services, setServices] = useState([]);
   const [filterService, setFilterService] = useState('tous');
   const [filterStatus, setFilterStatus] = useState('tous');
+  const [filterMarche, setFilterMarche] = useState('tous');
 
   const fetchData = async () => {
     try {
@@ -55,6 +62,7 @@ const ChefDashboard = () => {
       ];
       if (hasVoirMarches) {
         reqs.push(api.get('/marches'));
+        reqs.push(api.get('/soumissions'));
       }
       
       const res = await Promise.all(reqs);
@@ -62,8 +70,10 @@ const ChefDashboard = () => {
       setServices(res[1].data);
       if (hasVoirMarches) {
         setMarches(res[2].data);
+        setAllOffres(res[3].data);
       } else {
         setMarches([]);
+        setAllOffres([]);
       }
     } catch (err) {
       console.error('Erreur chargement données:', err);
@@ -73,9 +83,28 @@ const ChefDashboard = () => {
     }
   };
 
+  const refreshOffres = async () => {
+    setOffresRefreshing(true);
+    try {
+      const res = await api.get('/soumissions');
+      setAllOffres(res.data);
+    } catch (err) {
+      console.error('Erreur refresh offres:', err);
+    } finally {
+      setOffresRefreshing(false);
+    }
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Auto-refresh des offres toutes les 30 secondes quand l'onglet offres est actif
+  useEffect(() => {
+    if (activeTab !== 'offres') return;
+    const interval = setInterval(refreshOffres, 30000);
+    return () => clearInterval(interval);
+  }, [activeTab]);
 
   const fetchOffres = async (idMarche) => {
     setOffresLoading(true);
@@ -232,6 +261,23 @@ const ChefDashboard = () => {
             {activeTab === 'marches' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full animate-in slide-in-from-bottom-1" />}
           </button>
         )}
+        {hasVoirMarches && (
+          <button 
+            onClick={() => setActiveTab('offres')}
+            className={`pb-4 text-sm font-black uppercase tracking-widest transition-all relative flex items-center gap-2 ${
+              activeTab === 'offres' ? 'text-primary' : 'text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            <PackageOpen className="h-4 w-4" />
+            Offres Reçues
+            {allOffres.length > 0 && (
+              <span className="px-2 py-0.5 bg-emerald-500 text-white rounded-full text-[9px] font-black">
+                {allOffres.length}
+              </span>
+            )}
+            {activeTab === 'offres' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full animate-in slide-in-from-bottom-1" />}
+          </button>
+        )}
         <button 
           onClick={() => setActiveTab('demandes')}
           className={`pb-4 text-sm font-black uppercase tracking-widest transition-all relative ${
@@ -246,7 +292,181 @@ const ChefDashboard = () => {
       {message && <div className="bg-emerald-50 border border-emerald-100 text-emerald-700 p-4 rounded-2xl animate-in slide-in-from-top-2 font-bold flex items-center gap-2"><CheckCircle className="h-5 w-5" /> {message}</div>}
       {error && <div className="bg-red-50 border border-red-100 text-red-700 p-4 rounded-2xl animate-in slide-in-from-top-2 font-bold flex items-center gap-2"><XCircle className="h-5 w-5" /> {error}</div>}
 
-      {activeTab === 'marches' ? (
+      {activeTab === 'offres' ? (
+        /* ===== ONGLET OFFRES REÇUES ===== */
+        <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
+          {/* Barre de filtres + refresh */}
+          <div className="bg-surface p-4 rounded-4xl border border-gray-100 shadow-sm flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-2xl border border-gray-100">
+              <Filter className="h-4 w-4 text-gray-400" />
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Filtrer :</span>
+            </div>
+            <div className="relative">
+              <select
+                value={filterMarche}
+                onChange={(e) => setFilterMarche(e.target.value)}
+                className="appearance-none pl-10 pr-10 py-2.5 bg-white border border-gray-100 rounded-2xl text-xs font-bold text-gray-700 focus:outline-hidden focus:ring-2 focus:ring-primary/20 cursor-pointer shadow-sm min-w-[220px]"
+              >
+                <option value="tous">Tous les Marchés</option>
+                {marches.map(m => (
+                  <option key={m.idMarche} value={m.idMarche}>Marché #{m.idMarche} — {m.numeroBudget || m.modePassation}</option>
+                ))}
+              </select>
+              <Gavel className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+            </div>
+            <div className="ml-auto flex items-center gap-3">
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50 px-3 py-1.5 rounded-full">
+                {allOffres.filter(o => filterMarche === 'tous' || o.idMarche.toString() === filterMarche).length} Offre(s)
+              </span>
+              <button
+                onClick={refreshOffres}
+                disabled={offresRefreshing}
+                className="flex items-center gap-2 px-4 py-2 bg-primary/5 text-primary rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary/10 transition-all border border-primary/10"
+                title="Actualiser la liste des offres"
+              >
+                <RefreshCw className={`h-4 w-4 ${offresRefreshing ? 'animate-spin' : ''}`} />
+                Actualiser
+              </button>
+            </div>
+          </div>
+
+          {/* Statistiques rapides */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="bg-surface p-5 rounded-3xl border border-gray-100 shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl"><PackageOpen className="h-5 w-5" /></div>
+                <span className="text-2xl font-black text-gray-900">{allOffres.length}</span>
+              </div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Offres</p>
+            </div>
+            <div className="bg-surface p-5 rounded-3xl border border-gray-100 shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl"><TrendingUp className="h-5 w-5" /></div>
+                <span className="text-2xl font-black text-emerald-600">
+                  {allOffres.filter(o => o.statut === 'retenu').length}
+                </span>
+              </div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Retenues</p>
+            </div>
+            <div className="bg-surface p-5 rounded-3xl border border-gray-100 shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-2.5 bg-amber-50 text-amber-600 rounded-xl"><Clock className="h-5 w-5" /></div>
+                <span className="text-2xl font-black text-amber-600">
+                  {allOffres.filter(o => o.statut === 'en attente').length}
+                </span>
+              </div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">En Attente</p>
+            </div>
+            <div className="bg-surface p-5 rounded-3xl border border-gray-100 shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-2.5 bg-purple-50 text-purple-600 rounded-xl"><DollarSign className="h-5 w-5" /></div>
+                <span className="text-lg font-black text-purple-600">
+                  {allOffres.length > 0 ? (allOffres.reduce((sum, o) => sum + Number(o.montantPropose || 0), 0) / allOffres.length).toLocaleString('fr-FR', {maximumFractionDigits: 0}) : 0}
+                </span>
+              </div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Moy. FBU</p>
+            </div>
+          </div>
+
+          {/* Tableau des offres */}
+          <div className="bg-surface rounded-4xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-8 py-6 border-b border-gray-50 flex items-center justify-between bg-gray-50/30">
+              <h2 className="text-xl font-black text-gray-800 uppercase tracking-tighter">Registre des Offres Reçues</h2>
+              <div className="flex items-center gap-2 text-xs font-bold text-emerald-500">
+                <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                Mise à jour automatique (30s)
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50/50">
+                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">#</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Soumissionnaire</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Marché</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Référence AO</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Date Dépôt</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Montant Proposé</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Délai</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Statut</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {allOffres
+                    .filter(o => filterMarche === 'tous' || o.idMarche.toString() === filterMarche)
+                    .length === 0 ? (
+                    <tr>
+                      <td colSpan="8" className="px-8 py-20 text-center text-gray-400">
+                        <PackageOpen className="h-12 w-12 mx-auto mb-4 opacity-10" />
+                        <p className="font-bold uppercase text-xs tracking-widest">Aucune offre reçue pour le moment.</p>
+                        <p className="text-[10px] mt-1 text-gray-300">Les offres enregistrées par la réception apparaîtront ici automatiquement.</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    allOffres
+                      .filter(o => filterMarche === 'tous' || o.idMarche.toString() === filterMarche)
+                      .sort((a, b) => new Date(b.dateSoumission) - new Date(a.dateSoumission))
+                      .map((o) => (
+                        <tr key={o.idOffre} className="hover:bg-gray-50/30 transition-all group">
+                          <td className="px-6 py-5">
+                            <span className="text-xs font-black text-gray-400">#{o.idOffre}</span>
+                          </td>
+                          <td className="px-6 py-5">
+                            <div className="flex items-center gap-3">
+                              <div className="h-9 w-9 bg-primary/10 text-primary rounded-xl flex items-center justify-center font-black text-sm">
+                                {o.nomSoumissionnaire?.charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <p className="text-sm font-black text-gray-900">{o.nomSoumissionnaire}</p>
+                                <p className="text-[10px] text-gray-400 flex items-center gap-1">
+                                  <User className="h-3 w-3" /> {o.email || '—'}
+                                </p>
+                                <p className="text-[10px] text-primary font-semibold">{o.telephone}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-5">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-100 text-gray-700 text-[10px] font-black uppercase">
+                              <Gavel className="h-3 w-3" /> Marché #{o.idMarche}
+                            </span>
+                          </td>
+                          <td className="px-6 py-5">
+                            <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg">
+                              {o.referenceAppelOffre || '—'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-5">
+                            <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                              <Calendar className="h-3.5 w-3.5" />
+                              {new Date(o.dateSoumission).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            </div>
+                          </td>
+                          <td className="px-6 py-5 text-right">
+                            <span className="text-sm font-black text-primary">
+                              {Number(o.montantPropose).toLocaleString('fr-FR')} FBU
+                            </span>
+                          </td>
+                          <td className="px-6 py-5">
+                            <span className="text-xs text-gray-500">{o.delaiLivraison || '—'}</span>
+                          </td>
+                          <td className="px-6 py-5 text-center">
+                            <span className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border shadow-sm ${
+                              o.statut === 'retenu' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                              o.statut === 'rejeté' ? 'bg-red-50 text-red-600 border-red-100' :
+                              'bg-amber-50 text-amber-600 border-amber-100'
+                            }`}>
+                              {o.statut || 'en attente'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      ) : activeTab === 'marches' ? (
         <>
           {/* Stats Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
