@@ -116,6 +116,7 @@ const Demande = {
         const query = `
             SELECT 
                 d.*,
+                s.nomService,
                 da.numeroBudget,
                 u.nom as nomDemandeur,
                 r.nomRole as roleDemandeur,
@@ -132,6 +133,7 @@ const Demande = {
                 ) as articles
             FROM demande d
             LEFT JOIN budget da ON d.idBudget = da.idBudget
+            LEFT JOIN servicedemandeur s ON d.idService = s.idService
             LEFT JOIN ligne_demande l ON d.idDemande = l.idDemande
             LEFT JOIN article a ON l.idArticle = a.idArticle
             LEFT JOIN utilisateur u ON d.idUser = u.idUser
@@ -155,6 +157,7 @@ const Demande = {
         const query = `
             SELECT 
                 d.*,
+                s.nomService,
                 da.numeroBudget,
                 u.nom as nomDemandeur,
                 r.nomRole as roleDemandeur,
@@ -171,6 +174,7 @@ const Demande = {
                 ) as articles
             FROM demande d
             LEFT JOIN budget da ON d.idBudget = da.idBudget
+            LEFT JOIN servicedemandeur s ON d.idService = s.idService
             LEFT JOIN ligne_demande l ON d.idDemande = l.idDemande
             LEFT JOIN article a ON l.idArticle = a.idArticle
             LEFT JOIN utilisateur u ON d.idUser = u.idUser

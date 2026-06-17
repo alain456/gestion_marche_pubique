@@ -14,8 +14,8 @@ exports.addSoumissionnaire = async (req, res) => {
         montantPropose 
     } = req.body;
 
-    if (!idMarche || !nomSoumissionnaire || !montantPropose) {
-        return res.status(400).json({ message: "Le marché, le nom du prestataire et le montant sont requis." });
+    if (!idMarche || !nomSoumissionnaire) {
+        return res.status(400).json({ message: "Le marché et le nom du prestataire sont requis." });
     }
 
     console.log("📩 Données reçues pour l'offre. Email du soumissionnaire :", email);
@@ -39,6 +39,7 @@ exports.addSoumissionnaire = async (req, res) => {
         if (email) {
             try {
                 const subject = "Confirmation de dépôt d'offre - SETIC";
+                const montantText = montantPropose ? `Montant proposé : ${Number(montantPropose).toLocaleString()} FBU\n` : '';
                 const text = `Bonjour ${nomSoumissionnaire},\n\n` +
                              `Nous vous confirmons que votre offre a été enregistrée avec succès par notre service de réception.\n\n` +
                              `DÉTAILS DE L'ENREGISTREMENT :\n` +
@@ -46,7 +47,7 @@ exports.addSoumissionnaire = async (req, res) => {
                              `N° Offre : #${idOffre}\n` +
                              `Marché : #${idMarche}\n` +
                              `Téléphone enregistré : ${telephone}\n` +
-                             `Montant proposé : ${Number(montantPropose).toLocaleString()} FBU\n` +
+                             montantText +
                              `Date : ${new Date(dateSoumission).toLocaleDateString()}\n\n` +
                              `Offre yawe yabaye enregistre neza  cane muri SETIC.\n\n` +
                              `Cordialement,\n` +
@@ -161,9 +162,10 @@ exports.updateSoumission = async (req, res) => {
         }
 
         // Envoi de l'email de confirmation de mise à jour si l'email est fourni
-        if (email && nomSoumissionnaire && montantPropose) {
+        if (email && nomSoumissionnaire) {
             try {
                 const subject = "Mise à jour de votre offre - SETIC";
+                const montantText = montantPropose ? `Montant proposé : ${Number(montantPropose).toLocaleString()} FBU\n` : '';
                 const text = `Bonjour ${nomSoumissionnaire},\n\n` +
                              `Nous vous informons que votre offre a été mise à jour avec succès par notre service de réception.\n\n` +
                              `MODIFICATIONS APPORTÉES :\n` +
@@ -174,7 +176,7 @@ exports.updateSoumission = async (req, res) => {
                              `N° Offre : #${idOffre}\n` +
                              `Marché : #${idMarche || 'N/A'}\n` +
                              `Téléphone enregistré : ${telephone || 'N/A'}\n` +
-                             `Montant proposé : ${Number(montantPropose).toLocaleString()} FBU\n` +
+                             montantText +
                              `Date : ${dateSoumission ? new Date(dateSoumission).toLocaleDateString() : 'N/A'}\n\n` +
                              `Ihinduka ry'offre yawe ryabaye enregistre neza muri SETIC.\n\n` +
                              `Cordialement,\n` +

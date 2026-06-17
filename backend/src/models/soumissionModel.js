@@ -17,7 +17,7 @@ const Soumission = {
 
         const [result] = await db.query(query, [
             idMarche, nomSoumissionnaire, adresse, telephone, 
-            email, referenceAppelOffre, dateSoumission, montantPropose,
+            email, referenceAppelOffre, dateSoumission, montantPropose || null,
             delaiLivraison || null, statut || 'en attente', motif || null
         ]);
         return result;
@@ -65,8 +65,8 @@ const Soumission = {
 
         const [result] = await db.query(query, [
             idMarche, nomSoumissionnaire, adresse, telephone, 
-            email, referenceAppelOffre, dateSoumission, montantPropose,
-            delaiLivraison, statut, motif, autorisationModification, idOffre
+            email, referenceAppelOffre, dateSoumission, montantPropose || null,
+            delaiLivraison || null, statut, motif, autorisationModification, idOffre
         ]);
         return result;
     },

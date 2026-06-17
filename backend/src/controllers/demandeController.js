@@ -13,10 +13,22 @@ const STATUTS_VALIDES = [
 
 // Créer une nouvelle demande d'achat avec plusieurs articles
 exports.createDemande = async (req, res) => {
-    const { idService, typeMarche, statut, articles, idBudget } = req.body;
+    let { idService, typeMarche, statut, articles, idBudget } = req.body;
 
     const userRole = req.user.role ? req.user.role.toUpperCase() : '';
     const isSpecialRole = userRole === 'RAF' || userRole === 'ADMIN';
+
+    // Si pas de service fourni dans la requête (par ex. si le token est obsolète), on le cherche en BDD
+    if (!idService) {
+        try {
+            const [userRows] = await require('../config/db').query('SELECT idService FROM utilisateur WHERE idUser = ?', [req.user.idUser]);
+            if (userRows && userRows.length > 0 && userRows[0].idService) {
+                idService = userRows[0].idService;
+            }
+        } catch (err) {
+            console.error("Erreur récupération idService utilisateur :", err);
+        }
+    }
 
     // Validation des champs obligatoires
     if (!isSpecialRole && (!idService || !idBudget || !articles || !Array.isArray(articles) || articles.length === 0)) {
@@ -84,6 +96,23 @@ exports.updateDemande = async (req, res) => {
                 roleUtilisateur: req.user.role,
                 motif: "Mise à jour par le demandeur"
             });
+        }
+
+        // Si on met à jour les infos générales de la demande (budget, service, typeMarche)
+        if (req.body.idBudget || req.body.idService || req.body.typeMarche) {
+            const updateFields = [];
+            const updateValues = [];
+            if (req.body.idBudget) { updateFields.push('idBudget = ?'); updateValues.push(req.body.idBudget); }
+            if (req.body.idService) { updateFields.push('idService = ?'); updateValues.push(req.body.idService); }
+            if (req.body.typeMarche) { updateFields.push('typeMarche = ?'); updateValues.push(req.body.typeMarche); }
+            
+            if (updateFields.length > 0) {
+                updateValues.push(id);
+                await require('../config/db').query(
+                    `UPDATE demande SET ${updateFields.join(', ')} WHERE idDemande = ?`,
+                    updateValues
+                );
+            }
         }
 
         // Si on met à jour le statut
@@ -189,7 +218,7 @@ exports.getAllDemandes = async (req, res) => {
             rows = await Demande.findByUser(req.user.idUser);
         } 
         // Sinon, si l'utilisateur a la permission de tout voir ou a un rôle global
-        else if (hasVoirToutesDemandes || hasVoirMarches || userRole === 'ADMIN' || userRole === 'RAF' || userRole === 'CGMP' || userRole === 'CHEF_INSTITUTION' || userRole === 'RECEPTIONISTE' || userRole === 'RECEPTIONNISTE') {
+        else if (hasVoirToutesDemandes || userRole === 'ADMIN' || userRole === 'RAF' || userRole === 'CGMP') {
             rows = await Demande.findAll();
         } 
         // Sinon (DEMANDEUR, CHEF_SERVICE sans permission globale), il ne voit que son service

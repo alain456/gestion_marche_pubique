@@ -1,4 +1,5 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useCallback } from 'react';
+import { getServiceOrRoleLabel } from '../../utils/formatters';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -260,11 +261,16 @@ const RafDashboard = () => {
   };
 
   const demandesSource = demandeScope === 'mine' ? mesDemandes : demandes;
-  const filteredDemandes = demandesSource.filter(d => 
-    (d.statut === 'En attente' || d.statut === 'Valide' || d.statut === 'Rejete' || d.statut === 'Inclus dans Marché') && 
-    (d.nomService?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-     d.idDemande.toString().includes(searchTerm))
-  );
+  const filteredDemandes = demandesSource.filter(d => {
+    const label = getServiceOrRoleLabel(d);
+    const q = searchTerm.toLowerCase();
+    return (d.statut === 'En attente' || d.statut === 'Soumis' || d.statut === 'Valide' || d.statut === 'Rejete' || d.statut === 'Inclus dans Marché') &&
+      (!searchTerm ||
+        label.toLowerCase().includes(q) ||
+        d.nomDemandeur?.toLowerCase().includes(q) ||
+        d.roleDemandeur?.toLowerCase().includes(q) ||
+        d.idDemande.toString().includes(q));
+  });
 
   // Groupement par type de marché
   const groupedDemandes = filteredDemandes.reduce((acc, d) => {
@@ -369,7 +375,7 @@ const RafDashboard = () => {
           </div>
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase">En attente</p>
-            <p className="text-xl font-bold text-gray-900">{demandesSource.filter(d => d.statut === 'En attente').length}</p>
+            <p className="text-xl font-bold text-gray-900">{demandesSource.filter(d => d.statut === 'En attente' || d.statut === 'Soumis').length}</p>
           </div>
         </div>
         <div className="bg-surface p-5 rounded-2xl border border-emerald-100 shadow-sm flex items-center gap-4">
@@ -560,7 +566,7 @@ const RafDashboard = () => {
                               </div>
                               <div className="min-w-0 flex-1">
                                 <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                                  <span className="font-bold text-sm text-gray-800">{d.nomService || d.roleDemandeur || 'Direction Générale'}</span>
+                                  <span className="font-bold text-sm text-gray-800">{getServiceOrRoleLabel(d)}</span>
                                   <span className="text-xs text-gray-400">{new Date(d.dateDemande).toLocaleDateString('fr-FR')}</span>
                                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
                                     d.priorite === 'Critique' ? 'bg-red-100 text-red-700' :
@@ -638,7 +644,7 @@ const RafDashboard = () => {
                                 >
                                   DÉTAILS
                                 </button>
-                                {d.statut === 'En attente' && (
+                                {(d.statut === 'En attente' || d.statut === 'Soumis') && (
                                   <button
                                     onClick={() => openBudgetModal(d)}
                                     className="px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-blue-800 transition shadow-sm"
@@ -804,7 +810,7 @@ const RafDashboard = () => {
             <div className="space-y-4">
               <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 mb-4">
                 <p className="text-xs text-gray-400 uppercase font-bold">Demande sélectionnée</p>
-                <p className="text-sm font-bold text-gray-800">#{selectedDemande.idDemande} — {selectedDemande.nomService || selectedDemande.roleDemandeur || 'Direction Générale'}</p>
+                <p className="text-sm font-bold text-gray-800">#{selectedDemande.idDemande} — {(selectedDemande.roleDemandeur?.toLowerCase() === 'receptioniste' || selectedDemande.roleDemandeur?.toLowerCase() === 'receptionniste') ? 'Réceptionniste' : (selectedDemande.nomService || selectedDemande.roleDemandeur || 'Direction Générale')}</p>
               </div>
 
               {/* Infos Budget Real-time (Retiré à la demande de l'utilisateur) */}
@@ -954,7 +960,7 @@ const RafDashboard = () => {
               <div>
                 <h3 className="text-xl font-bold text-gray-900">Détails de la Demande #{selectedDemande.idDemande}</h3>
                 <div className="flex flex-col mt-1">
-                  <p className="text-sm font-medium text-gray-700">Origine : <span className="font-bold text-primary">{selectedDemande.nomService || selectedDemande.roleDemandeur || 'Direction Générale'}</span></p>
+                  <p className="text-sm font-medium text-gray-700">Origine : <span className="font-bold text-primary">{(selectedDemande.roleDemandeur?.toLowerCase() === 'receptioniste' || selectedDemande.roleDemandeur?.toLowerCase() === 'receptionniste') ? 'Réceptionniste' : (selectedDemande.nomService || selectedDemande.roleDemandeur || 'Direction Générale')}</span></p>
                   <p className="text-xs text-gray-500 italic">Chef responsable : {selectedDemande.nomChef || 'N/A'}</p>
                 </div>
               </div>

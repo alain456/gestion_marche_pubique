@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
+import { getServiceOrRoleLabel } from '../../utils/formatters';
 
 const RafBudgets = () => {
   const [budgets, setBudgets] = useState([]);
@@ -61,28 +62,36 @@ const RafBudgets = () => {
     fetchData();
   }, []);
 
+  
   const filteredBudgets = budgets.filter(b => {
+    const searchLower = searchTerm.toLowerCase();
     const matchesSearch = !searchTerm || 
-      b.numeroBudget.toLowerCase().includes(searchTerm.toLowerCase());
+      b.numeroBudget.toLowerCase().includes(searchLower);
     const matchesType = filterType === 'Tous' || b.typeBudget === filterType;
     
     // Filtrer par service (si au moins une demande du service est liée à ce budget)
-    const matchesService = !filterService || demandes.some(d => d.idBudget === b.idBudget && d.nomService === filterService);
+    const matchesService = !filterService || demandes.some(d => 
+      d.idBudget === b.idBudget && getServiceOrRoleLabel(d) === filterService
+    );
     
     return matchesSearch && matchesType && matchesService;
   });
 
   const filteredGroupDemandes = groupDemandes.filter(d => {
+    const label = getServiceOrRoleLabel(d);
+    const searchLower = searchTerm.toLowerCase();
     const matchesSearch = !searchTerm || 
-      d.nomService?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      label.toLowerCase().includes(searchLower) ||
+      d.roleDemandeur?.toLowerCase().includes(searchLower) ||
+      d.nomDemandeur?.toLowerCase().includes(searchLower) ||
       d.idDemande.toString().includes(searchTerm);
-    const matchesService = !filterService || d.nomService === filterService;
+    const matchesService = !filterService || label === filterService;
     const matchesPriority = !filterPriority || d.priorite === filterPriority;
     
     return matchesSearch && matchesService && matchesPriority;
   });
 
-  const services = [...new Set(demandes.map(d => d.nomService))].filter(Boolean).sort();
+  const services = [...new Set(demandes.map(d => getServiceOrRoleLabel(d)))].filter(Boolean).sort();
 
   // Calculer les stats pour chaque budget
   const getBudgetStats = (idBudget) => {
@@ -427,7 +436,7 @@ const RafBudgets = () => {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex flex-col">
-                            <span className="font-medium text-gray-900">{demande.nomService || demande.roleDemandeur || 'Direction Générale'}</span>
+                            <span className="font-medium text-gray-900">{(demande.roleDemandeur?.toLowerCase() === 'receptioniste' || demande.roleDemandeur?.toLowerCase() === 'receptionniste') ? 'Réceptionniste' : (demande.nomService || demande.roleDemandeur || 'Direction Générale')}</span>
                             <span className={`text-[9px] font-black uppercase mt-1 px-2 py-0.5 rounded-full w-fit ${
                               demande.priorite === 'Critique' ? 'bg-red-100 text-red-700' :
                               demande.priorite === 'Urgente' ? 'bg-amber-100 text-amber-700' :

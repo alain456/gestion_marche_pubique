@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import { AuthContext } from '../../contexts/AuthContext';
+import { getServiceOrRoleLabel } from '../../utils/formatters';
 
 const ToutesDemandes = () => {
   const [demandes, setDemandes] = useState([]);
@@ -75,8 +76,10 @@ const ToutesDemandes = () => {
 
   const filteredDemandes = demandes.filter((d) => {
     const searchLower = searchTerm.toLowerCase();
+    const label = getServiceOrRoleLabel(d);
     const matchSearch = !searchTerm ||
-      d.nomService?.toLowerCase().includes(searchLower) ||
+      label.toLowerCase().includes(searchLower) ||
+      d.roleDemandeur?.toLowerCase().includes(searchLower) ||
       d.nomDemandeur?.toLowerCase().includes(searchLower) ||
       d.articles?.some(a => a.nomArticle?.toLowerCase().includes(searchLower)) ||
       d.idDemande.toString().includes(searchLower);
@@ -123,7 +126,7 @@ const ToutesDemandes = () => {
               <div className="flex flex-wrap items-center gap-2 mb-2">
                 <span className="text-sm font-bold text-blue-700">{demande.numeroBudget || '— Budget'}</span>
                 <span className="text-[10px] bg-blue-50 text-blue-600 border border-blue-100 px-1.5 py-0.5 rounded font-bold flex items-center gap-1 uppercase tracking-tighter">
-                  <Building className="h-3 w-3" /> {demande.nomService || 'Service Inconnu'}
+                  <Building className="h-3 w-3" /> {getServiceOrRoleLabel(demande)}
                 </span>
                 <span className="text-[10px] bg-gray-100 text-gray-600 border border-gray-200 px-1.5 py-0.5 rounded font-bold flex items-center gap-1">
                   <User className="h-3 w-3" /> {demande.nomDemandeur || 'Inconnu'}
@@ -280,7 +283,7 @@ const ToutesDemandes = () => {
               <div>
                 <h3 className="text-lg font-bold">Détails de la demande #{viewingDemande.idDemande}</h3>
                 <p className="text-sm text-gray-500">
-                  Service: {viewingDemande.nomService} | Demandeur: {viewingDemande.nomDemandeur}
+                  Service: {(viewingDemande.roleDemandeur?.toLowerCase() === 'receptioniste' || viewingDemande.roleDemandeur?.toLowerCase() === 'receptionniste') ? 'Réceptionniste' : viewingDemande.nomService} | Demandeur: {viewingDemande.nomDemandeur}
                 </p>
               </div>
               <button onClick={() => setViewingDemande(null)} className="text-gray-400 hover:text-gray-600 text-2xl">×</button>

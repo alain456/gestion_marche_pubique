@@ -126,7 +126,7 @@ const DemandeurDemandes = () => {
     setError('');
     setMessage('');
 
-    if (!form.idService && userRole !== 'RAF' && userRole !== 'ADMIN' && userRole !== 'CHEF_INSTITUTION' && userRole !== 'CGMP') {
+    if (!form.idService && !['RAF', 'ADMIN', 'CHEF_INSTITUTION', 'CGMP', 'RECEPTIONISTE', 'RECEPTIONNISTE'].includes(userRole)) {
       setError('Service Demandeur requis.');
       return;
     }
@@ -134,12 +134,14 @@ const DemandeurDemandes = () => {
     let finalItems = [...selectedItems];
     if (currentItem.idArticle && currentItem.quantite) {
       const article = articles.find(a => a.idArticle === parseInt(currentItem.idArticle));
+      const pu = currentItem.montant ? parseInt(currentItem.montant) : null;
       finalItems.push({
         idArticle: parseInt(currentItem.idArticle),
         nomArticle: article?.nomArticle,
         quantite: parseInt(currentItem.quantite),
         description: currentItem.description,
-        montant: currentItem.montant ? parseInt(currentItem.montant) : null
+        prixUnitaire: pu,
+        montant: pu ? pu * parseInt(currentItem.quantite) : null
       });
     }
 
@@ -156,7 +158,7 @@ const DemandeurDemandes = () => {
         statut: statut,
         articles: finalItems,
         idBudget: parseInt(form.idBudget),
-        motif: statut === 'En attente' ? null : undefined // Effacer le motif si on soumet
+        motif: (statut === 'En attente' || statut === 'Soumis') ? null : undefined // Effacer le motif si on soumet
       };
 
       if (editingId) {
@@ -206,13 +208,14 @@ const DemandeurDemandes = () => {
       alert("Erreur: L'article sélectionné est introuvable.");
       return;
     }
-    
+    const pu = currentItem.montant ? parseInt(currentItem.montant) : null;
     setSelectedItems([...selectedItems, { 
       idArticle: articleIdNum, 
       nomArticle: articleData.nomArticle,
       quantite: parseInt(currentItem.quantite),
       description: currentItem.description,
-      montant: currentItem.montant ? parseInt(currentItem.montant) : null
+      prixUnitaire: pu,
+      montant: pu ? pu * parseInt(currentItem.quantite) : null
     }]);
     setCurrentItem({ idArticle: '', quantite: '', description: '', montant: '' });
   };
@@ -223,7 +226,7 @@ const DemandeurDemandes = () => {
       idArticle: item.idArticle?.toString() || '',
       quantite: item.quantite,
       description: item.description || '',
-      montant: item.montant?.toString() || ''
+      montant: item.prixUnitaire?.toString() || ''
     });
     removeArticleFromList(index);
   };
@@ -233,23 +236,30 @@ const DemandeurDemandes = () => {
   };
 
   const reprendreDemande = (demande) => {
-    setEditingId(demande.idDemande);
-    setForm({
-      idService: demande.idService || '',
-      idBudget: demande.idBudget || '',
-      typeMarche: demande.typeMarche ? demande.typeMarche.toLowerCase() : ''
-    });
-    setSelectedItems(demande.articles.map(art => ({
-      idArticle: art.idArticle,
-      nomArticle: art.nomArticle,
-      quantite: art.quantite,
-      description: art.description || '',
-      montant: art.montant || null
-    })));
-    setCurrentItem({ idArticle: '', quantite: '', description: '', montant: '' });
-    
-    setShowForm(true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    try {
+      setEditingId(demande.idDemande);
+      setError('');
+      setMessage('');
+      setForm({
+        idService: demande.idService || '',
+        idBudget: demande.idBudget || '',
+        typeMarche: demande.typeMarche ? demande.typeMarche.toLowerCase() : ''
+      });
+      setSelectedItems((demande.articles || []).map(art => ({
+        idArticle: art.idArticle,
+        nomArticle: art.nomArticle,
+        quantite: art.quantite,
+        description: art.description || '',
+        prixUnitaire: art.prixUnitaire || null,
+        montant: art.montant || null
+      })));
+      setCurrentItem({ idArticle: '', quantite: '', description: '', montant: '' });
+      setShowForm(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (e) {
+      console.error('Erreur dans reprendreDemande:', e);
+      setError('Impossible de charger la demande pour modification: ' + e.message);
+    }
   };
 
   const finaliserDemande = async (idDemande) => {
@@ -277,12 +287,13 @@ const DemandeurDemandes = () => {
   };
 
   const userRole = user?.role?.toUpperCase().replace(/\s+/g, '_');
-  const isChef = userRole === 'CHEF_SERVICE' || userRole === 'CHEF_INSTITUTION' || userRole === 'RAF' || userRole === 'ADMIN';
+  const isChef = userRole === 'CHEF_SERVICE' || userRole === 'CHEF_INSTITUTION' || userRole === 'RAF' || userRole === 'ADMIN' || userRole === 'RECEPTIONISTE' || userRole === 'RECEPTIONNISTE';
 
   const getBackPath = () => {
     if (userRole === 'ADMIN') return '/admin';
     if (userRole === 'RAF') return '/raf';
     if (userRole === 'CHEF_SERVICE' || userRole === 'CHEF_INSTITUTION') return '/chef';
+    if (userRole === 'RECEPTIONISTE' || userRole === 'RECEPTIONNISTE') return '/reception';
     return '/demandeur';
   };
 
@@ -349,8 +360,8 @@ const DemandeurDemandes = () => {
         </div>
       </div>
 
-      {message && <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-sm text-emerald-700">{message}</div>}
-      {error && !showForm && <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-700">{error}</div>}
+      {message && <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-sm text-emerald-700 mb-4">{message}</div>}
+      {error && <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-700 mb-4">{error}</div>}
 
       {/* Formulaire */}
       {showForm && (
@@ -495,7 +506,7 @@ const DemandeurDemandes = () => {
                       <tr key={idx}>
                         <td className="px-3 py-2 font-medium">{item.nomArticle}</td>
                         <td className="px-3 py-2">{item.quantite}</td>
-                        <td className="px-3 py-2 font-semibold text-primary">{item.montant ? item.montant.toLocaleString() + ' FBU' : '—'}</td>
+                        <td className="px-3 py-2 font-semibold text-primary">{item.prixUnitaire ? item.prixUnitaire.toLocaleString() + ' FBU' : '—'}</td>
                         <td className="px-3 py-2 text-gray-500 italic">{item.description || '—'}</td>
                         <td className="px-3 py-2 text-right space-x-2">
                           <button onClick={() => editArticleInList(idx)} className="text-blue-500"><Pencil className="h-4 w-4" /></button>
@@ -528,7 +539,7 @@ const DemandeurDemandes = () => {
             >
               <Save className="h-4 w-4 mr-2" /> Enregistrer Brouillon
             </button>
-            <button onClick={resetForm} className="px-6 py-2.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-50 transition">Annuler</button>
+            <button onClick={() => { resetForm(); setShowForm(false); }} className="px-6 py-2.5 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-50 transition">Annuler</button>
           </div>
         </section>
       )}
@@ -589,7 +600,7 @@ const DemandeurDemandes = () => {
                         {hasVoirToutes && (
                           <>
                             <span className="text-[10px] bg-blue-50 text-blue-600 border border-blue-100 px-1.5 py-0.5 rounded font-bold flex items-center gap-1 uppercase tracking-tighter">
-                              <Building className="h-3 w-3" /> {demande.nomService || 'Service Inconnu'}
+                              <Building className="h-3 w-3" /> {(demande.roleDemandeur?.toLowerCase() === 'receptioniste' || demande.roleDemandeur?.toLowerCase() === 'receptionniste') ? 'Réceptionniste' : (demande.nomService || 'Service Inconnu')}
                             </span>
                             <span className="text-[10px] bg-gray-100 text-gray-600 border border-gray-200 px-1.5 py-0.5 rounded font-bold flex items-center gap-1">
                               <User className="h-3 w-3" /> {demande.nomDemandeur || 'Inconnu'}
@@ -663,8 +674,13 @@ const DemandeurDemandes = () => {
                       <button onClick={() => setViewingDemande(demande)} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg border border-blue-100 transition" title="Visualiser">
                         <Eye className="h-4 w-4" />
                       </button>
-                      {canUpdateDemande && (demande.statut === 'Brouillon' || demande.statut === 'En attente' || demande.statut === 'Rejete') && (
-                        <button onClick={() => reprendreDemande(demande)} className="p-1.5 text-amber-500 hover:bg-amber-50 rounded-lg border border-amber-100 transition" title="Modifier">
+                      {(canUpdateDemande || demande.statut === 'Rejete' || demande.statut === 'En attente') && 
+                       (demande.statut === 'Brouillon' || demande.statut === 'En attente' || demande.statut === 'Rejete') && (
+                        <button 
+                          onClick={() => reprendreDemande(demande)} 
+                          className="p-1.5 text-amber-500 hover:bg-amber-50 rounded-lg border border-amber-100 transition" 
+                          title="Modifier cette demande"
+                        >
                           <Pencil className="h-4 w-4" />
                         </button>
                       )}
@@ -695,7 +711,7 @@ const DemandeurDemandes = () => {
             <div className="p-6 border-b border-gray-100 flex justify-between items-center">
               <div>
                 <h3 className="text-lg font-bold">Détails de la commande #{viewingDemande.idDemande}</h3>
-                <p className="text-sm text-gray-500">Service: {viewingDemande.nomService} | Budget: {viewingDemande.numeroBudget}</p>
+                <p className="text-sm text-gray-500">Service: {(viewingDemande.roleDemandeur?.toLowerCase() === 'receptioniste' || viewingDemande.roleDemandeur?.toLowerCase() === 'receptionniste') ? 'Réceptionniste' : viewingDemande.nomService} | Budget: {viewingDemande.numeroBudget}</p>
               </div>
               <button onClick={() => setViewingDemande(null)} className="text-gray-400 hover:text-gray-600">×</button>
             </div>

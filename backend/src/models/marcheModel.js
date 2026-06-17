@@ -23,23 +23,11 @@ const Marche = {
         return result;
     },
 
-    // Récupérer tous les marchés avec infos service
+    // Récupérer tous les marchés
     findAll: async () => {
-        const query = `
-            SELECT 
-                m.*, 
-                d.typeMarche, 
-                s.nomService,
-                u.nom as nomDemandeur,
-                r.nomRole as roleDemandeur
-            FROM marche m
-            LEFT JOIN demande d ON m.idDemande = d.idDemande
-            LEFT JOIN servicedemandeur s ON d.idService = s.idService
-            LEFT JOIN utilisateur u ON d.idUser = u.idUser
-            LEFT JOIN role r ON u.idRole = r.idRole
-            ORDER BY m.idMarche DESC
-        `;
-        const [rows] = await db.query(query);
+        // NOTE: idDemande est un champ varchar multi-valeurs (ex: "28,27,25")
+        // On ne peut pas faire un JOIN direct — on retourne simplement tous les marchés.
+        const [rows] = await db.query('SELECT * FROM marche ORDER BY idMarche DESC');
         return rows;
     },
 
