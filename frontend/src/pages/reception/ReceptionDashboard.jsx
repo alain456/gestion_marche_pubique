@@ -201,13 +201,12 @@ const ReceptionDashboard = () => {
                   <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Marché</th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Téléphone</th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Date</th>
-                  <th className="px-6 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Montant</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {filteredSoumissions.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="px-6 py-8 text-center text-gray-400 italic">
+                    <td colSpan="4" className="px-6 py-8 text-center text-gray-400 italic">
                       Aucune offre trouvée.
                     </td>
                   </tr>
@@ -227,9 +226,6 @@ const ReceptionDashboard = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {new Date(s.dateSoumission).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right font-bold text-primary">
-                        {Number(s.montantPropose).toLocaleString()} FBU
                       </td>
                     </tr>
                   ))

@@ -490,7 +490,7 @@ const CgmpMarches = () => {
           d.articles.forEach(art => {
             articles.push({
               ...art,
-              serviceSource: d.nomService || d.roleDemandeur
+              serviceSource: (d.roleDemandeur?.toLowerCase() === 'receptioniste' || d.roleDemandeur?.toLowerCase() === 'receptionniste') ? 'Réceptionniste' : (d.nomService || d.roleDemandeur)
             });
           });
         }
@@ -728,7 +728,7 @@ const CgmpMarches = () => {
             <div>
               <h2 className="text-xl font-bold">Nouveau marché</h2>
               <p className="text-blue-100 text-sm mt-1">
-                Demande #{selectedDemand?.idDemande} — {selectedDemand?.nomService || selectedDemand?.roleDemandeur || 'Direction Générale'} 
+                Demande #{selectedDemand?.idDemande} — {(selectedDemand?.roleDemandeur?.toLowerCase() === 'receptioniste' || selectedDemand?.roleDemandeur?.toLowerCase() === 'receptionniste') ? 'Réceptionniste' : (selectedDemand?.nomService || selectedDemand?.roleDemandeur || 'Direction Générale')} 
                 {selectedDemand?.nomDemandeur && ` (${selectedDemand.nomDemandeur})`}
               </p>
               <div className="mt-2 text-[10px] text-blue-100 uppercase font-bold">
@@ -928,7 +928,7 @@ const CgmpMarches = () => {
               <div>
                 <h2 className="text-xl font-bold">Gestion du Marché #{selectedMarche?.idMarche}</h2>
                 <p className="text-gray-400 text-sm">
-                  Demande #{selectedMarche?.idDemande} — {selectedMarche?.nomService || selectedMarche?.roleDemandeur || 'Direction Générale'}
+                  Demande #{selectedMarche?.idDemande} — {(selectedMarche?.roleDemandeur?.toLowerCase() === 'receptioniste' || selectedMarche?.roleDemandeur?.toLowerCase() === 'receptionniste') ? 'Réceptionniste' : (selectedMarche?.nomService || selectedMarche?.roleDemandeur || 'Direction Générale')}
                   {selectedMarche?.nomDemandeur && ` (${selectedMarche.nomDemandeur})`}
                 </p>
               </div>

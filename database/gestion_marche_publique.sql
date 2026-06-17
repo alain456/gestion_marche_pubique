@@ -146,10 +146,60 @@ CREATE TABLE `historique_demande` (
   PRIMARY KEY (`idHistorique`),
   KEY `idDemande` (`idDemande`),
   CONSTRAINT `historique_demande_ibfk_1` FOREIGN KEY (`idDemande`) REFERENCES `demande` (`idDemande`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=45 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Dumping data for table `historique_demande`
 INSERT INTO `historique_demande` (`idHistorique`, `idDemande`, `action`, `statutPrecedent`, `nouveauStatut`, `idUtilisateur`, `nomUtilisateur`, `roleUtilisateur`, `motif`, `dateAction`) VALUES
+<<<<<<< HEAD
+(1, 35, 'Soumission de la demande', NULL, 'En attente', 6, 'abby', 'CHEF_SERVICE', NULL, '2026-05-13 09:23:19'),
+(2, 35, 'Validation Budgétaire (RAF)', NULL, 'Valide', 8, 'alain', 'RAF', 'nayagabanije', '2026-05-13 09:24:24'),
+(3, 30, 'Validation Budgétaire (RAF)', NULL, 'Valide', 8, 'alain', 'RAF', 'n sawa', '2026-05-13 11:42:23'),
+(4, 33, 'Ajustement technique par la CGMP', NULL, NULL, 7, 'noe', 'CGMP', 'c\'est bon vous avez bien fait..', '2026-05-13 11:52:12'),
+(5, 35, 'Ajustement technique par la CGMP', NULL, NULL, 7, 'noe', 'CGMP', 'twadugije prix unitaire', '2026-05-14 12:35:55'),
+(6, 35, 'Ajustement technique par la CGMP', NULL, NULL, 7, 'noe', 'CGMP', 'sorry twakuyeko 10k', '2026-05-14 12:45:31'),
+(7, 28, 'Ajustement technique par la CGMP', NULL, NULL, 7, 'noe', 'CGMP', 'oya mwara mwakabije.', '2026-05-14 14:02:48'),
+(8, 28, 'Création du Marché Public', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Inclus dans le marché #4 (Mode: AO)', '2026-05-15 06:46:44'),
+(9, 27, 'Création du Marché Public', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Inclus dans le marché #4 (Mode: AO)', '2026-05-15 06:46:44'),
+(10, 25, 'Création du Marché Public', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Inclus dans le marché #4 (Mode: AO)', '2026-05-15 06:46:44'),
+(11, 23, 'Création du Marché Public', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Inclus dans le marché #4 (Mode: AO)', '2026-05-15 06:46:44'),
+(12, 22, 'Création du Marché Public', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Inclus dans le marché #4 (Mode: AO)', '2026-05-15 06:46:44'),
+(13, 20, 'Création du Marché Public', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Inclus dans le marché #4 (Mode: AO)', '2026-05-15 06:46:44'),
+(14, 18, 'Création du Marché Public', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Inclus dans le marché #4 (Mode: AO)', '2026-05-15 06:46:44'),
+(15, 16, 'Création du Marché Public', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Inclus dans le marché #4 (Mode: AO)', '2026-05-15 06:46:44'),
+(16, 15, 'Création du Marché Public', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Inclus dans le marché #4 (Mode: AO)', '2026-05-15 06:46:44'),
+(17, 28, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #4 est passé au statut : ATTRIBUTION', '2026-05-15 08:49:34'),
+(18, 27, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #4 est passé au statut : ATTRIBUTION', '2026-05-15 08:49:34'),
+(19, 25, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #4 est passé au statut : ATTRIBUTION', '2026-05-15 08:49:34'),
+(20, 23, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #4 est passé au statut : ATTRIBUTION', '2026-05-15 08:49:34'),
+(21, 22, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #4 est passé au statut : ATTRIBUTION', '2026-05-15 08:49:34'),
+(22, 20, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #4 est passé au statut : ATTRIBUTION', '2026-05-15 08:49:34'),
+(23, 18, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #4 est passé au statut : ATTRIBUTION', '2026-05-15 08:49:34'),
+(24, 16, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #4 est passé au statut : ATTRIBUTION', '2026-05-15 08:49:34'),
+(25, 15, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #4 est passé au statut : ATTRIBUTION', '2026-05-15 08:49:34'),
+(26, 28, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #4 est passé au statut : PUBLIE', '2026-05-15 08:49:58'),
+(27, 27, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #4 est passé au statut : PUBLIE', '2026-05-15 08:49:58'),
+(28, 25, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #4 est passé au statut : PUBLIE', '2026-05-15 08:49:58'),
+(29, 23, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #4 est passé au statut : PUBLIE', '2026-05-15 08:49:58'),
+(30, 22, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #4 est passé au statut : PUBLIE', '2026-05-15 08:49:58'),
+(31, 20, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #4 est passé au statut : PUBLIE', '2026-05-15 08:49:58'),
+(32, 18, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #4 est passé au statut : PUBLIE', '2026-05-15 08:49:58'),
+(33, 16, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #4 est passé au statut : PUBLIE', '2026-05-15 08:49:58'),
+(34, 15, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #4 est passé au statut : PUBLIE', '2026-05-15 08:49:58'),
+(35, 32, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #3 est passé au statut : PUBLIE', '2026-05-19 11:42:02'),
+(36, 28, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #3 est passé au statut : PUBLIE', '2026-05-19 11:42:02'),
+(37, 27, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #3 est passé au statut : PUBLIE', '2026-05-19 11:42:02'),
+(38, 25, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #3 est passé au statut : PUBLIE', '2026-05-19 11:42:02'),
+(39, 23, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #3 est passé au statut : PUBLIE', '2026-05-19 11:42:02'),
+(40, 22, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #3 est passé au statut : PUBLIE', '2026-05-19 11:42:02'),
+(41, 20, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #3 est passé au statut : PUBLIE', '2026-05-19 11:42:02'),
+(42, 18, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #3 est passé au statut : PUBLIE', '2026-05-19 11:42:02'),
+(43, 16, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #3 est passé au statut : PUBLIE', '2026-05-19 11:42:02'),
+(44, 15, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #3 est passé au statut : PUBLIE', '2026-05-19 11:42:02'),
+(45, 34, 'Création du Marché Public', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Inclus dans le marché #5 (Mode: PVN)', '2026-05-19 16:25:23'),
+(46, 29, 'Création du Marché Public', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Inclus dans le marché #5 (Mode: PVN)', '2026-05-19 16:25:23'),
+(47, 34, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #5 est passé au statut : PUBLIE', '2026-05-19 16:26:38'),
+(48, 29, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #5 est passé au statut : PUBLIE', '2026-05-19 16:26:38');
+=======
 (1, 35, 'Soumission de la demande', NULL, 'En attente', 6, 'abby', 'CHEF_SERVICE', NULL, '2026-05-13 07:23:19'),
 (2, 35, 'Validation Budgétaire (RAF)', NULL, 'Valide', 8, 'alain', 'RAF', 'nayagabanije', '2026-05-13 07:24:24'),
 (3, 30, 'Validation Budgétaire (RAF)', NULL, 'Valide', 8, 'alain', 'RAF', 'n sawa', '2026-05-13 09:42:23'),
@@ -194,6 +244,7 @@ INSERT INTO `historique_demande` (`idHistorique`, `idDemande`, `action`, `statut
 (42, 18, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #3 est passé au statut : PUBLIE', '2026-05-19 09:42:02'),
 (43, 16, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #3 est passé au statut : PUBLIE', '2026-05-19 09:42:02'),
 (44, 15, 'Mise à jour du Marché', NULL, 'Inclus dans Marché', 7, 'noe', 'CGMP', 'Le marché #3 est passé au statut : PUBLIE', '2026-05-19 09:42:02');
+>>>>>>> cf359edca5065796a7dcb83e2bc171fdd562942a
 
 -- Table structure for table `ligne_demande`
 DROP TABLE IF EXISTS `ligne_demande`;
@@ -260,14 +311,23 @@ CREATE TABLE `marche` (
   `dateLimite` datetime DEFAULT NULL,
   PRIMARY KEY (`idMarche`),
   KEY `idDemande` (`idDemande`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Dumping data for table `marche`
+<<<<<<< HEAD
+INSERT INTO `marche` (`idMarche`, `idDemande`, `numeroBudget`, `montantEstime`, `modePassation`, `justificationChoix`, `seuilReglementaireApplique`, `dateSelection`, `validateur`, `statut`, `dateCloture`, `cloturePar`, `commentaire`) VALUES
+(1, '16', NULL, 1234567890, 'AO', NULL, 'Travaux - Admin (> 10M BIF)', '2026-05-02 22:00:00', NULL, 'suspendu', NULL, NULL, NULL),
+(2, '15', NULL, 3000000, 'AO', NULL, 'Travaux - Admin (> 10M BIF)', '2026-04-26 22:00:00', 'alain', 'cloture', '2026-04-30 22:00:00', 'bugaga', 'n sawa'),
+(3, '32,28,27,25,23,22,20,18,16,15', 'BUDGET-2026-F001', 798992, 'AO', NULL, 'Travaux - Admin (> 10M BIF)', '2026-05-12 22:00:00', 'alain', 'publie', NULL, NULL, NULL),
+(4, '28,27,25,23,22,20,18,16,15', 'BUDGET-2026-F001', 769992, 'AO', 'wertyuiop[', 'Travaux - Admin (> 10M BIF)', '2026-05-07 22:00:00', 'alain gushakakwimana', 'publie', NULL, NULL, NULL),
+(5, '34,29', 'ibikoresho', 3135000, 'PVN', 'vvvvv', 'Travaux - Admin (> 10M BIF)', '2026-05-17 22:00:00', 'bbb', 'publie', NULL, 'abby', NULL);
+=======
 INSERT INTO `marche` (`idMarche`, `idDemande`, `numeroBudget`, `montantEstime`, `modePassation`, `justificationChoix`, `seuilReglementaireApplique`, `dateSelection`, `validateur`, `statut`, `dateCloture`, `cloturePar`, `commentaire`, `dateLimite`) VALUES
 (1, '16', NULL, 1234567890, 'AO', NULL, 'Travaux - Admin (> 10M BIF)', '2026-05-01 22:00:00', NULL, 'suspendu', NULL, NULL, NULL, NULL),
 (2, '15', NULL, 3000000, 'AO', NULL, 'Travaux - Admin (> 10M BIF)', '2026-04-25 22:00:00', 'alain', 'cloture', '2026-04-29 22:00:00', 'bugaga', 'n sawa', NULL),
 (3, '32,28,27,25,23,22,20,18,16,15', 'BUDGET-2026-F001', 798992, 'AO', NULL, 'Travaux - Admin (> 10M BIF)', '2026-05-11 22:00:00', 'alain', 'publie', NULL, NULL, NULL, NULL),
 (4, '28,27,25,23,22,20,18,16,15', 'BUDGET-2026-F001', 769992, 'AO', 'wertyuiop[', 'Travaux - Admin (> 10M BIF)', '2026-05-06 22:00:00', 'alain gushakakwimana', 'publie', NULL, NULL, NULL, NULL);
+>>>>>>> cf359edca5065796a7dcb83e2bc171fdd562942a
 
 -- Table structure for table `notification`
 DROP TABLE IF EXISTS `notification`;
@@ -513,7 +573,7 @@ CREATE TABLE `utilisateur` (
   KEY `fk_service` (`idService`),
   CONSTRAINT `fk_service` FOREIGN KEY (`idService`) REFERENCES `servicedemandeur` (`idService`),
   CONSTRAINT `utilisateur_ibfk_1` FOREIGN KEY (`idRole`) REFERENCES `role` (`idRole`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Dumping data for table `utilisateur`
 INSERT INTO `utilisateur` (`idUser`, `idRole`, `nom`, `email`, `password`, `est_actif`, `idService`) VALUES
@@ -523,7 +583,9 @@ INSERT INTO `utilisateur` (`idUser`, `idRole`, `nom`, `email`, `password`, `est_
 (7, 5, 'noe', 'noe@gmail.com', '$2b$10$Acqm/GNrQyiYpiXPrONwiOY9S.vVsd.Ok3pF0dSQD/.OpG8rg20IW', 1, NULL),
 (8, 2, 'alain', 'a@gmail.com', '$2b$10$wl30l8jkPWS1w1j/9BkZhejinle3buPY8OLzMoPPawXyEDmCfhYlK', 1, NULL),
 (9, 6, 'loraine', 'l@gmail.com', '$2b$10$NFnWr3XQBa2txpqvU3r04ON1ytxS7QilG8pxyrFcBAOoZP1UFc52S', 1, NULL),
-(10, 4, 'kagaga', 'k@gmail.com', '$2b$10$VwL105fIPMhhaFp84nKpN..Aj8hS/zryL.Y24IGuT7fvmFT5faIoq', 1, NULL);
+(10, 4, 'kagaga', 'k@gmail.com', '$2b$10$VwL105fIPMhhaFp84nKpN..Aj8hS/zryL.Y24IGuT7fvmFT5faIoq', 1, NULL),
+(11, 1, 'Brigitte Nahayo', 'brigittenahayo5@gmail.com', '$2b$10$qbodqQZbuNns4JkfUWh3yOIdrHE8w9KzvPQUl/ZFP6G3Nc0q5SbjW', 1, NULL),
+(12, 3, 'keza bella', 'kezabelle@gmail.com', '$2b$10$o6qD2npP91cwy9I/PqrEQOVxLsao7Zd3a/aOdOqJZmC5qPKxi4snK', 1, 4);
 
 -- Table structure for table `utilisateur_permission`
 DROP TABLE IF EXISTS `utilisateur_permission`;

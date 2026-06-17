@@ -220,7 +220,7 @@ const ReceptionSoumissions = () => {
             <div class="row"><span class="label">Marché concerné :</span> <span>Marché #${offer.idMarche}</span></div>
             <div class="row"><span class="label">Soumissionnaire :</span> <span>${offer.nomSoumissionnaire}</span></div>
             <div class="row"><span class="label">Date de dépôt :</span> <span>${new Date(offer.dateSoumission).toLocaleDateString()}</span></div>
-            <div class="row"><span class="label">Montant Proposé :</span> <span>${Number(offer.montantPropose).toLocaleString()} FBU</span></div>
+            ${offer.montantPropose ? `<div class="row"><span class="label">Montant Proposé :</span> <span>${Number(offer.montantPropose).toLocaleString()} FBU</span></div>` : ''}
             <div class="row"><span class="label">Référence Appel d'Offre :</span> <span>${offer.referenceAppelOffre}</span></div>
           </div>
           <div class="footer">
@@ -276,7 +276,6 @@ const ReceptionSoumissions = () => {
         </div>
         
         <form onSubmit={handleSubmit} className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* ... (le reste du formulaire reste identique) ... */}
           <div className="md:col-span-2 space-y-2">
             <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
               Marché Concerné
@@ -373,21 +372,7 @@ const ReceptionSoumissions = () => {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Montant (FBU)</label>
-            <div className="relative">
-              <p className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400">FBU</p>
-              <input
-                type="number"
-                required
-                className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-primary"
-                value={form.montantPropose}
-                onChange={(e) => setForm({...form, montantPropose: e.target.value})}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
+          <div className="md:col-span-2 space-y-2">
             <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Date</label>
             <div className="relative">
               <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -396,21 +381,6 @@ const ReceptionSoumissions = () => {
                 readOnly
                 className="w-full pl-12 pr-4 py-4 bg-gray-100 border border-gray-100 rounded-2xl outline-none cursor-not-allowed font-semibold text-gray-500"
                 value={form.dateSoumission}
-              />
-            </div>
-          </div>
-
-          <div className="md:col-span-2 space-y-2">
-            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Délai de Livraison Proposé</label>
-            <div className="relative">
-              <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <input
-                type="text"
-                required
-                placeholder="Ex: 15 jours, 1 mois, 48 heures..."
-                className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none"
-                value={form.delaiLivraison}
-                onChange={(e) => setForm({...form, delaiLivraison: e.target.value})}
               />
             </div>
           </div>
@@ -460,7 +430,6 @@ const ReceptionSoumissions = () => {
                   <th className="px-8 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Soumissionnaire</th>
                   <th className="px-8 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Marché</th>
                   <th className="px-8 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Date</th>
-                  <th className="px-8 py-5 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Montant</th>
                   <th className="px-8 py-5 text-center text-xs font-bold text-gray-400 uppercase tracking-wider">Statut Modif</th>
                   <th className="px-8 py-5 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Actions</th>
                 </tr>
@@ -481,7 +450,6 @@ const ReceptionSoumissions = () => {
                       <div className="text-[10px] text-gray-400 uppercase">{o.referenceAppelOffre}</div>
                     </td>
                     <td className="px-8 py-6 text-gray-500">{new Date(o.dateSoumission).toLocaleDateString()}</td>
-                    <td className="px-8 py-6 text-right font-bold text-primary">{Number(o.montantPropose).toLocaleString()} FBU</td>
                     <td className="px-8 py-6 text-center">
                       {o.demandeModification === 1 && (
                         <span className="px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-[10px] font-bold uppercase flex items-center justify-center gap-1">

@@ -208,7 +208,9 @@ pool.getConnection()
                 ],
                 'Receptioniste': [
                     'ENREGISTRER_EXECUTION', 'VALIDER_RECEPTION', 'VOIR_RECEPTIONS',
-                    'GERER_SOUMISSIONS', 'VOIR_MARCHES'
+                    'GERER_SOUMISSIONS', 'VOIR_MARCHES',
+                    'CREER_DEMANDE', 'VOIR_MES_DEMANDES', 'MODIFIER_DEMANDE', 'SUPPRIMER_DEMANDE',
+                    'DEMANDE_CREATE', 'DEMANDE_READ_OWN', 'DEMANDE_UPDATE', 'DEMANDE_DELETE'
                 ]
             };
 
