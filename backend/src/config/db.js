@@ -89,6 +89,22 @@ pool.getConnection()
             // console.log('ℹ️ Colonne numeroBudget déjà existante');
         }
 
+        // Vérifier si la colonne typeInstitution existe dans budget, sinon la créer
+        try {
+            await connection.query(`ALTER TABLE budget ADD COLUMN typeInstitution VARCHAR(255) DEFAULT NULL`);
+            console.log('✅ Colonne typeInstitution ajoutée à la table budget');
+        } catch (err) {
+            // console.log('ℹ️ Colonne typeInstitution déjà existante');
+        }
+
+        // Vérifier si la colonne est_actif existe dans article, sinon la créer
+        try {
+            await connection.query(`ALTER TABLE article ADD COLUMN est_actif TINYINT(1) DEFAULT 1`);
+            console.log('✅ Colonne est_actif ajoutée à la table article');
+        } catch (err) {
+            // console.log('ℹ️ Colonne est_actif déjà existante dans article');
+        }
+
         // --- NOUVEAU SYSTÈME DE PERMISSIONS ---
         // 1. Créer les tables du système de permissions
         try {

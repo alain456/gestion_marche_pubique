@@ -46,7 +46,7 @@ exports.getBudgetsOuverts = async (req, res) => {
 };
 
 exports.createBudget = async (req, res) => {
-    const { numeroBudget, typeBudget, exerciceBudgetaire, montantEstime, sourceFinancier } = req.body;
+    const { numeroBudget, typeBudget, exerciceBudgetaire, montantEstime, sourceFinancier, typeInstitution } = req.body;
     if (!numeroBudget || !typeBudget || !exerciceBudgetaire) {
         return res.status(400).json({ message: "Le numéro, le type et l'exercice sont requis." });
     }
@@ -58,6 +58,7 @@ exports.createBudget = async (req, res) => {
             exerciceBudgetaire,
             montantEstime,
             sourceFinancier,
+            typeInstitution,
             responsableFinancier: req.user.nom
         });
         res.status(201).json({ idBudget: id, message: "Ligne budgétaire créée avec succès" });

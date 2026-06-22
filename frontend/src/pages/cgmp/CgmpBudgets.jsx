@@ -17,6 +17,7 @@ import { Link } from 'react-router-dom';
 
 const CgmpBudgets = () => {
   const [budgets, setBudgets] = useState([]);
+  const [institutions, setInstitutions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
@@ -28,7 +29,8 @@ const CgmpBudgets = () => {
     typeBudget: 'fourniture',
     exerciceBudgetaire: new Date().getFullYear(),
     montantEstime: '',
-    sourceFinancier: 'Etat'
+    sourceFinancier: 'Etat',
+    typeInstitution: ''
   });
 
   const [message, setMessage] = useState('');
@@ -56,9 +58,28 @@ const CgmpBudgets = () => {
   };
 
   useEffect(() => {
+    const loadParametres = async () => {
+      try {
+        const res = await api.get('/parametres');
+        const insts = res.data.filter(p => p.typeParam === 'TYPE_INSTITUTION');
+        setInstitutions(insts);
+        if (insts.length > 0) {
+          setForm(prev => {
+            if (!prev.typeInstitution) {
+              return { ...prev, typeInstitution: insts[0].valeur };
+            }
+            return prev;
+          });
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
     const init = async () => {
       setLoading(true);
       await loadBudgets();
+      await loadParametres();
       setLoading(false);
     };
     init();
@@ -80,7 +101,14 @@ const CgmpBudgets = () => {
   }, [form.typeBudget, form.exerciceBudgetaire, showForm]);
 
   const resetForm = () => {
-    setForm({ numeroBudget: '', typeBudget: 'fourniture', exerciceBudgetaire: new Date().getFullYear(), montantEstime: '', sourceFinancier: 'Etat' });
+    setForm({ 
+      numeroBudget: '', 
+      typeBudget: 'fourniture', 
+      exerciceBudgetaire: new Date().getFullYear(), 
+      montantEstime: '', 
+      sourceFinancier: 'Etat',
+      typeInstitution: institutions.length > 0 ? institutions[0].valeur : ''
+    });
     setShowForm(false);
     setIsEditing(false);
     setEditId(null);
@@ -116,7 +144,8 @@ const CgmpBudgets = () => {
       typeBudget: budget.typeBudget,
       exerciceBudgetaire: budget.exerciceBudgetaire,
       montantEstime: budget.montantEstime,
-      sourceFinancier: budget.sourceFinancier || 'Etat'
+      sourceFinancier: budget.sourceFinancier || 'Etat',
+      typeInstitution: budget.typeInstitution || (institutions.length > 0 ? institutions[0].valeur : '')
     });
     setEditId(budget.idBudget);
     setIsEditing(true);
@@ -231,6 +260,19 @@ const CgmpBudgets = () => {
                 value={form.exerciceBudgetaire}
               />
             </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Type d&apos;Institution</label>
+              <select
+                required
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all font-semibold"
+                value={form.typeInstitution}
+                onChange={(e) => setForm({...form, typeInstitution: e.target.value})}
+              >
+                {institutions.map(inst => (
+                  <option key={inst.idParam} value={inst.valeur}>{inst.valeur}</option>
+                ))}
+              </select>
+            </div>
             {/* <div className="space-y-2">
               <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Source</label>
               <select
@@ -322,7 +364,7 @@ const CgmpBudgets = () => {
                 </div>
               </div>
               <div className="text-sm font-bold text-gray-700">
-                Origine: {b.sourceFinancier || '—'}
+                Institution: {b.typeInstitution || '—'}
               </div>
             </div>
           ))

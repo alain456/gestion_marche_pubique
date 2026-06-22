@@ -3,10 +3,10 @@ const db = require('../config/db');
 const Budget = {
     // Créer un budget en tant que conteneur (par le CGMP ou RAF)
     create: async (data) => {
-        const { numeroBudget, typeBudget, exerciceBudgetaire, montantEstime, sourceFinancier, responsableFinancier } = data;
+        const { numeroBudget, typeBudget, exerciceBudgetaire, montantEstime, sourceFinancier, responsableFinancier, typeInstitution } = data;
         const [result] = await db.query(
-            'INSERT INTO budget (numeroBudget, typeBudget, exerciceBudgetaire, montantEstime, sourceFinancier, statusValidation, responsableFinancier) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [numeroBudget, typeBudget, exerciceBudgetaire, montantEstime || 0, sourceFinancier, 'Ouvert', responsableFinancier]
+            'INSERT INTO budget (numeroBudget, typeBudget, exerciceBudgetaire, montantEstime, sourceFinancier, statusValidation, responsableFinancier, typeInstitution) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [numeroBudget, typeBudget, exerciceBudgetaire, montantEstime || 0, sourceFinancier, 'Ouvert', responsableFinancier, typeInstitution]
         );
         return result.insertId;
     },
@@ -105,13 +105,13 @@ const Budget = {
 
     // Mettre à jour une ligne budgétaire
     update: async (id, data) => {
-        const { numeroBudget, typeBudget, exerciceBudgetaire, montantEstime, sourceFinancier } = data;
+        const { numeroBudget, typeBudget, exerciceBudgetaire, montantEstime, sourceFinancier, typeInstitution } = data;
         const query = `
             UPDATE budget 
-            SET numeroBudget = ?, typeBudget = ?, exerciceBudgetaire = ?, montantEstime = ?, sourceFinancier = ?
+            SET numeroBudget = ?, typeBudget = ?, exerciceBudgetaire = ?, montantEstime = ?, sourceFinancier = ?, typeInstitution = ?
             WHERE idBudget = ?
         `;
-        const [result] = await db.query(query, [numeroBudget, typeBudget, exerciceBudgetaire, montantEstime, sourceFinancier, id]);
+        const [result] = await db.query(query, [numeroBudget, typeBudget, exerciceBudgetaire, montantEstime, sourceFinancier, typeInstitution, id]);
         return result;
     },
 

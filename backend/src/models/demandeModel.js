@@ -69,6 +69,7 @@ const Demande = {
                 da.numeroBudget,
                 da.exerciceBudgetaire,
                 da.sourceFinancier,
+                da.typeInstitution,
                 da.montantEstime as montantEstimeBudget,
                 u.nom as nomDemandeur,
                 r.nomRole as roleDemandeur,
@@ -118,6 +119,7 @@ const Demande = {
                 d.*,
                 s.nomService,
                 da.numeroBudget,
+                da.typeInstitution,
                 u.nom as nomDemandeur,
                 r.nomRole as roleDemandeur,
                 GROUP_CONCAT(
@@ -159,6 +161,7 @@ const Demande = {
                 d.*,
                 s.nomService,
                 da.numeroBudget,
+                da.typeInstitution,
                 u.nom as nomDemandeur,
                 r.nomRole as roleDemandeur,
                 GROUP_CONCAT(
@@ -398,6 +401,7 @@ const Demande = {
                 da.numeroBudget,
                 da.exerciceBudgetaire,
                 da.sourceFinancier,
+                da.typeInstitution,
                 da.montantEstime as montantEstimeBudget,
                 u.nom as nomDemandeur,
                 r.nomRole as roleDemandeur,

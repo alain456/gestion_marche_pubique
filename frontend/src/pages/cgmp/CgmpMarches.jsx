@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, Fragment } from 'react';
-import { useLocation } from 'react-router-dom';
+
 import api from '../../services/api';
 import { 
   FileText, 
@@ -29,7 +29,6 @@ import { analyzeMieuxDisant, isMieuxDisantOffer, DEFAULT_MAX_ECART_PERCENT } fro
 const normalizeTypeMarche = (value) => (value || '').toString().trim().toLowerCase();
 
 const CgmpMarches = () => {
-  const location = useLocation();
   const [marches, setMarches] = useState([]);
   const [groupedDemands, setGroupedDemands] = useState([]); // Nouveau nom pour plus de clarté
   const [allDemands, setAllDemands] = useState([]); // Pour retrouver les articles des marchés existants
@@ -78,7 +77,6 @@ const CgmpMarches = () => {
   const [expandedMarches, setExpandedMarches] = useState({});
   const [showComparison, setShowComparison] = useState(false);
   const [comparisonMarche, setComparisonMarche] = useState(null);
-  const [showRulesConfig, setShowRulesConfig] = useState(false);
   const [seuilRules, setSeuilRules] = useState([]);
 
   // États pour les filtres
@@ -92,6 +90,7 @@ const CgmpMarches = () => {
       const res = await api.get('/seuils');
       setSeuilRules(res.data.map(r => ({
         id: r.idSeuil,
+        typeInstitution: r.typeInstitution || 'Administrations Publiques',
         typeMarche: r.typeMarche,
         min: r.montantMin,
         max: r.montantMax,
@@ -106,12 +105,6 @@ const CgmpMarches = () => {
   useEffect(() => {
     fetchSeuils();
   }, []);
-
-  useEffect(() => {
-    if (location.pathname === '/cgmp/seuils') {
-      setShowRulesConfig(true);
-    }
-  }, [location.pathname]);
 
   const fetchData = async () => {
     try {
@@ -132,6 +125,8 @@ const CgmpMarches = () => {
             numeroBudget: d.numeroBudget,
             typeMarche: d.typeMarche,
             exerciceBudgetaire: d.exerciceBudgetaire,
+            typeInstitution: d.typeInstitution,
+            montantBudget: Number(d.montantEstimeBudget || 0),
             totalMontant: 0,
             demands: []
           };
@@ -234,19 +229,21 @@ const CgmpMarches = () => {
   };
 
   const selectedTypeMarche = normalizeTypeMarche(selectedDemand?.typeMarche);
+  const selectedTypeInstitution = selectedDemand?.typeInstitution;
   const currentMontant = Number(form.montantEstime || 0);
 
   const matchingRule = useMemo(() => {
-    if (!selectedTypeMarche || !currentMontant || currentMontant <= 0) return null;
+    if (!selectedTypeMarche || !currentMontant || currentMontant <= 0 || !selectedTypeInstitution) return null;
     return seuilRules.find((rule) => {
+      const sameInst = rule.typeInstitution === selectedTypeInstitution;
       const sameType = normalizeTypeMarche(rule.typeMarche) === selectedTypeMarche;
       const minOk = currentMontant >= Number(rule.min || 0);
       const maxOk = rule.max === null || rule.max === '' || Number.isNaN(Number(rule.max))
         ? true
         : currentMontant <= Number(rule.max);
-      return sameType && minOk && maxOk;
+      return sameInst && sameType && minOk && maxOk;
     }) || null;
-  }, [seuilRules, selectedTypeMarche, currentMontant]);
+  }, [seuilRules, selectedTypeMarche, selectedTypeInstitution, currentMontant]);
 
   useEffect(() => {
     if (!matchingRule) {
@@ -264,47 +261,28 @@ const CgmpMarches = () => {
     }));
   }, [matchingRule]);
 
-  const handleSeuilChange = (id, field, value) => {
-    setSeuilRules((prev) => prev.map((rule) => {
-      if (rule.id !== id) return rule;
-      if (field === 'min' || field === 'max') {
-        return { ...rule, [field]: value === '' ? null : Number(value) };
-      }
-      return { ...rule, [field]: value };
-    }));
-  };
-
-  const saveSeuilRule = async (rule) => {
-    try {
-      await api.put(`/seuils/${rule.id}`, {
-        typeMarche: rule.typeMarche,
-        montantMin: rule.min,
-        montantMax: rule.max,
-        modePassation: rule.modePassation,
-        label: rule.label
-      });
-      setMessage('Seuil enregistré avec succès.');
-      fetchSeuils();
-    } catch (err) {
-      console.error(err);
-      setError('Erreur lors de la sauvegarde du seuil.');
-    }
-  };
-
   const updateTypeMarche = normalizeTypeMarche(selectedMarche?.typeMarche);
   const updateMontant = Number(updateForm.montantEstime || 0);
 
+  const updateTypeInstitution = useMemo(() => {
+    if (!selectedMarche?.idDemande) return null;
+    const firstId = selectedMarche.idDemande.toString().split(',')[0];
+    const demand = allDemands.find(d => d.idDemande === parseInt(firstId));
+    return demand?.typeInstitution;
+  }, [selectedMarche, allDemands]);
+
   const updateMatchingRule = useMemo(() => {
-    if (!updateTypeMarche || !updateMontant || updateMontant <= 0) return null;
+    if (!updateTypeMarche || !updateMontant || updateMontant <= 0 || !updateTypeInstitution) return null;
     return seuilRules.find((rule) => {
+      const sameInst = rule.typeInstitution === updateTypeInstitution;
       const sameType = normalizeTypeMarche(rule.typeMarche) === updateTypeMarche;
       const minOk = updateMontant >= Number(rule.min || 0);
       const maxOk = rule.max === null || rule.max === '' || Number.isNaN(Number(rule.max))
         ? true
         : updateMontant <= Number(rule.max);
-      return sameType && minOk && maxOk;
+      return sameInst && sameType && minOk && maxOk;
     }) || null;
-  }, [seuilRules, updateTypeMarche, updateMontant]);
+  }, [seuilRules, updateTypeMarche, updateTypeInstitution, updateMontant]);
 
   useEffect(() => {
     if (showDetails && updateForm.montantEstime) {
@@ -322,31 +300,7 @@ const CgmpMarches = () => {
     }
   }, [updateMatchingRule, showDetails, updateForm.montantEstime]);
 
-  const addSeuilRule = async () => {
-    try {
-      await api.post('/seuils', {
-        typeMarche: 'travaux', montantMin: 0, montantMax: null, modePassation: 'AO', label: 'Nouvelle règle'
-      });
-      fetchSeuils();
-      setMessage('Nouvelle règle ajoutée.');
-    } catch (err) {
-      console.error(err);
-      setError('Erreur lors de l\'ajout de la règle.');
-    }
-  };
 
-  const removeSeuilRule = async (id) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette règle de seuil ?')) {
-      try {
-        await api.delete(`/seuils/${id}`);
-        fetchSeuils();
-        setMessage('Règle supprimée avec succès.');
-      } catch (err) {
-        console.error(err);
-        setError('Erreur lors de la suppression de la règle.');
-      }
-    }
-  };
 
   const handleStartEditArticles = (demand) => {
     setEditingDemand(demand);
@@ -623,103 +577,7 @@ const CgmpMarches = () => {
         </div>
       </div>
 
-      {/* Configuration CGMP des règles de passation */}
-      <section className="bg-surface rounded-3xl border border-gray-100 shadow-sm p-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <div>
-            <h3 className="text-lg font-bold text-gray-900">Paramétrage CGMP des seuils</h3>
-            <p className="text-sm text-gray-500">Définissez les modes de passation par type de marché et intervalle de montant.</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowRulesConfig((prev) => !prev)}
-            className="text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 transition"
-          >
-            {showRulesConfig ? 'Masquer config seuils' : 'Configurer seuils dynamiques'}
-          </button>
-        </div>
 
-        {showRulesConfig && (
-          <div className="pt-4">
-            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 space-y-3">
-              <p className="text-xs text-gray-600">
-                Le système applique automatiquement la première règle qui correspond au type de marché et au montant.
-              </p>
-              {seuilRules.map((rule) => (
-                <div key={rule.id} className="grid grid-cols-1 md:grid-cols-6 gap-2 items-end">
-                  <select
-                    value={rule.typeMarche}
-                    onChange={(e) => handleSeuilChange(rule.id, 'typeMarche', e.target.value)}
-                    className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm"
-                  >
-                    <option value="travaux">Travaux</option>
-                    <option value="fourniture">Fourniture</option>
-                    <option value="service">Service</option>
-                  </select>
-                  <input
-                    type="number"
-                    value={rule.min ?? ''}
-                    onChange={(e) => handleSeuilChange(rule.id, 'min', e.target.value)}
-                    placeholder="Montant min"
-                    className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm"
-                  />
-                  <input
-                    type="number"
-                    value={rule.max ?? ''}
-                    onChange={(e) => handleSeuilChange(rule.id, 'max', e.target.value)}
-                    placeholder="Montant max (vide = infini)"
-                    className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm"
-                  />
-                  <select
-                    value={rule.modePassation}
-                    onChange={(e) => handleSeuilChange(rule.id, 'modePassation', e.target.value)}
-                    className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm"
-                  >
-                    <option value="AO">Appel d&apos;Offres</option>
-                    <option value="AOR">Appel d&apos;Offres Restreint</option>
-                    <option value="PVN">Procédure avec Négociation</option>
-                    <option value="GG">Gré à Gré</option>
-                    <option value="DC">Dialogue compétitif</option>
-                    <option value="PA">Procédure adaptée</option>
-                  </select>
-                  <input
-                    type="text"
-                    value={rule.label}
-                    onChange={(e) => handleSeuilChange(rule.id, 'label', e.target.value)}
-                    placeholder="Libellé seuil"
-                    className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm"
-                  />
-                  <div className="flex gap-1">
-                    <button
-                      type="button"
-                      onClick={() => saveSeuilRule(rule)}
-                      className="px-3 py-2 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-600 text-sm font-semibold hover:bg-emerald-100 flex-1"
-                      title="Enregistrer les modifications"
-                    >
-                      <Save size={16} className="mx-auto" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => removeSeuilRule(rule.id)}
-                      className="px-3 py-2 rounded-xl border border-red-200 bg-red-50 text-red-600 text-sm font-semibold hover:bg-red-100 flex-1"
-                      title="Supprimer la règle"
-                    >
-                      <XCircle size={16} className="mx-auto" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={addSeuilRule}
-                className="px-4 py-2 rounded-xl border border-primary/30 bg-primary/10 text-primary text-sm font-semibold"
-              >
-                + Ajouter une règle
-              </button>
-            </div>
-          </div>
-        )}
-      </section>
 
       {/* Formulaire de création de marché */}
       {showForm && (
@@ -1164,7 +1022,7 @@ const CgmpMarches = () => {
                             <td colSpan="4" className="px-6 py-10 text-center text-gray-400 italic text-sm">Aucune offre déposée pour le moment.</td>
                           </tr>
                         ) : (
-                          (soumissionsAnalysis?.ranked || marcheOffers.map(o => ({ offer: o }))).map((row, idx) => {
+                          (soumissionsAnalysis?.ranked || marcheOffers.map(o => ({ offer: o }))).map((row) => {
                             const offer = row.offer || row;
                             const isBest = isMieuxDisantOffer(offer.idOffre, soumissionsAnalysis);
                             const ineligible = soumissionsAnalysis && row.isEligible === false;

@@ -2,7 +2,7 @@ const db = require('../config/db');
 
 const Article = {
     getAll: async () => {
-        const [rows] = await db.query('SELECT * FROM article ORDER BY typeArticle ASC, nomArticle ASC');
+        const [rows] = await db.query('SELECT * FROM article WHERE est_actif = 1 ORDER BY typeArticle ASC, nomArticle ASC');
         return rows;
     },
 
@@ -12,7 +12,7 @@ const Article = {
     },
 
     getByType: async (typeArticle) => {
-        const [rows] = await db.query('SELECT * FROM article WHERE typeArticle = ? ORDER BY nomArticle ASC', [typeArticle]);
+        const [rows] = await db.query('SELECT * FROM article WHERE typeArticle = ? AND est_actif = 1 ORDER BY nomArticle ASC', [typeArticle]);
         return rows;
     },
 
@@ -27,7 +27,7 @@ const Article = {
     },
 
     delete: async (id) => {
-        await db.query('DELETE FROM article WHERE idArticle = ?', [id]);
+        await db.query('UPDATE article SET est_actif = 0 WHERE idArticle = ?', [id]);
         return true;
     }
 };

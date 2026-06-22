@@ -53,7 +53,6 @@ const Sidebar = ({ user }) => {
     }
     if ((has('VOIR_MARCHES') || has('GERER_MARCHES')) && role !== 'RECEPTIONISTE' && role !== 'RECEPTIONNISTE') {
       links.push({ name: 'Marchés', path: '/cgmp/marches', icon: FileText });
-      links.push({ name: 'Paramétrage Seuils', path: '/cgmp/seuils', icon: Gavel });
     }
     if (has('AJUSTER_DEMANDE_CGMP')) {
       links.push({ name: 'Lignes Budgétaires', path: '/cgmp/budgets', icon: CreditCard });
@@ -70,6 +69,9 @@ const Sidebar = ({ user }) => {
     // Attribution des permissions : réservé au rôle ADMIN (même si l’admin n’a pas GERER_ROLES_PERMISSIONS)
     if (role === 'ADMIN' || has('GERER_UTILISATEURS')) {
       links.push({ name: 'Attribuer permissions', path: '/admin/user-permissions', icon: UserCog });
+    }
+    if (role === 'ADMIN') {
+      links.push({ name: 'Paramétrage Seuils', path: '/admin/seuils', icon: Gavel });
     }
     if (has('GERER_ROLES_PERMISSIONS')) {
       links.push({ name: 'Rôles & Permissions', path: '/admin/roles', icon: Shield });

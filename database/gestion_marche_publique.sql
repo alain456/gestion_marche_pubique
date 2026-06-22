@@ -515,6 +515,7 @@ INSERT INTO `servicedemandeur` (`idService`, `nomService`) VALUES
 DROP TABLE IF EXISTS `seuil_reglementaire`;
 CREATE TABLE `seuil_reglementaire` (
   `idSeuil` int(11) NOT NULL AUTO_INCREMENT,
+  `typeInstitution` varchar(100) DEFAULT 'Administrations Publiques et Assimilées',
   `typeMarche` varchar(50) NOT NULL,
   `montantMin` bigint(20) NOT NULL DEFAULT 0,
   `montantMax` bigint(20) DEFAULT NULL,

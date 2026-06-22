@@ -8,6 +8,7 @@ import AdminUsers from './pages/admin/AdminUsers';
 import AdminRoles from './pages/admin/AdminRoles';
 import AdminServices from './pages/admin/AdminServices';
 import AdminArticles from './pages/admin/AdminArticles';
+import AdminSeuils from './pages/admin/AdminSeuils';
 import DemandeurDashboard from './pages/demandeur/DemandeurDashboard';
 import DemandeurDemandes from './pages/demandeur/DemandeurDemandes';
 import RafDashboard from './pages/raf/RafDashboard';
@@ -68,6 +69,7 @@ const App = () => {
           {/* Admin Dashboard - Seulement pour le rôle ADMIN */}
           <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/seuils" element={<AdminSeuils />} />
           </Route>
 
           {/* Utilisateurs - Permission requise */}
@@ -126,7 +128,6 @@ const App = () => {
 
           <Route element={<ProtectedRoute requiredPermission={['VOIR_MARCHES', 'GERER_MARCHES']} />}>
             <Route path="/cgmp/marches" element={<CgmpMarches />} />
-            <Route path="/cgmp/seuils" element={<CgmpMarches />} />
           </Route>
 
           <Route element={<ProtectedRoute requiredPermission={['AJUSTER_DEMANDE_CGMP', 'VOIR_TOUTES_DEMANDES']} />}>
