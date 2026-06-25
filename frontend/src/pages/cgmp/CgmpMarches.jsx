@@ -469,7 +469,7 @@ const CgmpMarches = () => {
       const payload = formData || updateForm;
       await api.put(`/marches/${selectedMarche.idMarche}`, payload);
       setMessage('Statut du marché mis à jour avec succès.');
-      setShowDetails(false);
+      // setShowDetails(false); // Laissé ouvert selon la demande de l'utilisateur
       fetchData();
     } catch (err) {
       console.error(err);
@@ -832,6 +832,19 @@ const CgmpMarches = () => {
             </div>
             
             <form onSubmit={handleUpdate} className="p-8 space-y-6 overflow-y-auto max-h-[80vh]">
+              {error && (
+                <div className="bg-red-50 border border-red-100 text-red-700 p-4 rounded-xl flex items-center gap-3">
+                  <XCircle className="h-5 w-5" />
+                  {error}
+                </div>
+              )}
+              {message && (
+                <div className="bg-emerald-50 border border-emerald-100 text-emerald-700 p-4 rounded-xl flex items-center gap-3">
+                  <CheckCircle className="h-5 w-5" />
+                  {message}
+                </div>
+              )}
+
               {activeTab === 'info' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                   <div className="space-y-2">
@@ -1115,7 +1128,7 @@ const CgmpMarches = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                    {updateForm.statut === 'publie' && (
+                    {(updateForm.statut === 'en attente' || updateForm.statut === 'publie') && (
                       <div className="space-y-2 md:col-span-2">
                         <label className="text-xs font-bold text-blue-600 uppercase tracking-wider ml-1">
                           Date Limite de Dépôt des Offres
@@ -1190,62 +1203,87 @@ const CgmpMarches = () => {
                     { value: 'suspendu', label: 'Suspendu', prev: null, next: 'publie', color: 'bg-red-500 hover:bg-red-600 shadow-red-200', icon: '🔴' },
                   ];
                   const current = flow.find(s => s.value === updateForm.statut) || flow[0];
-                  const isLast = !current.next;
+                  const isLast = !current.next && current.value !== 'publie';
                   const hasPrev = !!current.prev;
 
-                  return (
-                    <>
-                      {hasPrev && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const prevStatut = current.prev;
-                            if (prevStatut) {
-                              const newForm = { ...updateForm, statut: prevStatut };
-                              setUpdateForm(newForm);
-                              handleUpdate({ preventDefault: () => {} }, newForm);
-                            }
-                          }}
-                          className="px-6 py-3 border border-gray-200 text-gray-600 rounded-2xl hover:bg-gray-50 transition-all font-semibold flex items-center gap-2"
-                        >
-                          &larr; Retour
-                        </button>
-                      )}
-                      
-                      {!hasPrev && (
-                        <button 
-                          type="button" 
-                          onClick={() => setShowDetails(false)}
-                          className="px-6 py-3 border border-gray-200 text-gray-600 rounded-2xl hover:bg-gray-50 transition-all font-semibold"
-                        >
-                          Fermer
-                        </button>
-                      )}
+                  const changeStatus = (newStatus) => {
+                    if (newStatus === 'publie' && !updateForm.dateLimite) {
+                      setError("La Date Limite de Dépôt des Offres est obligatoire avant la publication du marché.");
+                      return;
+                    }
+                    const newForm = { ...updateForm, statut: newStatus };
+                    setUpdateForm(newForm);
+                    handleUpdate({ preventDefault: () => {} }, newForm);
+                  };
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const nextStatut = current.next;
-                          if (nextStatut) {
-                            const newForm = { ...updateForm, statut: nextStatut };
-                            setUpdateForm(newForm);
-                            handleUpdate({ preventDefault: () => {} }, newForm);
-                          }
-                        }}
-                        disabled={isLast}
-                        className={`px-8 py-3 text-white rounded-2xl transition-all font-bold shadow-lg flex items-center gap-3 ${
-                          isLast ? 'bg-gray-400 cursor-not-allowed opacity-70' : current.color
-                        }`}
-                      >
-                        <span className="text-base">{current.icon}</span>
-                        <span className="flex flex-col items-start text-left">
-                          <span className="text-[10px] font-black uppercase tracking-widest opacity-80">Statut actuel</span>
-                          <span className="text-sm font-bold">
-                            {current.label}
-                          </span>
-                        </span>
-                      </button>
-                    </>
+                  return (
+                    <div className="flex items-center w-full justify-between">
+                      {/* Bouton Retour / Fermer à gauche */}
+                      <div className="flex gap-2">
+                        {hasPrev && (
+                          <button
+                            type="button"
+                            onClick={() => changeStatus(current.prev)}
+                            className="px-5 py-2.5 border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 transition-all font-semibold flex items-center gap-2 text-sm"
+                          >
+                            &larr; Retour
+                          </button>
+                        )}
+                        {!hasPrev && (
+                          <button 
+                            type="button" 
+                            onClick={() => setShowDetails(false)}
+                            className="px-5 py-2.5 border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 transition-all font-semibold text-sm"
+                          >
+                            Fermer
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Actions de changement de statut à droite */}
+                      <div className="flex gap-2 items-center">
+                        <div className="px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl flex items-center gap-2 mr-2">
+                          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Statut actuel:</span>
+                          <span className="text-sm font-black text-gray-700">{current.icon} {current.label}</span>
+                        </div>
+
+                        {current.value === 'publie' ? (
+                          <div className="flex bg-gray-100 rounded-xl p-1 gap-1">
+                            <button
+                              type="button"
+                              onClick={() => changeStatus('attribution')}
+                              className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-all font-bold text-sm shadow-sm flex items-center gap-1.5"
+                            >
+                              🟢 Attribuer
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => changeStatus('suspendu')}
+                              className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all font-bold text-sm shadow-sm flex items-center gap-1.5"
+                            >
+                              🔴 Suspendre
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => changeStatus('cloture')}
+                              className="px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded-lg transition-all font-bold text-sm shadow-sm flex items-center gap-1.5"
+                            >
+                              ⚫ Clôturer
+                            </button>
+                          </div>
+                        ) : (
+                          !isLast && (
+                            <button
+                              type="button"
+                              onClick={() => changeStatus(current.next)}
+                              className={`px-6 py-2.5 text-white rounded-xl transition-all font-bold shadow-md flex items-center gap-2 ${current.color}`}
+                            >
+                              Passer à l'étape suivante &rarr;
+                            </button>
+                          )
+                        )}
+                      </div>
+                    </div>
                   );
                 })()}
               </div>
