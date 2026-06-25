@@ -87,7 +87,7 @@ const CgmpBudgets = () => {
 
   // Génération automatique du numéro de budget
   useEffect(() => {
-    if (showForm) {
+    if (showForm && !isEditing) {
       const fetchNextNumber = async () => {
         try {
           const res = await api.get(`/budgets/next-number/${form.exerciceBudgetaire}/${form.typeBudget}`);
@@ -98,7 +98,7 @@ const CgmpBudgets = () => {
       };
       fetchNextNumber();
     }
-  }, [form.typeBudget, form.exerciceBudgetaire, showForm]);
+  }, [form.typeBudget, form.exerciceBudgetaire, showForm, isEditing]);
 
   const resetForm = () => {
     setForm({ 

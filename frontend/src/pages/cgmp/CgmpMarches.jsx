@@ -261,7 +261,14 @@ const CgmpMarches = () => {
     }));
   }, [matchingRule]);
 
-  const updateTypeMarche = normalizeTypeMarche(selectedMarche?.typeMarche);
+  const updateTypeMarche = useMemo(() => {
+    if (selectedMarche?.typeMarche) return normalizeTypeMarche(selectedMarche.typeMarche);
+    if (!selectedMarche?.idDemande) return '';
+    const firstId = selectedMarche.idDemande.toString().split(',')[0];
+    const demand = allDemands.find(d => d.idDemande === parseInt(firstId));
+    return normalizeTypeMarche(demand?.typeMarche);
+  }, [selectedMarche, allDemands]);
+
   const updateMontant = Number(updateForm.montantEstime || 0);
 
   const updateTypeInstitution = useMemo(() => {
@@ -453,14 +460,15 @@ const CgmpMarches = () => {
     return articles;
   };
 
-  const handleUpdate = async (e) => {
+  const handleUpdate = async (e, formData) => {
     e.preventDefault();
     setError('');
     setMessage('');
 
     try {
-      await api.put(`/marches/${selectedMarche.idMarche}`, updateForm);
-      setMessage('Marché mis à jour avec succès.');
+      const payload = formData || updateForm;
+      await api.put(`/marches/${selectedMarche.idMarche}`, payload);
+      setMessage('Statut du marché mis à jour avec succès.');
       setShowDetails(false);
       fetchData();
     } catch (err) {
@@ -634,21 +642,13 @@ const CgmpMarches = () => {
               <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Mode de Passation</label>
               <div className="relative">
                 <Gavel className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <select
-                  required
-                  value={form.modePassation}
-                  onChange={(e) => setForm({...form, modePassation: e.target.value})}
-                  disabled
-                  className="w-full pl-10 pr-4 py-3 bg-gray-100 border border-gray-100 rounded-2xl outline-none transition-all appearance-none cursor-not-allowed"
-                >
-                  <option value="">Sélectionner...</option>
-                  <option value="AO">Appel d&apos;Offres</option>
-                  <option value="AOR">Appel d&apos;Offres Restreint</option>
-                  <option value="PVN">Procédure avec Négociation</option>
-                  <option value="GG">Gré à Gré </option>
-                  <option value="DC">Dialogue competitif</option>
-                  <option value="PA">Procedure adapte</option>
-                </select>
+                <input
+                  type="text"
+                  readOnly
+                  value={form.modePassation || ''}
+                  placeholder="Sélectionner..."
+                  className="w-full pl-10 pr-4 py-3 bg-gray-100 border border-gray-100 rounded-2xl outline-none transition-all cursor-not-allowed font-semibold text-gray-700"
+                />
               </div>
             </div>
 
@@ -864,20 +864,13 @@ const CgmpMarches = () => {
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Mode de Passation</label>
                     <div className="relative">
                       <Gavel className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                      <select
+                      <input
+                        type="text"
+                        readOnly
                         value={updateForm.modePassation || ''}
-                        onChange={(e) => setUpdateForm({...updateForm, modePassation: e.target.value})}
-                        disabled
-                        className="w-full pl-10 pr-4 py-3 bg-gray-100 border border-gray-100 rounded-2xl outline-none transition-all appearance-none cursor-not-allowed"
-                      >
-                        <option value="">Sélectionner...</option>
-                        <option value="AO">Appel d&apos;Offres</option>
-                        <option value="AOR">Appel d&apos;Offres Restreint</option>
-                        <option value="PVN">Procédure avec Négociation</option>
-                        <option value="GG">Gré à Gré</option>
-                        <option value="DC">Dialogue competitif</option>
-                        <option value="PA">Procedure adapte</option>
-                      </select>
+                        placeholder="Sélectionner..."
+                        className="w-full pl-10 pr-4 py-3 bg-gray-100 border border-gray-100 rounded-2xl outline-none transition-all cursor-not-allowed font-semibold text-gray-700"
+                      />
                     </div>
                     {!updateMatchingRule && showDetails && (
                       <p className="text-[11px] text-red-600 font-semibold mt-1">
@@ -1121,59 +1114,6 @@ const CgmpMarches = () => {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Statut du Marché</label>
-                      <div className="flex items-center gap-2">
-                        {(() => {
-                          const flow = [
-                            { value: 'en attente', label: 'Phase de Préparation (Modifiable)', color: 'bg-amber-50 text-amber-700 border-amber-200' },
-                            { value: 'publie', label: 'Marché Publié', color: 'bg-blue-50 text-blue-700 border-blue-200' },
-                            { value: 'attribution', label: 'Marché Attribué', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-                            { value: 'cloture', label: 'Marché Clôturé', color: 'bg-gray-100 text-gray-600 border-gray-200' }
-                          ];
-                          // Si le statut est "suspendu" on le traite à part
-                          const currentIdx = updateForm.statut === 'suspendu' ? 0 : flow.findIndex(s => s.value === updateForm.statut);
-                          const idx = currentIdx >= 0 ? currentIdx : 0;
-                          const currentStep = flow[idx];
-                          
-                          const nextIdx = idx < flow.length - 1 ? idx + 1 : idx;
-                          const prevIdx = idx > 0 ? idx - 1 : 0;
-
-                          return (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => setUpdateForm({...updateForm, statut: flow[prevIdx].value})}
-                                disabled={idx === 0}
-                                className={`px-4 py-3 rounded-2xl border transition-all font-bold text-sm shadow-sm ${idx === 0 ? 'bg-gray-50 text-gray-400 border-gray-100 cursor-not-allowed' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50 hover:text-primary'}`}
-                                title="Statut précédent"
-                              >
-                                &larr; Retour
-                              </button>
-                              
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (idx < flow.length - 1) {
-                                    setUpdateForm({...updateForm, statut: flow[nextIdx].value});
-                                  }
-                                }}
-                                disabled={idx === flow.length - 1}
-                                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 border rounded-2xl transition-all font-bold text-sm shadow-sm ${
-                                  updateForm.statut === 'suspendu' ? 'bg-red-50 text-red-700 border-red-200' : currentStep.color
-                                } ${idx !== flow.length - 1 ? 'hover:opacity-80 cursor-pointer' : 'cursor-default'}`}
-                              >
-                                <Info className="h-4 w-4" />
-                                {updateForm.statut === 'suspendu' ? 'Marché Suspendu (Cliquez pour relancer)' : currentStep.label}
-                                {idx < flow.length - 1 && updateForm.statut !== 'suspendu' && (
-                                  <span className="ml-2 text-[10px] uppercase opacity-70 border-l border-current pl-2">Passer à {flow[nextIdx].label}</span>
-                                )}
-                              </button>
-                            </>
-                          );
-                        })()}
-                      </div>
-                    </div>
 
                     {updateForm.statut === 'publie' && (
                       <div className="space-y-2 md:col-span-2">
@@ -1241,20 +1181,73 @@ const CgmpMarches = () => {
               )}
 
               <div className="flex justify-end gap-4 pt-4 border-t border-gray-50 sticky bottom-0 bg-surface pb-2">
-                <button 
-                  type="button" 
-                  onClick={() => setShowDetails(false)}
-                  className="px-6 py-3 border border-gray-200 text-gray-600 rounded-2xl hover:bg-gray-50 transition-all font-semibold"
-                >
-                  Annuler
-                </button>
-                <button 
-                  type="submit"
-                  className="px-10 py-3 bg-primary text-white rounded-2xl hover:bg-blue-800 transition-all font-bold shadow-lg shadow-primary/20 flex items-center gap-2"
-                >
-                  <CheckCircle className="h-5 w-5" />
-                  Enregistrer les modifications
-                </button>
+                {(() => {
+                  const flow = [
+                    { value: 'en attente', label: 'Préparation', prev: null, next: 'publie', color: 'bg-amber-500 hover:bg-amber-600 shadow-amber-200', icon: '🟡' },
+                    { value: 'publie', label: 'Publication', prev: 'en attente', next: 'attribution', color: 'bg-blue-600 hover:bg-blue-700 shadow-blue-200', icon: '🔵' },
+                    { value: 'attribution', label: 'Attribution', prev: 'publie', next: 'cloture', color: 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200', icon: '🟢' },
+                    { value: 'cloture', label: 'Clôture', prev: 'attribution', next: null, color: 'bg-gray-500 hover:bg-gray-600 shadow-gray-200', icon: '⚫' },
+                    { value: 'suspendu', label: 'Suspendu', prev: null, next: 'publie', color: 'bg-red-500 hover:bg-red-600 shadow-red-200', icon: '🔴' },
+                  ];
+                  const current = flow.find(s => s.value === updateForm.statut) || flow[0];
+                  const isLast = !current.next;
+                  const hasPrev = !!current.prev;
+
+                  return (
+                    <>
+                      {hasPrev && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const prevStatut = current.prev;
+                            if (prevStatut) {
+                              const newForm = { ...updateForm, statut: prevStatut };
+                              setUpdateForm(newForm);
+                              handleUpdate({ preventDefault: () => {} }, newForm);
+                            }
+                          }}
+                          className="px-6 py-3 border border-gray-200 text-gray-600 rounded-2xl hover:bg-gray-50 transition-all font-semibold flex items-center gap-2"
+                        >
+                          &larr; Retour
+                        </button>
+                      )}
+                      
+                      {!hasPrev && (
+                        <button 
+                          type="button" 
+                          onClick={() => setShowDetails(false)}
+                          className="px-6 py-3 border border-gray-200 text-gray-600 rounded-2xl hover:bg-gray-50 transition-all font-semibold"
+                        >
+                          Fermer
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const nextStatut = current.next;
+                          if (nextStatut) {
+                            const newForm = { ...updateForm, statut: nextStatut };
+                            setUpdateForm(newForm);
+                            handleUpdate({ preventDefault: () => {} }, newForm);
+                          }
+                        }}
+                        disabled={isLast}
+                        className={`px-8 py-3 text-white rounded-2xl transition-all font-bold shadow-lg flex items-center gap-3 ${
+                          isLast ? 'bg-gray-400 cursor-not-allowed opacity-70' : current.color
+                        }`}
+                      >
+                        <span className="text-base">{current.icon}</span>
+                        <span className="flex flex-col items-start text-left">
+                          <span className="text-[10px] font-black uppercase tracking-widest opacity-80">Statut actuel</span>
+                          <span className="text-sm font-bold">
+                            {current.label}
+                          </span>
+                        </span>
+                      </button>
+                    </>
+                  );
+                })()}
               </div>
             </form>
           </div>
