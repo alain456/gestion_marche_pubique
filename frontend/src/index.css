@@ -8,9 +8,48 @@
 }
 
 @layer base {
+  html {
+    overflow-y: scroll; /* toujours afficher le scrollbar vertical pour éviter les décalages de layout */
+  }
+
   body {
     background-color: var(--color-secondary);
     color: #1e293b;
     font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  /* ═══════════════════════════════════════════════
+     SCROLLBAR VERTICAL — Style global (WebKit + Firefox)
+  ═══════════════════════════════════════════════ */
+
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #1e3a8a44 transparent;
+  }
+
+  /* Chrome, Edge, Safari */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 999px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #1e3a8a55;
+    border-radius: 999px;
+    transition: background 0.2s ease;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #1e3a8a;
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: transparent;
   }
 }

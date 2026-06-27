@@ -2,7 +2,7 @@ const Marche = require('../models/marcheModel');
 const Demande = require('../models/demandeModel');
 
 // Liste des statuts autorisés
-const STATUTS_VALIDES = ['en attente', 'publie', 'attribution', 'suspendu', 'cloture'];
+const STATUTS_VALIDES = ['brouillon', 'en attente', 'publie', 'attribution', 'suspendu', 'cloture'];
 
 // Creer un nouveau marché
 exports.createMarche = async (req, res) => {
@@ -18,17 +18,25 @@ exports.createMarche = async (req, res) => {
         statut, 
         dateCloture, 
         cloturePar, 
-        commentaire 
+        commentaire,
+        dateLimite
     } = req.body;
 
 
     // Validation du statut si fourni
     const statutFinal = statut ? statut.toLowerCase() : 'en attente';
     if (!STATUTS_VALIDES.includes(statutFinal)) {
-        return res.status(400).json({ message: "Statut invalide. Les valeurs possibles sont : en attente, attribue, cloture." });
+        return res.status(400).json({ message: "Statut invalide. Les valeurs possibles sont : brouillon, en attente, publie, attribution, cloture." });
     }
 
     try {
+        let formattedDateLimite = dateLimite || null;
+        if (formattedDateLimite && formattedDateLimite.includes('T')) {
+            formattedDateLimite = formattedDateLimite.replace('T', ' ') + ':00';
+        } else if (formattedDateLimite === '') {
+            formattedDateLimite = null;
+        }
+
         // Sanatisation des données pour la base de données (chaînes vides -> null)
         const sanitizedData = {
             idDemande,
@@ -42,7 +50,8 @@ exports.createMarche = async (req, res) => {
             statut: statutFinal,
             dateCloture: dateCloture || null,
             cloturePar: cloturePar || null,
-            commentaire: commentaire || null
+            commentaire: commentaire || null,
+            dateLimite: formattedDateLimite
         };
 
         const result = await Marche.create(sanitizedData);

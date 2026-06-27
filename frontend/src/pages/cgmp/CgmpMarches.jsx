@@ -52,7 +52,8 @@ const CgmpMarches = () => {
     statut: 'en attente',
     dateCloture: '',
     cloturePar: '',
-    commentaire: ''
+    commentaire: '',
+    dateLimite: ''
   });
 
   const [message, setMessage] = useState('');
@@ -359,7 +360,31 @@ const CgmpMarches = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
+  // Modes de passation considérés comme exceptionnels → justification obligatoire
+  const MODES_EXCEPTIONNELS = ['gré à gré', 'gre a gre', 'entente directe'];
+  const isExceptionalMode = MODES_EXCEPTIONNELS.some(m =>
+    form.modePassation?.toLowerCase().includes(m)
+  );
+
+  const resetForm = () => {
+    setForm({
+      idDemande: '',
+      numeroBudget: '',
+      montantEstime: '',
+      modePassation: '',
+      justificationChoix: '',
+      seuilReglementaireApplique: '',
+      dateSelection: new Date().toISOString().split('T')[0],
+      validateur: '',
+      statut: 'en attente',
+      dateCloture: '',
+      cloturePar: '',
+      commentaire: '',
+      dateLimite: ''
+    });
+  };
+
+  const handleSubmit = async (e, action) => {
     e.preventDefault();
     setError('');
     setMessage('');
@@ -369,24 +394,58 @@ const CgmpMarches = () => {
       return;
     }
 
+    // --- Validation : justification obligatoire pour modes exceptionnels ---
+    if (isExceptionalMode && !form.justificationChoix?.trim()) {
+      setError(`Le mode "${form.modePassation}" est exceptionnel. La justification est obligatoire pour des raisons d'audit.`);
+      return;
+    }
+
+    const dateRef = form.dateSelection || new Date().toISOString().split('T')[0];
+
+    // --- Validation des dates : dateLimite et dateCloture doivent être postérieures à dateSelection ---
+    if (form.dateLimite) {
+      const dlDate = new Date(form.dateLimite);
+      const refDate = new Date(dateRef);
+      if (dlDate <= refDate) {
+        setError("La date limite de dépôt doit être postérieure à la date de création du marché.");
+        return;
+      }
+    }
+
+    if (form.dateCloture) {
+      const dcDate = new Date(form.dateCloture);
+      const refDate = new Date(dateRef);
+      if (dcDate <= refDate) {
+        setError("La date de clôture doit être postérieure à la date de création du marché.");
+        return;
+      }
+    }
+
+    // --- Si on publie, la dateLimite est obligatoire ---
+    if (action === 'publie' && !form.dateLimite) {
+      setError("La date limite de dépôt des offres est obligatoire pour publier le marché.");
+      return;
+    }
+
+    // --- Si dateCloture et dateLimite sont toutes deux définies, dateCloture > dateLimite ---
+    if (form.dateLimite && form.dateCloture) {
+      const dlDate = new Date(form.dateLimite);
+      const dcDate = new Date(form.dateCloture);
+      if (dcDate <= dlDate) {
+        setError("La date de clôture doit être postérieure à la date limite de dépôt des offres.");
+        return;
+      }
+    }
+
     try {
-      await api.post('/marches', form);
-      setMessage('Marché créé et publié avec succès.');
+      const payload = { ...form, statut: action };
+      await api.post('/marches', payload);
+      const msg = action === 'publie'
+        ? 'Marché publié avec succès ! Les soumissionnaires peuvent maintenant déposer leurs offres.'
+        : 'Marché enregistré en brouillon. Vous pourrez le publier ultérieurement.';
+      setMessage(msg);
       setShowForm(false);
-        setForm({
-          idDemande: '',
-          numeroBudget: '',
-          montantEstime: '',
-          modePassation: '',
-          justificationChoix: '',
-          seuilReglementaireApplique: '',
-          dateSelection: new Date().toISOString().split('T')[0],
-          validateur: '',
-          statut: 'en attente',
-          dateCloture: '',
-          cloturePar: '',
-          commentaire: ''
-        });
+      resetForm();
       fetchData();
     } catch (err) {
       console.error(err);
@@ -608,7 +667,7 @@ const CgmpMarches = () => {
           </div>
 
 
-          <form onSubmit={handleSubmit} className="p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <form onSubmit={(e) => e.preventDefault()} className="p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Reference du marché</label>
               <div className="relative">
@@ -690,16 +749,37 @@ const CgmpMarches = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Date de Clôture</label>
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
+                Date Limite de Dépôt des Offres
+                <span className="ml-1 text-red-500">*</span>
+                <span className="ml-2 text-[10px] text-amber-600 font-semibold normal-case">Requise pour publication</span>
+              </label>
               <div className="relative">
-                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-amber-500" />
+                <input
+                  type="datetime-local"
+                  value={form.dateLimite}
+                  min={form.dateSelection ? `${form.dateSelection}T00:00` : ''}
+                  onChange={(e) => setForm({...form, dateLimite: e.target.value})}
+                  className="w-full pl-10 pr-4 py-3 bg-amber-50 border border-amber-200 rounded-2xl focus:ring-2 focus:ring-amber-300/40 outline-none transition-all font-medium"
+                />
+              </div>
+              <p className="text-[11px] text-amber-600 ml-1">Date et heure limite auxquelles les soumissionnaires doivent déposer leurs offres.</p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Date de Clôture du Marché</label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
                   type="date"
                   value={form.dateCloture}
+                  min={form.dateLimite ? form.dateLimite.split('T')[0] : (form.dateSelection || '')}
                   onChange={(e) => setForm({...form, dateCloture: e.target.value})}
                   className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                 />
               </div>
+              <p className="text-[11px] text-gray-400 ml-1">Date à laquelle le marché sera clôturé (après attribution).</p>
             </div>
 
             {/* <div className="space-y-2">
@@ -733,13 +813,35 @@ const CgmpMarches = () => {
             </div>
 
             <div className="md:col-span-2 lg:col-span-3 space-y-2">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Justification du choix du mode de passation</label>
+              <label className="text-xs font-bold uppercase tracking-wider ml-1 flex items-center gap-2">
+                <span className={isExceptionalMode ? 'text-red-600' : 'text-gray-400'}>
+                  Justification du choix du mode de passation
+                </span>
+                {isExceptionalMode && (
+                  <span className="px-2 py-0.5 bg-red-100 text-red-700 text-[10px] font-black rounded-full uppercase tracking-widest animate-pulse">
+                    OBLIGATOIRE — Mode Exceptionnel
+                  </span>
+                )}
+              </label>
+              {isExceptionalMode && (
+                <p className="text-[11px] text-red-600 ml-1 font-medium">
+                  ⚠️ Le mode &ldquo;{form.modePassation}&rdquo; est exceptionnel. Vous devez obligatoirement justifier ce choix pour des raisons d&apos;audit et de conformité réglementaire.
+                </p>
+              )}
               <textarea
-                rows="2"
+                rows="3"
+                required={isExceptionalMode}
                 value={form.justificationChoix}
                 onChange={(e) => setForm({...form, justificationChoix: e.target.value})}
-                className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
-                placeholder="Expliquez pourquoi ce mode de passation a été retenu..."
+                className={`w-full p-4 rounded-2xl focus:ring-2 outline-none transition-all text-sm ${
+                  isExceptionalMode
+                    ? 'bg-red-50 border-2 border-red-300 focus:ring-red-300/40 placeholder-red-400'
+                    : 'bg-gray-50 border border-gray-100 focus:ring-primary/20'
+                }`}
+                placeholder={isExceptionalMode
+                  ? 'Justification obligatoire : expliquez les raisons ayant conduit au choix de ce mode exceptionnel...'
+                  : 'Expliquez pourquoi ce mode de passation a été retenu...'
+                }
               ></textarea>
             </div>
 
@@ -758,21 +860,42 @@ const CgmpMarches = () => {
             </div>
 
 
-            <div className="md:col-span-2 lg:col-span-3 flex justify-end gap-4 pt-4">
-               <button 
-                type="button" 
-                onClick={() => setShowForm(false)}
-                className="px-6 py-3 border border-gray-200 text-gray-600 rounded-2xl hover:bg-gray-50 transition-all font-semibold"
-               >
-                 Annuler
-               </button>
-               <button 
-                type="submit"
-                className="px-10 py-3 bg-primary text-white rounded-2xl hover:bg-blue-800 transition-all font-bold shadow-lg shadow-primary/20 flex items-center gap-2"
-               >
-                 <PlusCircle className="h-5 w-5" />
-                Enregistrer le Marché
-               </button>
+            <div className="md:col-span-2 lg:col-span-3">
+              <div className="border-t border-gray-100 pt-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <button 
+                  type="button" 
+                  onClick={() => setShowForm(false)}
+                  className="px-6 py-3 border border-gray-200 text-gray-600 rounded-2xl hover:bg-gray-50 transition-all font-semibold text-sm"
+                >
+                  Annuler
+                </button>
+                <div className="flex gap-3 flex-wrap">
+                  {/* Bouton Brouillon */}
+                  <button 
+                    type="button"
+                    onClick={(e) => handleSubmit(e, 'en attente')}
+                    className="px-7 py-3 bg-gray-100 text-gray-700 border border-gray-200 rounded-2xl hover:bg-gray-200 transition-all font-semibold text-sm flex items-center gap-2"
+                  >
+                    <Save className="h-4 w-4" />
+                    Enregistrer  le marché
+                  </button>
+                  {/* Bouton Publier */}
+                  {/* <button 
+                    type="button"
+                    onClick={(e) => handleSubmit(e, 'publie')}
+                    className="px-8 py-3 bg-primary text-white rounded-2xl hover:bg-blue-800 transition-all font-bold shadow-lg shadow-primary/20 flex items-center gap-2 text-sm"
+                  >
+                    <PlusCircle className="h-4 w-4" />
+                    Publier le Marché
+                  </button> */}
+                </div>
+              </div>
+              {!form.dateLimite && (
+                <p className="text-[11px] text-amber-600 mt-3 flex items-center gap-1">
+                  <Info className="h-3 w-3" />
+                  Sans date limite de dépôt, vous ne pouvez qu&apos;enregistrer en brouillon. Ajoutez-la pour pouvoir publier.
+                </p>
+              )}
             </div>
           </form>
         </section>
@@ -1278,7 +1401,7 @@ const CgmpMarches = () => {
                               onClick={() => changeStatus(current.next)}
                               className={`px-6 py-2.5 text-white rounded-xl transition-all font-bold shadow-md flex items-center gap-2 ${current.color}`}
                             >
-                              Passer à l'étape suivante &rarr;
+                              Passer à l&apos;étape suivante &rarr;
                             </button>
                           )
                         )}
