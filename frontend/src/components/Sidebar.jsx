@@ -63,6 +63,11 @@ const Sidebar = ({ user }) => {
     if ((role === 'RECEPTIONISTE' || role === 'RECEPTIONNISTE') && has('ENREGISTRER_EXECUTION')) {
       links.push({ name: 'Enregistrement Offres', path: '/reception/soumissions', icon: FileText });
     }
+    // Accès à la création de demandes pour tout rôle ayant la permission (ex: Réceptionniste avec CREER_DEMANDE)
+    if ((has('CREER_DEMANDE') || has('DEMANDE_CREATE') || has('VOIR_MES_DEMANDES') || has('DEMANDE_READ_OWN'))
+        && (role === 'RECEPTIONISTE' || role === 'RECEPTIONNISTE')) {
+      links.push({ name: 'Mes Demandes', path: '/demandeur/demandes', icon: FileText });
+    }
     if (has('GERER_UTILISATEURS') || has('VOIR_UTILISATEURS')) {
       links.push({ name: 'Utilisateurs', path: '/admin/users', icon: Users });
     }

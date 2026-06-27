@@ -16,7 +16,8 @@ exports.createDemande = async (req, res) => {
     let { idService, typeMarche, statut, articles, idBudget } = req.body;
 
     const userRole = req.user.role ? req.user.role.toUpperCase() : '';
-    const isSpecialRole = userRole === 'RAF' || userRole === 'ADMIN';
+    const isSpecialRole = userRole === 'RAF' || userRole === 'ADMIN' ||
+        userRole === 'RECEPTIONISTE' || userRole === 'RECEPTIONNISTE' || userRole === 'CGMP';
 
     // Si pas de service fourni dans la requête (par ex. si le token est obsolète), on le cherche en BDD
     if (!idService) {
@@ -221,6 +222,10 @@ exports.getAllDemandes = async (req, res) => {
         else if (hasVoirToutesDemandes || userRole === 'ADMIN' || userRole === 'RAF' || userRole === 'CGMP') {
             rows = await Demande.findAll();
         } 
+        // Rôles sans service rattaché (RECEPTIONISTE, CGMP sans perm globale, etc.) → ses propres créations
+        else if (!idService || userRole === 'RECEPTIONISTE' || userRole === 'RECEPTIONNISTE') {
+            rows = await Demande.findByUser(req.user.idUser);
+        }
         // Sinon (DEMANDEUR, CHEF_SERVICE sans permission globale), il ne voit que son service
         else {
             rows = await Demande.findByService(idService);
