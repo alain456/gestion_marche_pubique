@@ -1,14 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import api from '../../services/api';
+import { AuthContext } from '../../contexts/AuthContext';
 import { 
   CheckCircle, 
   XCircle, 
   Save,
   LayoutGrid,
-  Settings
+  Settings,
+  Lock
 } from 'lucide-react';
 
 const AdminSeuils = () => {
+  const { hasPermission } = useContext(AuthContext);
+  const canManage = hasPermission('GERER_PARAMETRES_SEUILS');
   const [seuilRules, setSeuilRules] = useState([]);
   const [parametres, setParametres] = useState([]);
   const [showParamModal, setShowParamModal] = useState(false);
@@ -192,20 +196,26 @@ const AdminSeuils = () => {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
           <div>
             <h3 className="text-lg font-bold text-gray-900">Règles de seuils</h3>
-            <p className="text-sm text-gray-500">Définissez les modes de passation par type de marché, d'institution et intervalle de montant.</p>
+            <p className="text-sm text-gray-500">D&apos;finissez les modes de passation par type de march&apos;, d&apos;institution et intervalle de montant.</p>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowParamModal(true)}
-            className="text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition flex items-center gap-2"
-          >
-            <LayoutGrid size={16} /> Gérer les paramètres globaux (Dictionnaires)
-          </button>
+          {canManage ? (
+            <button
+              type="button"
+              onClick={() => setShowParamModal(true)}
+              className="text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition flex items-center gap-2"
+            >
+              <LayoutGrid size={16} /> Gérer les paramètres globaux (Dictionnaires)
+            </button>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-3 py-2 rounded-xl">
+              <Lock size={13} /> Lecture seule — permission <strong>GERER_PARAMETRES_SEUILS</strong> requise
+            </span>
+          )}
         </div>
 
         <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 space-y-3">
           <p className="text-xs text-gray-600 mb-2">
-            Le système applique automatiquement la première règle qui correspond au type de marché, au type d'institution et au montant estimé.
+            Le système applique automatiquement la première règle qui correspond au type de marché, au type d&apos;institution et au montant estimé.
           </p>
           {seuilRules.map((rule) => (
             <div key={rule.id} className="grid grid-cols-1 md:grid-cols-7 gap-2 items-end">
@@ -260,33 +270,37 @@ const AdminSeuils = () => {
                 placeholder="Libellé seuil"
                 className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm"
               />
-              <div className="flex gap-1">
-                <button
-                  type="button"
-                  onClick={() => saveSeuilRule(rule)}
-                  className="px-3 py-2 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-600 text-sm font-semibold hover:bg-emerald-100 flex-1"
-                  title="Enregistrer les modifications"
-                >
-                  <Save size={16} className="mx-auto" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => removeSeuilRule(rule.id)}
-                  className="px-3 py-2 rounded-xl border border-red-200 bg-red-50 text-red-600 text-sm font-semibold hover:bg-red-100 flex-1"
-                  title="Supprimer la règle"
-                >
-                  <XCircle size={16} className="mx-auto" />
-                </button>
-              </div>
+              {canManage && (
+                <div className="flex gap-1">
+                  <button
+                    type="button"
+                    onClick={() => saveSeuilRule(rule)}
+                    className="px-3 py-2 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-600 text-sm font-semibold hover:bg-emerald-100 flex-1"
+                    title="Enregistrer les modifications"
+                  >
+                    <Save size={16} className="mx-auto" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeSeuilRule(rule.id)}
+                    className="px-3 py-2 rounded-xl border border-red-200 bg-red-50 text-red-600 text-sm font-semibold hover:bg-red-100 flex-1"
+                    title="Supprimer la règle"
+                  >
+                    <XCircle size={16} className="mx-auto" />
+                  </button>
+                </div>
+              )}
             </div>
           ))}
-          <button
-            type="button"
-            onClick={addSeuilRule}
-            className="px-4 py-2 rounded-xl border border-primary/30 bg-primary/10 text-primary text-sm font-semibold mt-4"
-          >
-            + Ajouter une règle
-          </button>
+          {canManage && (
+            <button
+              type="button"
+              onClick={addSeuilRule}
+              className="px-4 py-2 rounded-xl border border-primary/30 bg-primary/10 text-primary text-sm font-semibold mt-4"
+            >
+              + Ajouter une règle
+            </button>
+          )}
         </div>
 
         {/* Modal de gestion des paramètres */}
@@ -318,6 +332,7 @@ const AdminSeuils = () => {
                 </div>
 
                 <div className="p-6 overflow-y-auto flex-1 space-y-4">
+                  {canManage && (
                   <form onSubmit={handleAddParam} className="flex gap-2">
                     <input
                       type="text"
@@ -335,6 +350,7 @@ const AdminSeuils = () => {
                       Ajouter
                     </button>
                   </form>
+                )}
 
                   <div className="space-y-2 mt-4">
                     {parametres.filter(p => p.typeParam === newParam.typeParam).length === 0 && (
@@ -343,14 +359,16 @@ const AdminSeuils = () => {
                     {parametres.filter(p => p.typeParam === newParam.typeParam).map((p) => (
                       <div key={p.idParam} className="flex justify-between items-center p-4 rounded-xl border border-gray-100 bg-white hover:border-gray-300 transition">
                         <span className="font-semibold text-gray-700">{p.valeur}</span>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteParam(p.idParam)}
-                          className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition"
-                          title="Supprimer"
-                        >
-                          <XCircle size={18} />
-                        </button>
+                        {canManage && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteParam(p.idParam)}
+                            className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition"
+                            title="Supprimer"
+                          >
+                            <XCircle size={18} />
+                          </button>
+                        )}
                       </div>
                     ))}
                   </div>

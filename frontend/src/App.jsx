@@ -69,6 +69,9 @@ const App = () => {
           {/* Admin Dashboard - Seulement pour le rôle ADMIN */}
           <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
             <Route path="/admin" element={<AdminDashboard />} />
+          </Route>
+          
+          <Route element={<ProtectedRoute allowedRoles={['ADMIN']} requiredPermission="GERER_PARAMETRES_SEUILS" />}>
             <Route path="/admin/seuils" element={<AdminSeuils />} />
           </Route>
 
@@ -130,7 +133,7 @@ const App = () => {
             <Route path="/cgmp/marches" element={<CgmpMarches />} />
           </Route>
 
-          <Route element={<ProtectedRoute requiredPermission={['AJUSTER_DEMANDE_CGMP', 'VOIR_TOUTES_DEMANDES']} />}>
+          <Route element={<ProtectedRoute requiredPermission={['AJUSTER_DEMANDE_CGMP', 'VOIR_TOUTES_DEMANDES', 'GERER_PARAMETRES_SEUILS']} />}>
             <Route path="/cgmp/budgets" element={<CgmpBudgets />} />
           </Route>
 

@@ -54,7 +54,7 @@ const Sidebar = ({ user }) => {
     if ((has('VOIR_MARCHES') || has('GERER_MARCHES')) && role !== 'RECEPTIONISTE' && role !== 'RECEPTIONNISTE') {
       links.push({ name: 'Marchés', path: '/cgmp/marches', icon: FileText });
     }
-    if (has('AJUSTER_DEMANDE_CGMP')) {
+    if (has('AJUSTER_DEMANDE_CGMP') || has('GERER_PARAMETRES_SEUILS')) {
       links.push({ name: 'Lignes Budgétaires', path: '/cgmp/budgets', icon: CreditCard });
     }
     if (role === 'CGMP' && (has('VOIR_MARCHES') || has('GERER_SOUMISSIONS'))) {
@@ -75,7 +75,7 @@ const Sidebar = ({ user }) => {
     if (role === 'ADMIN' || has('GERER_UTILISATEURS')) {
       links.push({ name: 'Attribuer permissions', path: '/admin/user-permissions', icon: UserCog });
     }
-    if (role === 'ADMIN') {
+    if (role === 'ADMIN' || has('GERER_PARAMETRES_SEUILS')) {
       links.push({ name: 'Paramétrage Seuils', path: '/admin/seuils', icon: Gavel });
     }
     if (has('GERER_ROLES_PERMISSIONS')) {
