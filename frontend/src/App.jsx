@@ -99,7 +99,7 @@ const App = () => {
           </Route>
 
           {/* === Dashboards (Basés sur les Rôles) === */}
-          <Route element={<ProtectedRoute allowedRoles={['CHEF_INSTITUTION', 'CHEF_SERVICE']} />}>
+          <Route element={<ProtectedRoute allowedRoles={['CHEF_INSTITUTION', 'CHEF_SERVICE']} requiredPermission="VOIR_STATISTIQUES" />}>
             <Route path="/chef" element={<ChefDashboard />} />
           </Route>
 

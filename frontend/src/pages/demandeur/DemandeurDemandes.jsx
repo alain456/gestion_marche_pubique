@@ -649,7 +649,7 @@ const DemandeurDemandes = () => {
                       <button onClick={() => setViewingDemande(demande)} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg border border-blue-100 transition" title="Visualiser">
                         <Eye className="h-4 w-4" />
                       </button>
-                      {(canUpdateDemande || demande.statut === 'Rejete' || demande.statut === 'En attente') && 
+                      {canUpdateDemande && 
                        (demande.statut === 'Brouillon' || demande.statut === 'En attente' || demande.statut === 'Rejete') && (
                         <button 
                           onClick={() => reprendreDemande(demande)} 

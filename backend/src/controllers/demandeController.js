@@ -85,6 +85,17 @@ exports.updateDemande = async (req, res) => {
     const { articles, statut, typeMarche, motif } = req.body;
 
     try {
+        const db = require('../config/db');
+        const [rows] = await db.query('SELECT statut FROM demande WHERE idDemande = ?', [id]);
+        if (rows.length === 0) {
+            return res.status(404).json({ message: "Demande non trouvée." });
+        }
+        
+        const currentStatut = rows[0].statut;
+        if (['Valide', 'Inclus dans Marché'].includes(currentStatut)) {
+            return res.status(403).json({ message: "Impossible de modifier une demande déjà validée ou incluse dans un marché." });
+        }
+
         // Si on met à jour les articles
         if (articles && Array.isArray(articles)) {
             await Demande.updateArticles(id, articles);
@@ -297,6 +308,17 @@ exports.markAlerteAsVue = async (req, res) => {
 exports.deleteDemande = async (req, res) => {
     const { id } = req.params;
     try {
+        const db = require('../config/db');
+        const [rows] = await db.query('SELECT statut FROM demande WHERE idDemande = ?', [id]);
+        if (rows.length === 0) {
+            return res.status(404).json({ message: "Demande non trouvée." });
+        }
+        
+        const currentStatut = rows[0].statut;
+        if (['Valide', 'Inclus dans Marché'].includes(currentStatut)) {
+            return res.status(403).json({ message: "Impossible de supprimer une demande déjà validée ou incluse dans un marché." });
+        }
+
         await Demande.delete(id);
         res.json({ message: "Demande supprimée avec succès." });
     } catch (error) {

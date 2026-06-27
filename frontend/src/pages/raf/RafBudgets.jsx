@@ -15,8 +15,13 @@ import {
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import { getServiceOrRoleLabel } from '../../utils/formatters';
+import { useContext } from 'react';
+import { AuthContext } from '../../contexts/AuthContext';
 
 const RafBudgets = () => {
+  const { hasPermission } = useContext(AuthContext);
+  const canValidate = hasPermission('VALIDER_BUDGET_DEMANDE');
+  
   const [budgets, setBudgets] = useState([]);
   const [demandes, setDemandes] = useState([]);
   const [groupedDemandes, setGroupedDemandes] = useState([]);
@@ -357,12 +362,14 @@ const RafBudgets = () => {
                         <p className="text-sm font-bold text-primary">{group.totalMontant?.toLocaleString() || 0} Fbu</p>
                         <p className="text-xs text-gray-400">Montant total</p>
                       </div>
-                      <button 
-                        onClick={() => fetchGroupDemandes(group.typeMarche)}
-                        className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl hover:bg-blue-800 transition font-medium shadow-sm shadow-blue-100"
-                      >
-                        <CheckSquare className="h-4 w-4" /> Valider
-                      </button>
+                      {canValidate && (
+                        <button 
+                          onClick={() => fetchGroupDemandes(group.typeMarche)}
+                          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl hover:bg-blue-800 transition font-medium shadow-sm shadow-blue-100"
+                        >
+                          <CheckSquare className="h-4 w-4" /> Valider
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -378,32 +385,36 @@ const RafBudgets = () => {
           {/* Barre d'actions */}
           <div className="bg-surface p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
             <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                checked={selectedForValidation.length === groupDemandes.length && groupDemandes.length > 0}
-                onChange={handleSelectAll}
-                className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary"
-              />
+              {canValidate && (
+                <input
+                  type="checkbox"
+                  checked={selectedForValidation.length === groupDemandes.length && groupDemandes.length > 0}
+                  onChange={handleSelectAll}
+                  className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary"
+                />
+              )}
               <span className="text-sm font-medium text-gray-700">
                 {selectedForValidation.length} / {groupDemandes.length} sélectionnées
               </span>
             </div>
-            <div className="flex items-center gap-3">
-              <input
-                type="text"
-                placeholder="Motif de validation..."
-                value={motif}
-                onChange={(e) => setMotif(e.target.value)}
-                className="px-4 py-2 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 w-64"
-              />
-              <button
-                onClick={handleBulkValidate}
-                disabled={selectedForValidation.length === 0}
-                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <CheckCircle className="h-4 w-4" /> Valider ({selectedForValidation.length})
-              </button>
-            </div>
+            {canValidate && (
+              <div className="flex items-center gap-3">
+                <input
+                  type="text"
+                  placeholder="Motif de validation..."
+                  value={motif}
+                  onChange={(e) => setMotif(e.target.value)}
+                  className="px-4 py-2 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 w-64"
+                />
+                <button
+                  onClick={handleBulkValidate}
+                  disabled={selectedForValidation.length === 0}
+                  className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <CheckCircle className="h-4 w-4" /> Valider ({selectedForValidation.length})
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Table des demandes du groupe */}
@@ -427,12 +438,14 @@ const RafBudgets = () => {
                     filteredGroupDemandes.map((demande) => (
                       <tr key={demande.idDemande} className="hover:bg-gray-50/50 transition">
                         <td className="px-6 py-4">
-                          <input
-                            type="checkbox"
-                            checked={selectedForValidation.includes(demande.idDemande)}
-                            onChange={() => handleSelectForValidation(demande.idDemande)}
-                            className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary"
-                          />
+                          {canValidate && (
+                            <input
+                              type="checkbox"
+                              checked={selectedForValidation.includes(demande.idDemande)}
+                              onChange={() => handleSelectForValidation(demande.idDemande)}
+                              className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary"
+                            />
+                          )}
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex flex-col">

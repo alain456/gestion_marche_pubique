@@ -88,7 +88,7 @@ const Sidebar = ({ user }) => {
     if (has('GERER_ARTICLES')) {
       links.push({ name: 'Articles', path: '/admin/articles', icon: FileText });
     }
-    if (has('VOIR_STATISTIQUES') && role === 'CHEF_INSTITUTION') {
+    if (has('VOIR_STATISTIQUES')) {
       links.push({ name: 'Suivi Stratégique', path: '/chef', icon: Gavel });
     }
 
