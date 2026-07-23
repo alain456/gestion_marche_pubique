@@ -54,3 +54,14 @@ exports.validerContrat = async (req, res) => {
         res.status(500).json({ message: "Erreur lors de la validation du contrat." });
     }
 };
+
+// Récupérer tous les contrats
+exports.getAllContrats = async (req, res) => {
+    try {
+        const rows = await Contrat.findAll();
+        res.json(rows);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Erreur lors de la récupération des contrats." });
+    }
+};

@@ -6,6 +6,7 @@ const { verifyToken, requirePermission } = require('../middlewares/authMiddlewar
 router.use(verifyToken);
 
 // Routes pour la gestion des contrats
+router.get('/', requirePermission(['VALIDER_CONTRAT', 'CREER_CONTRAT']), contratController.getAllContrats);
 router.post('/', requirePermission('CREER_CONTRAT'), contratController.createContrat); // CGMP rédige le contrat
 router.put('/:id/valider', requirePermission('VALIDER_CONTRAT'), contratController.validerContrat); // Chef d'Institution valide le contrat
 

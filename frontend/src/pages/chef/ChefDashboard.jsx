@@ -21,7 +21,10 @@ import {
   PackageOpen,
   TrendingUp,
   RefreshCw,
-  DollarSign
+  DollarSign,
+  Bell,
+  ShieldCheck,
+  CreditCard
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
@@ -37,7 +40,10 @@ const ChefDashboard = () => {
   const [offresRefreshing, setOffresRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const hasVoirMarches = user?.permissions?.includes('VOIR_MARCHES') || user?.permissions?.includes('GERER_MARCHES');
-  const [activeTab, setActiveTab] = useState(hasVoirMarches ? 'marches' : 'demandes');
+  const hasValiderContrat = user?.permissions?.includes('VALIDER_CONTRAT');
+  const hasVoirPaiements = user?.permissions?.includes('VOIR_PAIEMENTS') || user?.permissions?.includes('EFFECTUER_PAIEMENT');
+
+  const [activeTab, setActiveTab] = useState('notifications'); // Default to notifications since it's the main workspace/alert tab
   const [selectedMarche, setSelectedMarche] = useState(null);
   const [selectedDemande, setSelectedDemande] = useState(null);
   const [showOffresModal, setShowOffresModal] = useState(false);
@@ -53,6 +59,17 @@ const ChefDashboard = () => {
   const [filterStatus, setFilterStatus] = useState('tous');
   const [filterMarche, setFilterMarche] = useState('tous');
 
+  // New features state
+  const [contrats, setContrats] = useState([]);
+  const [receptions, setReceptions] = useState([]);
+  const [paiements, setPaiements] = useState([]);
+  const [showPaiementModal, setShowPaiementModal] = useState(false);
+  const [selectedReception, setSelectedReception] = useState(null);
+  const [paiementMontant, setPaiementMontant] = useState('');
+  const [paiementDate, setPaiementDate] = useState(new Date().toISOString().substring(0, 10));
+  const [contratSigningId, setContratSigningId] = useState(null);
+  const [paiementSubmitting, setPaiementSubmitting] = useState(false);
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -60,21 +77,49 @@ const ChefDashboard = () => {
         api.get('/demandes'),
         api.get('/services')
       ];
+      
+      let indexMarches = -1;
+      let indexSoumissions = -1;
+      let indexContrats = -1;
+      let indexReceptions = -1;
+      let indexPaiements = -1;
+      
       if (hasVoirMarches) {
+        indexMarches = reqs.length;
         reqs.push(api.get('/marches'));
+        indexSoumissions = reqs.length;
         reqs.push(api.get('/soumissions'));
+      }
+      if (hasValiderContrat) {
+        indexContrats = reqs.length;
+        reqs.push(api.get('/contrats'));
+      }
+      if (hasVoirPaiements) {
+        indexPaiements = reqs.length;
+        reqs.push(api.get('/paiements'));
+        indexReceptions = reqs.length;
+        reqs.push(api.get('/receptions'));
       }
       
       const res = await Promise.all(reqs);
       setDemandes(res[0].data);
       setServices(res[1].data);
-      if (hasVoirMarches) {
-        setMarches(res[2].data);
-        setAllOffres(res[3].data);
-      } else {
-        setMarches([]);
-        setAllOffres([]);
-      }
+      
+      if (indexMarches !== -1) setMarches(res[indexMarches].data);
+      else setMarches([]);
+
+      if (indexSoumissions !== -1) setAllOffres(res[indexSoumissions].data);
+      else setAllOffres([]);
+
+      if (indexContrats !== -1) setContrats(res[indexContrats].data);
+      else setContrats([]);
+
+      if (indexPaiements !== -1) setPaiements(res[indexPaiements].data);
+      else setPaiements([]);
+
+      if (indexReceptions !== -1) setReceptions(res[indexReceptions].data);
+      else setReceptions([]);
+
     } catch (err) {
       console.error('Erreur chargement données:', err);
       setError('Impossible de charger les données.');
@@ -144,6 +189,51 @@ const ChefDashboard = () => {
       fetchData();
     } catch (err) {
       console.error('Erreur lors du marquage de la notification Chef:', err);
+    }
+  };
+
+  const handleValiderContrat = async (idContrat) => {
+    if (!window.confirm("Confirmer la signature et la validation de ce contrat ?")) return;
+    setContratSigningId(idContrat);
+    try {
+      await api.put(`/contrats/${idContrat}/valider`);
+      setMessage("Contrat signé et validé avec succès par le Chef d'Institution.");
+      fetchData();
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) {
+      console.error(err);
+      setError("Erreur lors de la validation du contrat.");
+      setTimeout(() => setError(''), 3000);
+    } finally {
+      setContratSigningId(null);
+    }
+  };
+
+  const handleEffPaiement = async (e) => {
+    e.preventDefault();
+    if (!selectedReception || !paiementMontant || !paiementDate) {
+      setError("Veuillez remplir tous les champs obligatoires.");
+      return;
+    }
+    setPaiementSubmitting(true);
+    try {
+      await api.post('/paiements', {
+        idReception: selectedReception.idExecution,
+        montant: Number(paiementMontant),
+        datePaiement: paiementDate
+      });
+      setMessage("Paiement enregistré avec succès. Le marché est désormais clôturé.");
+      setShowPaiementModal(false);
+      setSelectedReception(null);
+      setPaiementMontant('');
+      fetchData();
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || "Erreur lors de l'enregistrement du paiement.");
+      setTimeout(() => setError(''), 3000);
+    } finally {
+      setPaiementSubmitting(false);
     }
   };
 
@@ -249,7 +339,29 @@ const ChefDashboard = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-100 gap-8">
+      <div className="flex flex-wrap border-b border-gray-100 gap-6">
+        <button 
+          onClick={() => setActiveTab('notifications')}
+          className={`pb-4 text-sm font-black uppercase tracking-widest transition-all relative flex items-center gap-2 ${
+            activeTab === 'notifications' ? 'text-primary' : 'text-gray-400 hover:text-gray-600'
+          }`}
+        >
+          <Bell className="h-4 w-4" />
+          Centre de Notifications
+          {(demandes.filter(d => d.modifieParCgmp === 1 && d.alerteChef === 0).length + 
+            marches.filter(m => m.statut === 'en attente').length + 
+            contrats.filter(c => c.statut === 'En attente validation Chef').length +
+            receptions.filter(r => !paiements.some(p => p.idReception === r.idExecution)).length) > 0 && (
+            <span className="px-2 py-0.5 bg-rose-500 text-white rounded-full text-[9px] font-black animate-pulse">
+              {demandes.filter(d => d.modifieParCgmp === 1 && d.alerteChef === 0).length + 
+               marches.filter(m => m.statut === 'en attente').length + 
+               contrats.filter(c => c.statut === 'En attente validation Chef').length +
+               receptions.filter(r => !paiements.some(p => p.idReception === r.idExecution)).length}
+            </span>
+          )}
+          {activeTab === 'notifications' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full animate-in slide-in-from-bottom-1" />}
+        </button>
+
         {hasVoirMarches && (
           <button 
             onClick={() => setActiveTab('marches')}
@@ -278,6 +390,40 @@ const ChefDashboard = () => {
             {activeTab === 'offres' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full animate-in slide-in-from-bottom-1" />}
           </button>
         )}
+        {hasValiderContrat && (
+          <button 
+            onClick={() => setActiveTab('contrats')}
+            className={`pb-4 text-sm font-black uppercase tracking-widest transition-all relative flex items-center gap-2 ${
+              activeTab === 'contrats' ? 'text-primary' : 'text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            <ShieldCheck className="h-4 w-4" />
+            Gestion des Contrats
+            {contrats.filter(c => c.statut === 'En attente validation Chef').length > 0 && (
+              <span className="px-2 py-0.5 bg-amber-500 text-white rounded-full text-[9px] font-black">
+                {contrats.filter(c => c.statut === 'En attente validation Chef').length}
+              </span>
+            )}
+            {activeTab === 'contrats' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full animate-in slide-in-from-bottom-1" />}
+          </button>
+        )}
+        {hasVoirPaiements && (
+          <button 
+            onClick={() => setActiveTab('paiements')}
+            className={`pb-4 text-sm font-black uppercase tracking-widest transition-all relative flex items-center gap-2 ${
+              activeTab === 'paiements' ? 'text-primary' : 'text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            <CreditCard className="h-4 w-4" />
+            Suivi des Paiements
+            {receptions.filter(r => !paiements.some(p => p.idReception === r.idExecution)).length > 0 && (
+              <span className="px-2 py-0.5 bg-blue-500 text-white rounded-full text-[9px] font-black">
+                {receptions.filter(r => !paiements.some(p => p.idReception === r.idExecution)).length}
+              </span>
+            )}
+            {activeTab === 'paiements' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full animate-in slide-in-from-bottom-1" />}
+          </button>
+        )}
         <button 
           onClick={() => setActiveTab('demandes')}
           className={`pb-4 text-sm font-black uppercase tracking-widest transition-all relative ${
@@ -291,6 +437,324 @@ const ChefDashboard = () => {
 
       {message && <div className="bg-emerald-50 border border-emerald-100 text-emerald-700 p-4 rounded-2xl animate-in slide-in-from-top-2 font-bold flex items-center gap-2"><CheckCircle className="h-5 w-5" /> {message}</div>}
       {error && <div className="bg-red-50 border border-red-100 text-red-700 p-4 rounded-2xl animate-in slide-in-from-top-2 font-bold flex items-center gap-2"><XCircle className="h-5 w-5" /> {error}</div>}
+
+      {/* ===== ONGLET NOTIFICATIONS ===== */}
+      {activeTab === 'notifications' && (
+        <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { label: 'Demandes CGMP', count: demandes.filter(d => d.modifieParCgmp === 1 && d.alerteChef === 0).length, color: 'rose', icon: <Bell className="h-5 w-5" /> },
+              { label: 'Marchés en attente', count: marches.filter(m => m.statut === 'en attente').length, color: 'amber', icon: <Clock className="h-5 w-5" /> },
+              { label: 'Contrats à signer', count: contrats.filter(c => c.statut === 'En attente validation Chef').length, color: 'indigo', icon: <ShieldCheck className="h-5 w-5" /> },
+              { label: 'Paiements en attente', count: receptions.filter(r => !paiements.some(p => p.idReception === r.idExecution)).length, color: 'blue', icon: <CreditCard className="h-5 w-5" /> },
+            ].map(({ label, count, color, icon }) => (
+              <div key={label} className={`bg-surface p-5 rounded-3xl border border-gray-100 shadow-sm`}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className={`p-2.5 bg-${color}-50 text-${color}-600 rounded-xl`}>{icon}</div>
+                  <span className={`text-2xl font-black text-${color}-600`}>{count}</span>
+                </div>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Demandes modifiées par CGMP */}
+          {demandes.filter(d => d.modifieParCgmp === 1 && d.alerteChef === 0).length > 0 && (
+            <div className="bg-surface rounded-4xl border border-rose-100 shadow-sm overflow-hidden">
+              <div className="px-8 py-5 border-b border-rose-50 bg-rose-50/50 flex items-center gap-3">
+                <Bell className="h-5 w-5 text-rose-500" />
+                <h2 className="text-base font-black text-rose-700 uppercase tracking-tighter">Demandes ajustées par la CGMP</h2>
+              </div>
+              <div className="divide-y divide-gray-50">
+                {demandes.filter(d => d.modifieParCgmp === 1 && d.alerteChef === 0).map(d => (
+                  <div key={d.idDemande} className="px-8 py-5 flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-black text-gray-900">Demande #{d.idDemande} — {d.nomService}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{new Date(d.dateDemande).toLocaleDateString('fr-FR')}</p>
+                    </div>
+                    <button onClick={() => markChefAlerteAsVue(d.idDemande)}
+                      className="px-4 py-2 bg-rose-500 text-white text-[10px] font-black uppercase rounded-xl hover:bg-rose-600 transition-all flex items-center gap-2 animate-pulse">
+                      <CheckCircle className="h-4 w-4" /> Marquer comme Lu
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Marchés en attente de publication */}
+          {marches.filter(m => m.statut === 'en attente').length > 0 && (
+            <div className="bg-surface rounded-4xl border border-amber-100 shadow-sm overflow-hidden">
+              <div className="px-8 py-5 border-b border-amber-50 bg-amber-50/50 flex items-center gap-3">
+                <Gavel className="h-5 w-5 text-amber-500" />
+                <h2 className="text-base font-black text-amber-700 uppercase tracking-tighter">Marchés en attente d&apos;autorisation</h2>
+              </div>
+              <div className="divide-y divide-gray-50">
+                {marches.filter(m => m.statut === 'en attente').map(m => (
+                  <div key={m.idMarche} className="px-8 py-5 flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-black text-gray-900">Marché #{m.idMarche} — {m.modePassation}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{Number(m.montantEstime).toLocaleString('fr-FR')} FBU</p>
+                    </div>
+                    <button onClick={() => updateMarcheStatus(m.idMarche, 'publie', 'Marché publié avec succès.')}
+                      className="px-4 py-2 bg-amber-500 text-white text-[10px] font-black uppercase rounded-xl hover:bg-amber-600 transition-all flex items-center gap-2">
+                      <Send className="h-4 w-4" /> Autoriser Publication
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Contrats à signer */}
+          {contrats.filter(c => c.statut === 'En attente validation Chef').length > 0 && (
+            <div className="bg-surface rounded-4xl border border-indigo-100 shadow-sm overflow-hidden">
+              <div className="px-8 py-5 border-b border-indigo-50 bg-indigo-50/50 flex items-center gap-3">
+                <ShieldCheck className="h-5 w-5 text-indigo-500" />
+                <h2 className="text-base font-black text-indigo-700 uppercase tracking-tighter">Contrats en attente de signature</h2>
+              </div>
+              <div className="divide-y divide-gray-50">
+                {contrats.filter(c => c.statut === 'En attente validation Chef').map(c => (
+                  <div key={c.idContrat} className="px-8 py-5 flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-black text-gray-900">Contrat #{c.idContrat} — {c.titulaireMarche}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{Number(c.montant).toLocaleString('fr-FR')} FBU · Marché #{c.idMarche}</p>
+                    </div>
+                    <button onClick={() => handleValiderContrat(c.idContrat)}
+                      disabled={contratSigningId === c.idContrat}
+                      className="px-4 py-2 bg-indigo-600 text-white text-[10px] font-black uppercase rounded-xl hover:bg-indigo-700 transition-all flex items-center gap-2 disabled:opacity-60">
+                      <CheckCircle className="h-4 w-4" /> Signer &amp; Valider
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Réceptions en attente de paiement */}
+          {receptions.filter(r => !paiements.some(p => p.idReception === r.idExecution)).length > 0 && (
+            <div className="bg-surface rounded-4xl border border-blue-100 shadow-sm overflow-hidden">
+              <div className="px-8 py-5 border-b border-blue-50 bg-blue-50/50 flex items-center gap-3">
+                <CreditCard className="h-5 w-5 text-blue-500" />
+                <h2 className="text-base font-black text-blue-700 uppercase tracking-tighter">Réceptions en attente de paiement</h2>
+              </div>
+              <div className="divide-y divide-gray-50">
+                {receptions.filter(r => !paiements.some(p => p.idReception === r.idExecution)).map(r => (
+                  <div key={r.idExecution} className="px-8 py-5 flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-black text-gray-900">Réception #{r.idExecution} — Contrat #{r.idContrat}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{new Date(r.dateExecution || r.dateReception).toLocaleDateString('fr-FR')}</p>
+                    </div>
+                    <button onClick={() => { setSelectedReception(r); setPaiementMontant(''); setShowPaiementModal(true); setActiveTab('paiements'); }}
+                      className="px-4 py-2 bg-blue-600 text-white text-[10px] font-black uppercase rounded-xl hover:bg-blue-700 transition-all flex items-center gap-2">
+                      <DollarSign className="h-4 w-4" /> Enregistrer Paiement
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {(demandes.filter(d => d.modifieParCgmp === 1 && d.alerteChef === 0).length +
+            marches.filter(m => m.statut === 'en attente').length +
+            contrats.filter(c => c.statut === 'En attente validation Chef').length +
+            receptions.filter(r => !paiements.some(p => p.idReception === r.idExecution)).length) === 0 && (
+            <div className="bg-surface rounded-4xl border border-gray-100 shadow-sm py-20 text-center text-gray-400">
+              <CheckCircle className="h-12 w-12 mx-auto mb-4 opacity-10" />
+              <p className="font-bold uppercase text-xs tracking-widest">Aucune action requise pour le moment.</p>
+              <p className="text-[10px] mt-1 text-gray-300">Toutes les tâches sont à jour. Bon travail !</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ===== ONGLET GESTION DES CONTRATS ===== */}
+      {activeTab === 'contrats' && (
+        <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              { label: 'Total Contrats', count: contrats.length, color: 'gray', icon: <FileText className="h-5 w-5" /> },
+              { label: 'En attente signature', count: contrats.filter(c => c.statut === 'En attente validation Chef').length, color: 'amber', icon: <Clock className="h-5 w-5" /> },
+              { label: 'Validés', count: contrats.filter(c => c.statut === 'Validé').length, color: 'emerald', icon: <CheckCircle className="h-5 w-5" /> },
+            ].map(({ label, count, color, icon }) => (
+              <div key={label} className="bg-surface p-5 rounded-3xl border border-gray-100 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <div className={`p-2.5 bg-${color}-50 text-${color}-600 rounded-xl`}>{icon}</div>
+                  <span className={`text-2xl font-black text-${color}-600`}>{count}</span>
+                </div>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{label}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="bg-surface rounded-4xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-8 py-6 border-b border-gray-50 bg-gray-50/30 flex items-center justify-between">
+              <h2 className="text-xl font-black text-gray-800 uppercase tracking-tighter">Registre des Contrats</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50/50">
+                    {['#', 'Titulaire', 'Marché', 'Montant', 'Dates', 'Durée', 'Statut', 'Action'].map(h => (
+                      <th key={h} className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {contrats.length === 0 ? (
+                    <tr><td colSpan="8" className="px-8 py-20 text-center text-gray-400">
+                      <FileText className="h-12 w-12 mx-auto mb-4 opacity-10" />
+                      <p className="font-bold uppercase text-xs tracking-widest">Aucun contrat disponible.</p>
+                    </td></tr>
+                  ) : contrats.map(c => (
+                    <tr key={c.idContrat} className="hover:bg-gray-50/30 transition-all">
+                      <td className="px-6 py-5"><span className="text-xs font-black text-gray-400">#{c.idContrat}</span></td>
+                      <td className="px-6 py-5">
+                        <div className="flex items-center gap-3">
+                          <div className="h-9 w-9 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center font-black text-sm">
+                            {c.titulaireMarche?.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="text-sm font-black text-gray-900">{c.titulaireMarche}</p>
+                            <p className="text-[10px] text-gray-400">Mode: {c.modepassation}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-5">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-100 text-gray-700 text-[10px] font-black uppercase">
+                          <Gavel className="h-3 w-3" /> #{c.idMarche}
+                        </span>
+                      </td>
+                      <td className="px-6 py-5"><span className="text-sm font-black text-primary">{Number(c.montant).toLocaleString('fr-FR')} FBU</span></td>
+                      <td className="px-6 py-5">
+                        <div className="text-[10px] text-gray-500">
+                          <div className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {new Date(c.dateDebut).toLocaleDateString('fr-FR')}</div>
+                          <div className="flex items-center gap-1 mt-0.5"><Calendar className="h-3 w-3 opacity-40" /> {new Date(c.dateFin).toLocaleDateString('fr-FR')}</div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-5"><span className="text-xs text-gray-500">{c.dureeContrat || '—'}</span></td>
+                      <td className="px-6 py-5">
+                        <span className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border shadow-sm ${
+                          c.statut === 'Validé' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                          c.statut === 'En attente validation Chef' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                          'bg-gray-50 text-gray-500 border-gray-100'
+                        }`}>{c.statut}</span>
+                      </td>
+                      <td className="px-6 py-5">
+                        {c.statut === 'En attente validation Chef' && (
+                          <button onClick={() => handleValiderContrat(c.idContrat)}
+                            disabled={contratSigningId === c.idContrat}
+                            className="px-4 py-2 bg-emerald-600 text-white text-[10px] font-black uppercase rounded-xl hover:bg-emerald-700 transition-all flex items-center gap-2 disabled:opacity-60 shadow-lg shadow-emerald-100">
+                            {contratSigningId === c.idContrat ? <RefreshCw className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+                            Signer
+                          </button>
+                        )}
+                        {c.statut === 'Validé' && (
+                          <div className="flex items-center gap-1 text-emerald-500 text-[10px] font-black">
+                            <CheckCircle className="h-4 w-4" /> Signé
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== ONGLET SUIVI DES PAIEMENTS ===== */}
+      {activeTab === 'paiements' && (
+        <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              { label: 'Paiements Effectués', count: paiements.length, color: 'emerald', icon: <CheckCircle className="h-5 w-5" /> },
+              { label: 'En Attente', count: receptions.filter(r => !paiements.some(p => p.idReception === r.idExecution)).length, color: 'amber', icon: <Clock className="h-5 w-5" /> },
+              { label: 'Total Versé (FBU)', count: paiements.reduce((s, p) => s + Number(p.montant || 0), 0).toLocaleString('fr-FR'), color: 'blue', icon: <CreditCard className="h-5 w-5" /> },
+            ].map(({ label, count, color, icon }) => (
+              <div key={label} className="bg-surface p-5 rounded-3xl border border-gray-100 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <div className={`p-2.5 bg-${color}-50 text-${color}-600 rounded-xl`}>{icon}</div>
+                  <span className={`text-xl font-black text-${color}-600`}>{count}</span>
+                </div>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Réceptions non payées */}
+          {receptions.filter(r => !paiements.some(p => p.idReception === r.idExecution)).length > 0 && (
+            <div className="bg-surface rounded-4xl border border-amber-100 shadow-sm overflow-hidden">
+              <div className="px-8 py-6 border-b border-amber-50 bg-amber-50/30 flex items-center gap-3">
+                <Clock className="h-5 w-5 text-amber-500" />
+                <h2 className="text-lg font-black text-amber-700 uppercase tracking-tighter">Réceptions en attente de paiement</h2>
+              </div>
+              <div className="divide-y divide-gray-50">
+                {receptions.filter(r => !paiements.some(p => p.idReception === r.idExecution)).map(r => (
+                  <div key={r.idExecution} className="px-8 py-5 flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-black text-gray-900">Réception #{r.idExecution} — Contrat #{r.idContrat}</p>
+                      <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        {new Date(r.dateExecution || r.dateReception).toLocaleDateString('fr-FR')}
+                        {r.observations && ` · ${r.observations}`}
+                      </p>
+                    </div>
+                    <button onClick={() => { setSelectedReception(r); setPaiementMontant(''); setPaiementDate(new Date().toISOString().substring(0, 10)); setShowPaiementModal(true); }}
+                      className="px-4 py-2 bg-blue-600 text-white text-[10px] font-black uppercase rounded-xl hover:bg-blue-700 transition-all flex items-center gap-2 shadow-lg shadow-blue-100">
+                      <DollarSign className="h-4 w-4" /> Payer
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Historique des paiements */}
+          <div className="bg-surface rounded-4xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-8 py-6 border-b border-gray-50 bg-gray-50/30 flex items-center justify-between">
+              <h2 className="text-xl font-black text-gray-800 uppercase tracking-tighter">Historique des Paiements</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50/50">
+                    {['#', 'Réception liée', 'Montant', 'Date', 'Statut'].map(h => (
+                      <th key={h} className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {paiements.length === 0 ? (
+                    <tr><td colSpan="5" className="px-8 py-20 text-center text-gray-400">
+                      <DollarSign className="h-12 w-12 mx-auto mb-4 opacity-10" />
+                      <p className="font-bold uppercase text-xs tracking-widest">Aucun paiement enregistré.</p>
+                    </td></tr>
+                  ) : paiements.map(p => (
+                    <tr key={p.idPaiement} className="hover:bg-gray-50/30 transition-all">
+                      <td className="px-6 py-5"><span className="text-xs font-black text-gray-400">#{p.idPaiement}</span></td>
+                      <td className="px-6 py-5"><span className="text-sm font-bold text-gray-700">Réception #{p.idReception}</span></td>
+                      <td className="px-6 py-5"><span className="text-sm font-black text-emerald-600">{Number(p.montant).toLocaleString('fr-FR')} FBU</span></td>
+                      <td className="px-6 py-5">
+                        <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                          <Calendar className="h-3.5 w-3.5" />
+                          {new Date(p.datePaiement).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </div>
+                      </td>
+                      <td className="px-6 py-5">
+                        <span className="px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border shadow-sm bg-emerald-50 text-emerald-600 border-emerald-100">
+                          Effectué
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
 
       {activeTab === 'offres' ? (
         /* ===== ONGLET OFFRES REÇUES ===== */
@@ -926,6 +1390,70 @@ const ChefDashboard = () => {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+      {/* ===== MODAL PAIEMENT ===== */}
+      {showPaiementModal && selectedReception && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+          <div className="bg-surface rounded-4xl w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="bg-gradient-to-br from-blue-600 to-blue-800 p-8 text-white flex justify-between items-center">
+              <div>
+                <h3 className="text-xl font-black uppercase tracking-tighter">Enregistrer un Paiement</h3>
+                <p className="text-blue-200 text-sm mt-1 flex items-center gap-2">
+                  <CreditCard className="h-4 w-4" /> Réception #{selectedReception.idExecution} — Contrat #{selectedReception.idContrat}
+                </p>
+              </div>
+              <button onClick={() => setShowPaiementModal(false)} className="p-2 bg-white/10 hover:bg-white/20 rounded-2xl transition-all">
+                <XCircle className="h-6 w-6" />
+              </button>
+            </div>
+            <form onSubmit={handleEffPaiement} className="p-8 space-y-6">
+              <div>
+                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">
+                  Montant du Paiement (FBU)
+                </label>
+                <div className="relative">
+                  <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-300" />
+                  <input
+                    type="number"
+                    min="1"
+                    step="any"
+                    required
+                    value={paiementMontant}
+                    onChange={e => setPaiementMontant(e.target.value)}
+                    placeholder="Ex: 5000000"
+                    className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">
+                  Date du Paiement
+                </label>
+                <div className="relative">
+                  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-300" />
+                  <input
+                    type="date"
+                    required
+                    value={paiementDate}
+                    onChange={e => setPaiementDate(e.target.value)}
+                    className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => setShowPaiementModal(false)}
+                  className="flex-1 px-6 py-3 bg-gray-100 text-gray-600 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-gray-200 transition-all">
+                  Annuler
+                </button>
+                <button type="submit" disabled={paiementSubmitting}
+                  className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 flex items-center justify-center gap-2 disabled:opacity-60">
+                  {paiementSubmitting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+                  Confirmer
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

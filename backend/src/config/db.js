@@ -167,6 +167,7 @@ pool.getConnection()
                 ['AJUSTER_DEMANDE_CGMP', 'Modifier les quantités ou montants des demandes validées'],
                 ['GERER_BUDGETS', 'Créer, allouer et modifier des lignes budgétaires'],
                 ['VOIR_BUDGETS', "Consulter l'état des budgets disponibles"],
+                ['GERER_PARAMETRES_SEUILS', 'Gérer les seuils de passation et les enveloppes budgétaires'],
                 ['VALIDER_BUDGET_DEMANDE', 'Valider ou rejeter les demandes par rapport au budget'],
                 ['VOIR_MARCHES', "Suivre l'état d'avancement des marchés publics"],
                 ['GERER_MARCHES', 'Créer un marché à partir de demandes et le configurer'],
@@ -214,7 +215,8 @@ pool.getConnection()
                 'Chef_institution': [
                     'CREER_DEMANDE', 'VOIR_MES_DEMANDES', 'MODIFIER_DEMANDE', 'SUPPRIMER_DEMANDE',
                     'VOIR_STATISTIQUES', 'VALIDER_CONTRAT', 'VOIR_TOUTES_DEMANDES',
-                    'DEMANDE_CREATE', 'DEMANDE_READ_OWN', 'DEMANDE_READ_ALL', 'DEMANDE_UPDATE', 'DEMANDE_DELETE'
+                    'DEMANDE_CREATE', 'DEMANDE_READ_OWN', 'DEMANDE_READ_ALL', 'DEMANDE_UPDATE', 'DEMANDE_DELETE',
+                    'VOIR_MARCHES', 'VOIR_RECEPTIONS', 'EFFECTUER_PAIEMENT', 'VOIR_PAIEMENTS'
                 ],
                 'cgmp': [
                     'VOIR_TOUTES_DEMANDES', 'AJUSTER_DEMANDE_CGMP',

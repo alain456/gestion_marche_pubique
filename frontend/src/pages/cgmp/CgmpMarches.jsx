@@ -867,7 +867,7 @@ const CgmpMarches = () => {
                   onClick={() => setShowForm(false)}
                   className="px-6 py-3 border border-gray-200 text-gray-600 rounded-2xl hover:bg-gray-50 transition-all font-semibold text-sm"
                 >
-                  Annuler
+                Fermer
                 </button>
                 <div className="flex gap-3 flex-wrap">
                   {/* Bouton Brouillon */}
@@ -877,7 +877,7 @@ const CgmpMarches = () => {
                     className="px-7 py-3 bg-gray-100 text-gray-700 border border-gray-200 rounded-2xl hover:bg-gray-200 transition-all font-semibold text-sm flex items-center gap-2"
                   >
                     <Save className="h-4 w-4" />
-                    Enregistrer  le marché
+                    Cloturer l'analyse
                   </button>
                   {/* Bouton Publier */}
                   {/* <button 

@@ -46,7 +46,8 @@ const DemandeurDemandes = () => {
 
   const [form, setForm] = useState({
     typeMarche: '',
-    idBudget: ''
+    idBudget: '',
+    idService: user?.idService || ''
   });
 
   const loadDemandes = async () => {
@@ -86,12 +87,15 @@ const DemandeurDemandes = () => {
       setLoading(true);
       await Promise.all([loadDemandes(), loadArticles(), loadBudgets()]);
       setLoading(false);
+      if (user?.idService) {
+        setForm(prev => ({ ...prev, idService: user.idService }));
+      }
     };
     init();
   }, [user]);
 
   const resetForm = () => {
-    setForm({ typeMarche: '', idBudget: '' });
+    setForm({ typeMarche: '', idBudget: '', idService: user?.idService || '' });
     setSelectedItems([]);
     setCurrentItem({ idArticle: '', quantite: '', description: '', montant: '' });
     setEditingId(null);
@@ -118,7 +122,9 @@ const DemandeurDemandes = () => {
     setError('');
     setMessage('');
 
-    if (!form.idService && !['RAF', 'ADMIN', 'CHEF_INSTITUTION', 'CGMP', 'RECEPTIONISTE', 'RECEPTIONNISTE'].includes(userRole)) {
+    const finalIdService = form.idService || user?.idService || null;
+
+    if (!finalIdService && !['RAF', 'ADMIN', 'CHEF_INSTITUTION', 'CGMP', 'RECEPTIONISTE', 'RECEPTIONNISTE'].includes(userRole)) {
       setError('Service Demandeur requis.');
       return;
     }
@@ -145,7 +151,7 @@ const DemandeurDemandes = () => {
     try {
       const statut = isDraft ? 'Brouillon' : (isChef ? 'En attente' : 'Soumis');
       const payload = {
-        idService: form.idService ? parseInt(form.idService) : null,
+        idService: finalIdService ? parseInt(finalIdService) : null,
         typeMarche: form.typeMarche,
         statut: statut,
         articles: finalItems,
