@@ -267,7 +267,7 @@ const AdminSeuils = () => {
                 type="text"
                 value={rule.label}
                 onChange={(e) => handleSeuilChange(rule.id, 'label', e.target.value)}
-                placeholder="Libellé seuil"
+                placeholder="Justification (Motif)"
                 className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm"
               />
               {canManage && (

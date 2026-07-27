@@ -258,7 +258,8 @@ const CgmpMarches = () => {
     setForm((prev) => ({
       ...prev,
       modePassation: matchingRule.modePassation || '',
-      seuilReglementaireApplique: matchingRule.label || ''
+      seuilReglementaireApplique: matchingRule.label || '',
+      justificationChoix: matchingRule.label || ''
     }));
   }, [matchingRule]);
 
@@ -302,7 +303,8 @@ const CgmpMarches = () => {
       } else {
         setUpdateForm((prev) => ({
           ...prev,
-          modePassation: updateMatchingRule.modePassation || ''
+          modePassation: updateMatchingRule.modePassation || '',
+          justificationChoix: updateMatchingRule.label || ''
         }));
       }
     }
@@ -748,7 +750,7 @@ const CgmpMarches = () => {
               </div>
             </div>
 
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
                 Date Limite de Dépôt des Offres
                 <span className="ml-1 text-red-500">*</span>
@@ -765,7 +767,7 @@ const CgmpMarches = () => {
                 />
               </div>
               <p className="text-[11px] text-amber-600 ml-1">Date et heure limite auxquelles les soumissionnaires doivent déposer leurs offres.</p>
-            </div>
+            </div> */}
 
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Date de Clôture du Marché</label>
@@ -813,35 +815,15 @@ const CgmpMarches = () => {
             </div>
 
             <div className="md:col-span-2 lg:col-span-3 space-y-2">
-              <label className="text-xs font-bold uppercase tracking-wider ml-1 flex items-center gap-2">
-                <span className={isExceptionalMode ? 'text-red-600' : 'text-gray-400'}>
-                  Justification du choix du mode de passation
-                </span>
-                {isExceptionalMode && (
-                  <span className="px-2 py-0.5 bg-red-100 text-red-700 text-[10px] font-black rounded-full uppercase tracking-widest animate-pulse">
-                    OBLIGATOIRE — Mode Exceptionnel
-                  </span>
-                )}
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
+                Justification du choix du mode de passation
               </label>
-              {isExceptionalMode && (
-                <p className="text-[11px] text-red-600 ml-1 font-medium">
-                  ⚠️ Le mode &ldquo;{form.modePassation}&rdquo; est exceptionnel. Vous devez obligatoirement justifier ce choix pour des raisons d&apos;audit et de conformité réglementaire.
-                </p>
-              )}
               <textarea
                 rows="3"
-                required={isExceptionalMode}
+                readOnly
                 value={form.justificationChoix}
-                onChange={(e) => setForm({...form, justificationChoix: e.target.value})}
-                className={`w-full p-4 rounded-2xl focus:ring-2 outline-none transition-all text-sm ${
-                  isExceptionalMode
-                    ? 'bg-red-50 border-2 border-red-300 focus:ring-red-300/40 placeholder-red-400'
-                    : 'bg-gray-50 border border-gray-100 focus:ring-primary/20'
-                }`}
-                placeholder={isExceptionalMode
-                  ? 'Justification obligatoire : expliquez les raisons ayant conduit au choix de ce mode exceptionnel...'
-                  : 'Expliquez pourquoi ce mode de passation a été retenu...'
-                }
+                className="w-full p-4 rounded-2xl bg-gray-100 border border-gray-100 outline-none transition-all text-sm cursor-not-allowed font-semibold text-gray-700"
+                placeholder="La justification apparaîtra automatiquement ici..."
               ></textarea>
             </div>
 
@@ -877,7 +859,7 @@ const CgmpMarches = () => {
                     className="px-7 py-3 bg-gray-100 text-gray-700 border border-gray-200 rounded-2xl hover:bg-gray-200 transition-all font-semibold text-sm flex items-center gap-2"
                   >
                     <Save className="h-4 w-4" />
-                    Cloturer l'analyse
+                    Clôturer l&apos;analyse
                   </button>
                   {/* Bouton Publier */}
                   {/* <button 
@@ -1045,9 +1027,9 @@ const CgmpMarches = () => {
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Justification du choix</label>
                     <textarea
                       rows="2"
+                      readOnly
                       value={updateForm.justificationChoix || ''}
-                      onChange={(e) => setUpdateForm({...updateForm, justificationChoix: e.target.value})}
-                      className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
+                      className="w-full p-4 bg-gray-100 border border-gray-100 rounded-2xl outline-none transition-all text-sm cursor-not-allowed font-semibold text-gray-700"
                     ></textarea>
                   </div>
                 </div>
@@ -1251,10 +1233,10 @@ const CgmpMarches = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                    {(updateForm.statut === 'en attente' || updateForm.statut === 'publie') && (
+                    {/* {(updateForm.statut === 'en attente' || updateForm.statut === 'publie') && (
                       <div className="space-y-2 md:col-span-2">
                         <label className="text-xs font-bold text-blue-600 uppercase tracking-wider ml-1">
-                          Date Limite de Dépôt des Offres
+                          Date Limite de Dépôt de Offres
                         </label>
                         <div className="relative animate-in fade-in zoom-in-95 duration-200">
                           <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-400" />
@@ -1270,7 +1252,7 @@ const CgmpMarches = () => {
                           Une fois cette date passée, ce marché ne sera plus disponible pour de nouvelles soumissions.
                         </p>
                       </div>
-                    )}
+                    )} */}
 
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Date de Clôture</label>
