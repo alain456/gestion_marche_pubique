@@ -22,6 +22,10 @@ exports.createMarche = async (req, res) => {
         dateLimite
     } = req.body;
 
+    let finalCommentaire = commentaire;
+    if (req.file) {
+        finalCommentaire = req.file.filename; // On enregistre juste le nom du fichier (ou un chemin relatif)
+    }
 
     // Validation du statut si fourni
     const statutFinal = statut ? statut.toLowerCase() : 'en attente';
@@ -50,7 +54,7 @@ exports.createMarche = async (req, res) => {
             statut: statutFinal,
             dateCloture: dateCloture || null,
             cloturePar: cloturePar || null,
-            commentaire: commentaire || null,
+            commentaire: finalCommentaire || null,
             dateLimite: formattedDateLimite
         };
 
@@ -117,6 +121,10 @@ exports.getMarcheById = async (req, res) => {
 exports.updateMarche = async (req, res) => {
     const { id } = req.params;
     const data = req.body;
+
+    if (req.file) {
+        data.commentaire = req.file.filename;
+    }
 
     // Validation du statut si présent
     if (data.statut && !STATUTS_VALIDES.includes(data.statut.toLowerCase())) {

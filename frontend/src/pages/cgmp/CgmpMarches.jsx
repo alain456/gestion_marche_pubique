@@ -226,7 +226,6 @@ const CgmpMarches = () => {
       montantEstime: group.totalMontant || '' 
     }));
     setShowForm(true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const selectedTypeMarche = normalizeTypeMarche(selectedDemand?.typeMarche);
@@ -441,7 +440,21 @@ const CgmpMarches = () => {
 
     try {
       const payload = { ...form, statut: action };
-      await api.post('/marches', payload);
+      
+      let dataToSend = payload;
+      let config = {};
+      
+      if (payload.fichierNotes) {
+        dataToSend = new FormData();
+        Object.keys(payload).forEach(key => {
+          if (payload[key] !== null && payload[key] !== undefined) {
+             dataToSend.append(key, payload[key]);
+          }
+        });
+        config = { headers: { 'Content-Type': 'multipart/form-data' } };
+      }
+
+      await api.post('/marches', dataToSend, config);
       const msg = action === 'publie'
         ? 'Marché publié avec succès ! Les soumissionnaires peuvent maintenant déposer leurs offres.'
         : 'Marché enregistré en brouillon. Vous pourrez le publier ultérieurement.';
@@ -528,7 +541,21 @@ const CgmpMarches = () => {
 
     try {
       const payload = formData || updateForm;
-      await api.put(`/marches/${selectedMarche.idMarche}`, payload);
+      
+      let dataToSend = payload;
+      let config = {};
+      
+      if (payload.fichierNotes) {
+        dataToSend = new FormData();
+        Object.keys(payload).forEach(key => {
+          if (payload[key] !== null && payload[key] !== undefined) {
+             dataToSend.append(key, payload[key]);
+          }
+        });
+        config = { headers: { 'Content-Type': 'multipart/form-data' } };
+      }
+
+      await api.put(`/marches/${selectedMarche.idMarche}`, dataToSend, config);
       setMessage('Statut du marché mis à jour avec succès.');
       // setShowDetails(false); // Laissé ouvert selon la demande de l'utilisateur
       fetchData();
@@ -650,237 +677,202 @@ const CgmpMarches = () => {
 
       {/* Formulaire de création de marché */}
       {showForm && (
-        <section className="bg-surface rounded-3xl border border-gray-100 shadow-xl overflow-hidden animate-in zoom-in-95 duration-300">
-          <div className="p-6 bg-primary text-white flex justify-between items-center">
-            <div>
-              <h2 className="text-xl font-bold">Nouveau marché</h2>
-              <p className="text-blue-100 text-sm mt-1">
-                Demande #{selectedDemand?.idDemande} — {(selectedDemand?.roleDemandeur?.toLowerCase() === 'receptioniste' || selectedDemand?.roleDemandeur?.toLowerCase() === 'receptionniste') ? 'Réceptionniste' : (selectedDemand?.nomService || selectedDemand?.roleDemandeur || 'Direction Générale')} 
-                {selectedDemand?.nomDemandeur && ` (${selectedDemand.nomDemandeur})`}
-              </p>
-              <div className="mt-2 text-[10px] text-blue-100 uppercase font-bold">
-                ID(s) Demande: {form.idDemande}
-              </div>
-
-            </div>
-            <button onClick={() => setShowForm(false)} className="hover:bg-surface/10 p-2 rounded-full transition-colors">
-              <XCircle className="h-6 w-6" />
-            </button>
-          </div>
-
-
-          <form onSubmit={(e) => e.preventDefault()} className="p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Reference du marché</label>
-              <div className="relative">
-                <LayoutGrid className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  required
-                  readOnly
-                  value={form.numeroBudget}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-100 border border-gray-100 rounded-2xl outline-none transition-all font-bold text-primary cursor-not-allowed"
-                  placeholder="Référence budget"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Montant Estimé (FBU)</label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="number"
-                  required
-                  value={form.montantEstime}
-                  onChange={(e) => setForm({...form, montantEstime: e.target.value})}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all font-semibold"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Mode de Passation</label>
-              <div className="relative">
-                <Gavel className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  readOnly
-                  value={form.modePassation || ''}
-                  placeholder="Sélectionner..."
-                  className="w-full pl-10 pr-4 py-3 bg-gray-100 border border-gray-100 rounded-2xl outline-none transition-all cursor-not-allowed font-semibold text-gray-700"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Seuil Règlementaire Appliqué</label>
-              <div className="relative">
-                <Info className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  required
-                  value={form.seuilReglementaireApplique}
-                  onChange={(e) => setForm({...form, seuilReglementaireApplique: e.target.value})}
-                  readOnly
-                  className="w-full pl-10 pr-4 py-3 bg-gray-100 border border-gray-100 rounded-2xl outline-none transition-all cursor-not-allowed"
-                  placeholder="Calculé automatiquement par les règles dynamiques"
-                />
-              </div>
-              <p className="text-[11px] text-gray-500">
-                Type: <span className="font-semibold">{selectedTypeMarche || '—'}</span> ·
-                Montant: <span className="font-semibold"> {currentMontant ? currentMontant.toLocaleString() : '0'} FBU</span>
-              </p>
-              {!matchingRule && (
-                <p className="text-[11px] text-red-600 font-semibold">
-                  Aucune règle active pour ce type/montant. Configurez les seuils CGMP.
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="bg-surface rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="p-6 bg-primary text-white flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-bold">Nouveau marché</h2>
+                <p className="text-blue-100 text-sm mt-1">
+                  Demande #{selectedDemand?.idDemande} — {(selectedDemand?.roleDemandeur?.toLowerCase() === 'receptioniste' || selectedDemand?.roleDemandeur?.toLowerCase() === 'receptionniste') ? 'Réceptionniste' : (selectedDemand?.nomService || selectedDemand?.roleDemandeur || 'Direction Générale')} 
+                  {selectedDemand?.nomDemandeur && ` (${selectedDemand.nomDemandeur})`}
                 </p>
-              )}
-            </div>
+                <div className="mt-2 text-[10px] text-blue-100 uppercase font-bold">
+                  ID(s) Demande: {form.idDemande}
+                </div>
 
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Date de creation</label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="date"
-                  value={form.dateSelection}
-                  onChange={(e) => setForm({...form, dateSelection: e.target.value})}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                />
               </div>
-            </div>
-
-            {/* <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
-                Date Limite de Dépôt des Offres
-                <span className="ml-1 text-red-500">*</span>
-                <span className="ml-2 text-[10px] text-amber-600 font-semibold normal-case">Requise pour publication</span>
-              </label>
-              <div className="relative">
-                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-amber-500" />
-                <input
-                  type="datetime-local"
-                  value={form.dateLimite}
-                  min={form.dateSelection ? `${form.dateSelection}T00:00` : ''}
-                  onChange={(e) => setForm({...form, dateLimite: e.target.value})}
-                  className="w-full pl-10 pr-4 py-3 bg-amber-50 border border-amber-200 rounded-2xl focus:ring-2 focus:ring-amber-300/40 outline-none transition-all font-medium"
-                />
-              </div>
-              <p className="text-[11px] text-amber-600 ml-1">Date et heure limite auxquelles les soumissionnaires doivent déposer leurs offres.</p>
-            </div> */}
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Date de Clôture du Marché</label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="date"
-                  value={form.dateCloture}
-                  min={form.dateLimite ? form.dateLimite.split('T')[0] : (form.dateSelection || '')}
-                  onChange={(e) => setForm({...form, dateCloture: e.target.value})}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                />
-              </div>
-              <p className="text-[11px] text-gray-400 ml-1">Date à laquelle le marché sera clôturé (après attribution).</p>
-            </div>
-
-            {/* <div className="space-y-2">
-              <label className="text-xs font-black text-gray-500 uppercase tracking-widest ml-1">Responsable de Publication</label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Nom du validateur"
-                  value={form.validateur}
-                  onChange={(e) => setForm({...form, validateur: e.target.value})}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                />
-              </div>
-            </div> */}
-
-           
-
-            <div className="space-y-2">
-              <label className="text-xs font-black text-gray-500 uppercase tracking-widest ml-1">Responsable de Clôture</label>
-              <div className="relative">
-                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Nom de la personne"
-                  value={form.cloturePar}
-                  onChange={(e) => setForm({...form, cloturePar: e.target.value})}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                />
-              </div>
-            </div>
-
-            <div className="md:col-span-2 lg:col-span-3 space-y-2">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
-                Justification du choix du mode de passation
-              </label>
-              <textarea
-                rows="3"
-                readOnly
-                value={form.justificationChoix}
-                className="w-full p-4 rounded-2xl bg-gray-100 border border-gray-100 outline-none transition-all text-sm cursor-not-allowed font-semibold text-gray-700"
-                placeholder="La justification apparaîtra automatiquement ici..."
-              ></textarea>
-            </div>
-
-            <div className="md:col-span-2 lg:col-span-3 space-y-2">
-              <label className="text-xs font-black text-gray-500 uppercase tracking-widest ml-1">Notes Additionnelles</label>
-              <div className="relative">
-                <MessageSquare className="absolute left-4 top-4 h-4 w-4 text-gray-400" />
-                <textarea
-                  rows="2"
-                  value={form.commentaire}
-                  onChange={(e) => setForm({...form, commentaire: e.target.value})}
-                  className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
-                  placeholder="Informations complémentaires..."
-                ></textarea>
-              </div>
+              <button onClick={() => setShowForm(false)} className="hover:bg-surface/10 p-2 rounded-full transition-colors">
+                <XCircle className="h-6 w-6" />
+              </button>
             </div>
 
 
-            <div className="md:col-span-2 lg:col-span-3">
-              <div className="border-t border-gray-100 pt-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <form onSubmit={(e) => e.preventDefault()} className="overflow-y-auto max-h-[80vh] flex flex-col bg-white">
+              <div className="p-8 space-y-8">
+                {/* Section Informations Générales */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-black text-gray-800 uppercase tracking-widest border-b border-gray-100 pb-2">Informations Générales</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Reference du marché</label>
+                      <div className="relative">
+                        <LayoutGrid className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                          type="text"
+                          required
+                          readOnly
+                          value={form.numeroBudget}
+                          className="w-full pl-10 pr-4 py-3 bg-gray-100 border border-gray-100 rounded-2xl outline-none transition-all font-bold text-primary cursor-not-allowed"
+                          placeholder="Référence budget"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Montant Estimé (FBU)</label>
+                      <div className="relative">
+                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                          type="number"
+                          required
+                          readOnly
+                          value={form.montantEstime}
+                          className="w-full pl-10 pr-4 py-3 bg-gray-100 border border-gray-100 rounded-2xl outline-none transition-all font-bold text-primary cursor-not-allowed"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section Passation & Règlementation */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-black text-gray-800 uppercase tracking-widest border-b border-gray-100 pb-2">Passation & Règlementation</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Mode de Passation</label>
+                      <div className="relative">
+                        <Gavel className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                          type="text"
+                          readOnly
+                          value={form.modePassation || ''}
+                          placeholder="Sélectionner..."
+                          className="w-full pl-10 pr-4 py-3 bg-gray-100 border border-gray-100 rounded-2xl outline-none transition-all cursor-not-allowed font-semibold text-gray-700"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Seuil Règlementaire Appliqué</label>
+                      <div className="relative">
+                        <Info className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                          required
+                          value={form.seuilReglementaireApplique}
+                          onChange={(e) => setForm({...form, seuilReglementaireApplique: e.target.value})}
+                          readOnly
+                          className="w-full pl-10 pr-4 py-3 bg-gray-100 border border-gray-100 rounded-2xl outline-none transition-all cursor-not-allowed"
+                          placeholder="Calculé automatiquement par les règles dynamiques"
+                        />
+                      </div>
+                      <p className="text-[11px] text-gray-500">
+                        Type: <span className="font-semibold">{selectedTypeMarche || '—'}</span> ·
+                        Montant: <span className="font-semibold"> {currentMontant ? currentMontant.toLocaleString() : '0'} FBU</span>
+                      </p>
+                      {!matchingRule && (
+                        <p className="text-[11px] text-red-600 font-semibold">
+                          Aucune règle active pour ce type/montant. Configurez les seuils CGMP.
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="md:col-span-2 space-y-2">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
+                        Justification du choix du mode de passation
+                      </label>
+                      <textarea
+                        rows="2"
+                        readOnly
+                        value={form.justificationChoix}
+                        className="w-full p-4 rounded-2xl bg-gray-100 border border-gray-100 outline-none transition-all text-sm cursor-not-allowed font-semibold text-gray-700"
+                        placeholder="La justification apparaîtra automatiquement ici..."
+                      ></textarea>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section Dates & Pièces Jointes */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-black text-gray-800 uppercase tracking-widest border-b border-gray-100 pb-2">Dates & Documents</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Date de creation</label>
+                      <div className="relative">
+                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                          type="date"
+                          value={form.dateSelection}
+                          onChange={(e) => setForm({...form, dateSelection: e.target.value})}
+                          className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Date de Clôture du Marché</label>
+                      <div className="relative">
+                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                          type="date"
+                          value={form.dateCloture}
+                          min={form.dateLimite ? form.dateLimite.split('T')[0] : (form.dateSelection || '')}
+                          onChange={(e) => setForm({...form, dateCloture: e.target.value})}
+                          className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                        />
+                      </div>
+                      <p className="text-[11px] text-gray-400 ml-1">Date à laquelle le marché sera clôturé (après attribution).</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-black text-gray-500 uppercase tracking-widest ml-1">Responsable de Clôture</label>
+                      <div className="relative">
+                        <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                          type="text"
+                          placeholder="Nom de la personne"
+                          value={form.cloturePar}
+                          onChange={(e) => setForm({...form, cloturePar: e.target.value})}
+                          className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-black text-gray-500 uppercase tracking-widest ml-1">Document(s) Additionnel(s)</label>
+                      <div className="relative">
+                        <input
+                          type="file"
+                          onChange={(e) => setForm({...form, fichierNotes: e.target.files[0]})}
+                          className="w-full pl-4 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-8 border-t border-gray-100 bg-gray-50/50 mt-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <button 
                   type="button" 
                   onClick={() => setShowForm(false)}
-                  className="px-6 py-3 border border-gray-200 text-gray-600 rounded-2xl hover:bg-gray-50 transition-all font-semibold text-sm"
+                  className="px-6 py-3 border border-gray-200 bg-white text-gray-600 rounded-2xl hover:bg-gray-50 transition-all font-semibold text-sm"
                 >
-                Fermer
+                  Fermer
                 </button>
                 <div className="flex gap-3 flex-wrap">
-                  {/* Bouton Brouillon */}
                   <button 
                     type="button"
                     onClick={(e) => handleSubmit(e, 'en attente')}
-                    className="px-7 py-3 bg-gray-100 text-gray-700 border border-gray-200 rounded-2xl hover:bg-gray-200 transition-all font-semibold text-sm flex items-center gap-2"
+                    className="px-7 py-3 bg-primary text-white border border-primary rounded-2xl hover:bg-blue-800 shadow-lg shadow-primary/20 transition-all font-bold text-sm flex items-center gap-2"
                   >
                     <Save className="h-4 w-4" />
-                    Clôturer l&apos;analyse
+                    Enregistrer le Marché
                   </button>
-                  {/* Bouton Publier */}
-                  {/* <button 
-                    type="button"
-                    onClick={(e) => handleSubmit(e, 'publie')}
-                    className="px-8 py-3 bg-primary text-white rounded-2xl hover:bg-blue-800 transition-all font-bold shadow-lg shadow-primary/20 flex items-center gap-2 text-sm"
-                  >
-                    <PlusCircle className="h-4 w-4" />
-                    Publier le Marché
-                  </button> */}
                 </div>
               </div>
-              {!form.dateLimite && (
-                <p className="text-[11px] text-amber-600 mt-3 flex items-center gap-1">
-                  <Info className="h-3 w-3" />
-                  Sans date limite de dépôt, vous ne pouvez qu&apos;enregistrer en brouillon. Ajoutez-la pour pouvoir publier.
-                </p>
-              )}
-            </div>
-          </form>
-        </section>
+            </form>
+          </div>
+        </div>
       )}
 
       {/* Modal de gestion du marché */}
@@ -1282,16 +1274,13 @@ const CgmpMarches = () => {
                     </div>
 
                     <div className="space-y-2 md:col-span-2">
-                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Commentaires / Rapport Final</label>
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Document(s) Additionnel(s)</label>
                       <div className="relative">
-                        <MessageSquare className="absolute left-4 top-4 h-4 w-4 text-gray-400" />
-                        <textarea
-                          rows="3"
-                          value={updateForm.commentaire}
-                          onChange={(e) => setUpdateForm({...updateForm, commentaire: e.target.value})}
-                          className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
-                          placeholder="Informations sur la fin du marché..."
-                        ></textarea>
+                        <input
+                          type="file"
+                          onChange={(e) => setUpdateForm({...updateForm, fichierNotes: e.target.files[0]})}
+                          className="w-full pl-4 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                        />
                       </div>
                     </div>
                   </div>
