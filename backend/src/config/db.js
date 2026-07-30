@@ -89,6 +89,14 @@ pool.getConnection()
             // console.log('ℹ️ Colonne numeroBudget déjà existante');
         }
 
+        // Vérifier si la colonne noteAdd existe dans marche, sinon la créer
+        try {
+            await connection.query(`ALTER TABLE marche ADD COLUMN noteAdd TEXT DEFAULT NULL`);
+            console.log('✅ Colonne noteAdd ajoutée à la table marche');
+        } catch (err) {
+            // console.log('ℹ️ Colonne noteAdd déjà existante');
+        }
+
         // Vérifier si la colonne typeInstitution existe dans budget, sinon la créer
         try {
             await connection.query(`ALTER TABLE budget ADD COLUMN typeInstitution VARCHAR(255) DEFAULT NULL`);

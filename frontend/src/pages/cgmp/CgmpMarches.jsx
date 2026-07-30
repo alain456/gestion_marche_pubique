@@ -254,10 +254,13 @@ const CgmpMarches = () => {
       }));
       return;
     }
+    const minFmt = Number(matchingRule.min || 0).toLocaleString();
+    const maxFmt = matchingRule.max ? Number(matchingRule.max).toLocaleString() + ' FBU' : '\u221e';
+    const seuilRef = `Séuil #${matchingRule.id} — ${minFmt} à ${maxFmt} FBU`;
     setForm((prev) => ({
       ...prev,
       modePassation: matchingRule.modePassation || '',
-      seuilReglementaireApplique: matchingRule.label || '',
+      seuilReglementaireApplique: seuilRef,
       justificationChoix: matchingRule.label || ''
     }));
   }, [matchingRule]);
@@ -310,6 +313,36 @@ const CgmpMarches = () => {
   }, [updateMatchingRule, showDetails, updateForm.montantEstime]);
 
 
+
+
+
+  const handleRelancer = async (marche) => {
+    if (!window.confirm(`Relancer le marché #${marche.idMarche} ? Il sera archivé et un nouveau marché sera créé à partir des mêmes demandes.`)) return;
+    try {
+      setError('');
+      const res = await api.post(`/marches/${marche.idMarche}/relancer`);
+      const { marcheRelance } = res.data;
+      // Fermer la modale de détails
+      setShowDetails(false);
+      // Recharger les données pour que les demandes réapparaissent dans la liste
+      await fetchData();
+      // Pré-remplir et ouvrir le formulaire de création
+      const demandIds = marcheRelance.idDemande.toString().split(',').map(id => parseInt(id.trim()));
+      const firstDemand = allDemands.find(d => demandIds.includes(d.idDemande));
+      setSelectedDemand(firstDemand || null);
+      setForm(prev => ({
+        ...prev,
+        idDemande: marcheRelance.idDemande,
+        numeroBudget: marcheRelance.numeroBudget || '',
+        montantEstime: marcheRelance.montantEstime || ''
+      }));
+      setShowForm(true);
+      setMessage(`Marché #${marche.idMarche} suspendu archivé. Remplissez le formulaire pour créer un nouveau marché.`);
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || 'Erreur lors du relance du marché.');
+    }
+  };
 
   const handleStartEditArticles = (demand) => {
     setEditingDemand(demand);
@@ -395,7 +428,7 @@ const CgmpMarches = () => {
       return;
     }
 
-    if (!form.fichierNotes || form.fichierNotes.length === 0) {
+    if (!form.noteAdd || form.noteAdd.length === 0) {
       setError("Les notes additionnelles  sont obligatoires.");
       return;
     }
@@ -449,22 +482,26 @@ const CgmpMarches = () => {
       let dataToSend = payload;
       let config = {};
       
-      if (payload.fichierNotes) {
-        dataToSend = new FormData();
-        Object.keys(payload).forEach(key => {
-          if (payload[key] !== null && payload[key] !== undefined) {
-             if (key === 'fichierNotes') {
-               const files = payload[key];
-               for (let i = 0; i < files.length; i++) {
-                 dataToSend.append('fichierNotes', files[i]);
-               }
-             } else {
-               dataToSend.append(key, payload[key]);
-             }
-          }
-        });
-        config = { headers: { 'Content-Type': 'multipart/form-data' } };
+      // Toujours utiliser FormData pour supporter les fichiers
+      dataToSend = new FormData();
+      const scalarFields = [
+        'idDemande', 'numeroBudget', 'montantEstime', 'modePassation',
+        'justificationChoix', 'seuilReglementaireApplique', 'dateSelection',
+        'validateur', 'statut', 'dateCloture', 'cloturePar', 'commentaire',
+        'dateLimite'
+      ];
+      scalarFields.forEach(key => {
+        if (payload[key] !== null && payload[key] !== undefined && payload[key] !== '') {
+          dataToSend.append(key, payload[key]);
+        }
+      });
+      // Ajouter les fichiers (noteAdd) sous la clé multer 'fichierNotes'
+      if (payload.noteAdd && payload.noteAdd.length > 0) {
+        for (let i = 0; i < payload.noteAdd.length; i++) {
+          dataToSend.append('fichierNotes', payload.noteAdd[i]);
+        }
       }
+      config = { headers: { 'Content-Type': 'multipart/form-data' } };
 
       await api.post('/marches', dataToSend, config);
       const msg = action === 'publie'
@@ -557,22 +594,26 @@ const CgmpMarches = () => {
       let dataToSend = payload;
       let config = {};
       
-      if (payload.fichierNotes) {
-        dataToSend = new FormData();
-        Object.keys(payload).forEach(key => {
-          if (payload[key] !== null && payload[key] !== undefined) {
-             if (key === 'fichierNotes') {
-               const files = payload[key];
-               for (let i = 0; i < files.length; i++) {
-                 dataToSend.append('fichierNotes', files[i]);
-               }
-             } else {
-               dataToSend.append(key, payload[key]);
-             }
-          }
-        });
-        config = { headers: { 'Content-Type': 'multipart/form-data' } };
+      // Toujours utiliser FormData pour supporter les fichiers
+      dataToSend = new FormData();
+      const scalarFieldsUpd = [
+        'idDemande', 'numeroBudget', 'montantEstime', 'modePassation',
+        'justificationChoix', 'seuilReglementaireApplique', 'dateSelection',
+        'validateur', 'statut', 'dateCloture', 'cloturePar', 'commentaire',
+        'dateLimite'
+      ];
+      scalarFieldsUpd.forEach(key => {
+        if (payload[key] !== null && payload[key] !== undefined && payload[key] !== '') {
+          dataToSend.append(key, payload[key]);
+        }
+      });
+      // Ajouter les fichiers (noteAdd) sous la clé multer 'fichierNotes'
+      if (payload.noteAdd && payload.noteAdd.length > 0) {
+        for (let i = 0; i < payload.noteAdd.length; i++) {
+          dataToSend.append('fichierNotes', payload.noteAdd[i]);
+        }
       }
+      config = { headers: { 'Content-Type': 'multipart/form-data' } };
 
       await api.put(`/marches/${selectedMarche.idMarche}`, dataToSend, config);
       setMessage('Statut du marché mis à jour avec succès.');
@@ -863,7 +904,7 @@ const CgmpMarches = () => {
                           type="file"
                           multiple
                           required
-                          onChange={(e) => setForm({...form, fichierNotes: e.target.files})}
+                          onChange={(e) => setForm({...form, noteAdd: e.target.files})}
                           className="w-full pl-4 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
                         />
                       </div>
@@ -1295,12 +1336,12 @@ const CgmpMarches = () => {
                     </div>
 
                     <div className="space-y-2 md:col-span-2">
-                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Document(s) Additionnel(s)</label>
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Note Additionnelle</label>
                       <div className="relative">
                         <input
                           type="file"
                           multiple
-                          onChange={(e) => setUpdateForm({...updateForm, fichierNotes: e.target.files})}
+                          onChange={(e) => setUpdateForm({...updateForm, noteAdd: e.target.files})}
                           className="w-full pl-4 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
                         />
                       </div>
@@ -1367,11 +1408,20 @@ const CgmpMarches = () => {
                             Attribuer
                           </button>
                         )}
-                        {['attribution', 'cloture', 'suspendu'].includes(currentStatus) && (
+                        {['attribution', 'cloture'].includes(currentStatus) && (
                           <div className="px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl flex items-center gap-2 mr-2">
                             <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Statut actuel:</span>
                             <span className="text-sm font-black text-gray-700 capitalize">{currentStatus}</span>
                           </div>
+                        )}
+                        {currentStatus === 'suspendu' && (
+                          <button
+                            type="button"
+                            onClick={() => handleRelancer(selectedMarche)}
+                            className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl transition-all font-bold shadow-md shadow-amber-200 flex items-center gap-2"
+                          >
+                            🔄 Relancer
+                          </button>
                         )}
                       </div>
                     </div>

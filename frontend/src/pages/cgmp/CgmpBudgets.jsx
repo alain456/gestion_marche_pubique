@@ -18,6 +18,7 @@ import { Link } from 'react-router-dom';
 const CgmpBudgets = () => {
   const [budgets, setBudgets] = useState([]);
   const [institutions, setInstitutions] = useState([]);
+  const [typesMarche, setTypesMarche] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
@@ -62,11 +63,13 @@ const CgmpBudgets = () => {
       try {
         const res = await api.get('/parametres');
         const insts = res.data.filter(p => p.typeParam === 'TYPE_INSTITUTION');
+        const types = res.data.filter(p => p.typeParam === 'TYPE_MARCHE');
         setInstitutions(insts);
+        setTypesMarche(types);
         if (insts.length > 0) {
           setForm(prev => {
             if (!prev.typeInstitution) {
-              return { ...prev, typeInstitution: insts[0].valeur };
+              return { ...prev, typeInstitution: insts[0].valeur, typeBudget: prev.typeBudget || (types[0]?.valeur || '') };
             }
             return prev;
           });
@@ -103,7 +106,7 @@ const CgmpBudgets = () => {
   const resetForm = () => {
     setForm({ 
       numeroBudget: '', 
-      typeBudget: 'fourniture', 
+      typeBudget: typesMarche.length > 0 ? typesMarche[0].valeur : '', 
       exerciceBudgetaire: new Date().getFullYear(), 
       montantEstime: '', 
       sourceFinancier: 'Etat',
@@ -245,9 +248,10 @@ const CgmpBudgets = () => {
                 value={form.typeBudget}
                 onChange={(e) => setForm({...form, typeBudget: e.target.value})}
               >
-                <option value="fourniture">Fourniture</option>
-                <option value="travaux">Travaux</option>
-                <option value="service">Service</option>
+                <option value="">-- Sélectionner un type --</option>
+                {typesMarche.map(t => (
+                  <option key={t.idParam} value={t.valeur}>{t.valeur}</option>
+                ))}
               </select>
             </div>
             <div className="space-y-2">

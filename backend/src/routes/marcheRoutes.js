@@ -13,6 +13,7 @@ router.get('/:id', requirePermission(['VOIR_MARCHES', 'GERER_MARCHES']), marcheC
 router.put('/:id', requirePermission('GERER_MARCHES'), upload.array('fichierNotes', 10), marcheController.updateMarche);
 router.put('/:id/criteres', requirePermission('GERER_MARCHES'), marcheController.updateCriteres);
 router.post('/:id/rank', requirePermission('GERER_MARCHES'), marcheController.rankSoumissions);
+router.post('/:id/relancer', requirePermission('GERER_MARCHES'), marcheController.relancerMarche);
 router.delete('/:id', requirePermission('GERER_MARCHES'), marcheController.deleteMarche);
 
 module.exports = router;

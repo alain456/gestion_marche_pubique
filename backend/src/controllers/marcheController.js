@@ -2,7 +2,7 @@ const Marche = require('../models/marcheModel');
 const Demande = require('../models/demandeModel');
 
 // Liste des statuts autorisés
-const STATUTS_VALIDES = ['brouillon', 'en attente', 'publie', 'attribution', 'suspendu', 'cloture'];
+const STATUTS_VALIDES = ['brouillon', 'en attente', 'publie', 'attribution', 'suspendu', 'cloture', 'annule'];
 
 // Creer un nouveau marché
 exports.createMarche = async (req, res) => {
@@ -23,11 +23,17 @@ exports.createMarche = async (req, res) => {
     } = req.body;
 
     let finalCommentaire = commentaire;
+    let noteAdd = null;
     if (req.files && req.files.length > 0) {
-        finalCommentaire = req.files.map(f => f.filename).join(',');
+        noteAdd = req.files.map(f => f.filename).join(',');
+        console.log('[DEBUG createMarche] req.files:', req.files.map(f => f.filename));
     } else if (req.file) {
-        finalCommentaire = req.file.filename;
+        noteAdd = req.file.filename;
+        console.log('[DEBUG createMarche] req.file:', req.file.filename);
+    } else {
+        console.log('[DEBUG createMarche] Aucun fichier reçu. req.files:', req.files, '| req.file:', req.file);
     }
+    console.log('[DEBUG createMarche] noteAdd final:', noteAdd);
 
     // Validation du statut si fourni
     const statutFinal = statut ? statut.toLowerCase() : 'en attente';
@@ -57,8 +63,10 @@ exports.createMarche = async (req, res) => {
             dateCloture: dateCloture || null,
             cloturePar: cloturePar || null,
             commentaire: finalCommentaire || null,
-            dateLimite: formattedDateLimite
+            dateLimite: formattedDateLimite,
+            noteAdd: noteAdd
         };
+        console.log('[DEBUG createMarche] sanitizedData.noteAdd:', sanitizedData.noteAdd);
 
         const result = await Marche.create(sanitizedData);
         
@@ -125,9 +133,9 @@ exports.updateMarche = async (req, res) => {
     const data = req.body;
 
     if (req.files && req.files.length > 0) {
-        data.commentaire = req.files.map(f => f.filename).join(',');
+        data.noteAdd = req.files.map(f => f.filename).join(',');
     } else if (req.file) {
-        data.commentaire = req.file.filename;
+        data.noteAdd = req.file.filename;
     }
 
     // Validation du statut si présent
@@ -209,13 +217,59 @@ exports.deleteMarche = async (req, res) => {
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: "Marché non trouvé" });
         }
-        res.json({ message: "Marché supprimé avec succès. Les demandes liées sont à nouveau disponibles." });
+        res.json({ message: "March\u00e9 supprim\u00e9 avec succ\u00e8s. Les demandes li\u00e9es sont \u00e0 nouveau disponibles." });
     } catch (error) {
         if (error.code === 'ER_ROW_IS_REFERENCED_2') {
-            return res.status(400).json({ message: "Impossible de supprimer un marché lié à d'autres données." });
+            return res.status(400).json({ message: "Impossible de supprimer un march\u00e9 li\u00e9 \u00e0 d'autres donn\u00e9es." });
         }
         console.error(error);
         res.status(500).json({ message: "Erreur lors de la suppression" });
+    }
+};
+
+// Relancer un marché suspendu — libère les demandes et retourne les données pour recréer un nouveau marché
+exports.relancerMarche = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const marche = await Marche.findById(id);
+        if (!marche) return res.status(404).json({ message: "March\u00e9 non trouv\u00e9" });
+        if (marche.statut !== 'suspendu') {
+            return res.status(400).json({ message: "Seul un march\u00e9 suspendu peut \u00eatre relancer." });
+        }
+
+        // Libérer les demandes liées (retour au statut "Valide")
+        if (marche.idDemande) {
+            const ids = marche.idDemande.toString().split(',');
+            for (const idD of ids) {
+                const trimmedId = idD.trim();
+                if (!trimmedId) continue;
+                await Demande.updateStatut(trimmedId, "Valide", `March\u00e9 #${id} suspendu relancer - demande remise en attente.`);
+                await Demande.addHistory(null, {
+                    idDemande: trimmedId,
+                    action: "Relance du March\u00e9",
+                    nouveauStatut: "Valide",
+                    idUtilisateur: req.user.idUser,
+                    nomUtilisateur: req.user.nom,
+                    roleUtilisateur: req.user.role,
+                    motif: `March\u00e9 #${id} suspendu. La demande est de nouveau disponible pour cr\u00e9er un nouveau march\u00e9.`
+                });
+            }
+        }
+
+        // Marquer le marché suspendu comme "annule" (archivage)
+        await Marche.update(id, { statut: 'annule' });
+
+        res.json({
+            message: "March\u00e9 relancer avec succ\u00e8s. Vous pouvez cr\u00e9er un nouveau march\u00e9.",
+            marcheRelance: {
+                idDemande: marche.idDemande,
+                numeroBudget: marche.numeroBudget,
+                montantEstime: marche.montantEstime
+            }
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Erreur lors du relance du march\u00e9" });
     }
 };
 
