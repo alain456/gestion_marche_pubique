@@ -1311,92 +1311,67 @@ const CgmpMarches = () => {
 
               <div className="flex justify-end gap-4 pt-4 border-t border-gray-50 sticky bottom-0 bg-surface pb-2">
                 {(() => {
-                  const flow = [
-                    { value: 'en attente', label: 'Préparation', prev: null, next: 'publie', color: 'bg-amber-500 hover:bg-amber-600 shadow-amber-200', icon: '🟡' },
-                    { value: 'publie', label: 'Publication', prev: 'en attente', next: 'attribution', color: 'bg-blue-600 hover:bg-blue-700 shadow-blue-200', icon: '🔵' },
-                    { value: 'attribution', label: 'Attribution', prev: 'publie', next: 'cloture', color: 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200', icon: '🟢' },
-                    { value: 'cloture', label: 'Clôture', prev: 'attribution', next: null, color: 'bg-gray-500 hover:bg-gray-600 shadow-gray-200', icon: '⚫' },
-                    { value: 'suspendu', label: 'Suspendu', prev: null, next: 'publie', color: 'bg-red-500 hover:bg-red-600 shadow-red-200', icon: '🔴' },
-                  ];
-                  const current = flow.find(s => s.value === updateForm.statut) || flow[0];
-                  const isLast = !current.next && current.value !== 'publie';
-                  const hasPrev = !!current.prev;
+                  const currentStatus = updateForm.statut || 'en attente';
 
-                  const changeStatus = (newStatus) => {
+                  const changeStatus = async (newStatus) => {
                     if (newStatus === 'publie' && !updateForm.dateLimite) {
                       setError("La Date Limite de Dépôt des Offres est obligatoire avant la publication du marché.");
                       return;
                     }
                     const newForm = { ...updateForm, statut: newStatus };
                     setUpdateForm(newForm);
-                    handleUpdate({ preventDefault: () => {} }, newForm);
+                    await handleUpdate({ preventDefault: () => {} }, newForm);
+                    
+                    if (newStatus === 'attribution') {
+                       setActiveTab('soumissions');
+                    }
                   };
 
                   return (
                     <div className="flex items-center w-full justify-between">
-                      {/* Bouton Retour / Fermer à gauche */}
                       <div className="flex gap-2">
-                        {hasPrev && (
-                          <button
-                            type="button"
-                            onClick={() => changeStatus(current.prev)}
-                            className="px-5 py-2.5 border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 transition-all font-semibold flex items-center gap-2 text-sm"
-                          >
-                            &larr; Retour
-                          </button>
-                        )}
-                        {!hasPrev && (
-                          <button 
-                            type="button" 
-                            onClick={() => setShowDetails(false)}
-                            className="px-5 py-2.5 border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 transition-all font-semibold text-sm"
-                          >
-                            Fermer
-                          </button>
-                        )}
+                        <button 
+                          type="button" 
+                          onClick={() => setShowDetails(false)}
+                          className="px-5 py-2.5 border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 transition-all font-semibold text-sm"
+                        >
+                          Retour
+                        </button>
                       </div>
 
-                      {/* Actions de changement de statut à droite */}
                       <div className="flex gap-2 items-center">
-                        <div className="px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl flex items-center gap-2 mr-2">
-                          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Statut actuel:</span>
-                          <span className="text-sm font-black text-gray-700">{current.icon} {current.label}</span>
-                        </div>
-
-                        {current.value === 'publie' ? (
-                          <div className="flex bg-gray-100 rounded-xl p-1 gap-1">
-                            <button
-                              type="button"
-                              onClick={() => changeStatus('attribution')}
-                              className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-all font-bold text-sm shadow-sm flex items-center gap-1.5"
-                            >
-                              🟢 Attribuer
-                            </button>
+                        {(currentStatus === 'en attente' || currentStatus === 'brouillon') && (
+                          <>
                             <button
                               type="button"
                               onClick={() => changeStatus('suspendu')}
-                              className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all font-bold text-sm shadow-sm flex items-center gap-1.5"
+                              className="px-6 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl transition-all font-bold shadow-md shadow-red-200 flex items-center gap-2"
                             >
-                              🔴 Suspendre
+                              Suspendre
                             </button>
                             <button
                               type="button"
-                              onClick={() => changeStatus('cloture')}
-                              className="px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded-lg transition-all font-bold text-sm shadow-sm flex items-center gap-1.5"
+                              onClick={() => changeStatus('publie')}
+                              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all font-bold shadow-md shadow-blue-200 flex items-center gap-2"
                             >
-                              ⚫ Clôturer
+                              Publier
                             </button>
+                          </>
+                        )}
+                        {currentStatus === 'publie' && (
+                          <button
+                            type="button"
+                            onClick={() => changeStatus('attribution')}
+                            className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all font-bold shadow-md shadow-emerald-200 flex items-center gap-2"
+                          >
+                            Attribuer
+                          </button>
+                        )}
+                        {['attribution', 'cloture', 'suspendu'].includes(currentStatus) && (
+                          <div className="px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl flex items-center gap-2 mr-2">
+                            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Statut actuel:</span>
+                            <span className="text-sm font-black text-gray-700 capitalize">{currentStatus}</span>
                           </div>
-                        ) : (
-                          !isLast && (
-                            <button
-                              type="button"
-                              onClick={() => changeStatus(current.next)}
-                              className={`px-6 py-2.5 text-white rounded-xl transition-all font-bold shadow-md flex items-center gap-2 ${current.color}`}
-                            >
-                              Passer à l&apos;étape suivante &rarr;
-                            </button>
-                          )
                         )}
                       </div>
                     </div>
