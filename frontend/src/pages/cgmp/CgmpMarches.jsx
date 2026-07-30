@@ -395,6 +395,11 @@ const CgmpMarches = () => {
       return;
     }
 
+    if (!form.fichierNotes || form.fichierNotes.length === 0) {
+      setError("Les notes additionnelles  sont obligatoires.");
+      return;
+    }
+
     // --- Validation : justification obligatoire pour modes exceptionnels ---
     if (isExceptionalMode && !form.justificationChoix?.trim()) {
       setError(`Le mode "${form.modePassation}" est exceptionnel. La justification est obligatoire pour des raisons d'audit.`);
@@ -448,7 +453,14 @@ const CgmpMarches = () => {
         dataToSend = new FormData();
         Object.keys(payload).forEach(key => {
           if (payload[key] !== null && payload[key] !== undefined) {
-             dataToSend.append(key, payload[key]);
+             if (key === 'fichierNotes') {
+               const files = payload[key];
+               for (let i = 0; i < files.length; i++) {
+                 dataToSend.append('fichierNotes', files[i]);
+               }
+             } else {
+               dataToSend.append(key, payload[key]);
+             }
           }
         });
         config = { headers: { 'Content-Type': 'multipart/form-data' } };
@@ -549,7 +561,14 @@ const CgmpMarches = () => {
         dataToSend = new FormData();
         Object.keys(payload).forEach(key => {
           if (payload[key] !== null && payload[key] !== undefined) {
-             dataToSend.append(key, payload[key]);
+             if (key === 'fichierNotes') {
+               const files = payload[key];
+               for (let i = 0; i < files.length; i++) {
+                 dataToSend.append('fichierNotes', files[i]);
+               }
+             } else {
+               dataToSend.append(key, payload[key]);
+             }
           }
         });
         config = { headers: { 'Content-Type': 'multipart/form-data' } };
@@ -838,11 +857,13 @@ const CgmpMarches = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-xs font-black text-gray-500 uppercase tracking-widest ml-1">Document(s) Additionnel(s)</label>
+                      <label className="text-xs font-black text-gray-500 uppercase tracking-widest ml-1">Notes Additionnelles</label>
                       <div className="relative">
                         <input
                           type="file"
-                          onChange={(e) => setForm({...form, fichierNotes: e.target.files[0]})}
+                          multiple
+                          required
+                          onChange={(e) => setForm({...form, fichierNotes: e.target.files})}
                           className="w-full pl-4 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
                         />
                       </div>
@@ -866,7 +887,7 @@ const CgmpMarches = () => {
                     className="px-7 py-3 bg-primary text-white border border-primary rounded-2xl hover:bg-blue-800 shadow-lg shadow-primary/20 transition-all font-bold text-sm flex items-center gap-2"
                   >
                     <Save className="h-4 w-4" />
-                    Enregistrer le Marché
+                      Clôturer l'analyse
                   </button>
                 </div>
               </div>
@@ -1278,7 +1299,8 @@ const CgmpMarches = () => {
                       <div className="relative">
                         <input
                           type="file"
-                          onChange={(e) => setUpdateForm({...updateForm, fichierNotes: e.target.files[0]})}
+                          multiple
+                          onChange={(e) => setUpdateForm({...updateForm, fichierNotes: e.target.files})}
                           className="w-full pl-4 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
                         />
                       </div>

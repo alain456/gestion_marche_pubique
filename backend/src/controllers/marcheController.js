@@ -23,8 +23,10 @@ exports.createMarche = async (req, res) => {
     } = req.body;
 
     let finalCommentaire = commentaire;
-    if (req.file) {
-        finalCommentaire = req.file.filename; // On enregistre juste le nom du fichier (ou un chemin relatif)
+    if (req.files && req.files.length > 0) {
+        finalCommentaire = req.files.map(f => f.filename).join(',');
+    } else if (req.file) {
+        finalCommentaire = req.file.filename;
     }
 
     // Validation du statut si fourni
@@ -122,7 +124,9 @@ exports.updateMarche = async (req, res) => {
     const { id } = req.params;
     const data = req.body;
 
-    if (req.file) {
+    if (req.files && req.files.length > 0) {
+        data.commentaire = req.files.map(f => f.filename).join(',');
+    } else if (req.file) {
         data.commentaire = req.file.filename;
     }
 
