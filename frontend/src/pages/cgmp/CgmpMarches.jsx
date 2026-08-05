@@ -85,6 +85,7 @@ const CgmpMarches = () => {
   const [filterType, setFilterType] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterYear, setFilterYear] = useState('');
+  const [filterViewMode, setFilterViewMode] = useState('actifs');
 
   const fetchSeuils = async () => {
     try {
@@ -161,6 +162,9 @@ const CgmpMarches = () => {
   // Logique de filtrage des marchés existants
   const filteredMarches = useMemo(() => {
     return marches.filter(m => {
+      if (filterViewMode === 'actifs' && m.statut === 'annule') return false;
+      if (filterViewMode === 'archives' && m.statut !== 'annule') return false;
+
       const matchSearch = m.idMarche?.toString().includes(searchQuery) ||
                           m.numeroBudget?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           m.typeMarche?.toLowerCase().includes(searchQuery.toLowerCase());
@@ -170,7 +174,7 @@ const CgmpMarches = () => {
 
       return matchSearch && matchType && matchStatus && matchYear;
     });
-  }, [marches, searchQuery, filterType, filterStatus, filterYear]);
+  }, [marches, searchQuery, filterType, filterStatus, filterYear, filterViewMode]);
 
   const soumissionsAnalysis = useMemo(() => {
     if (!selectedMarche || marcheOffers.length === 0) return null;
@@ -460,11 +464,11 @@ const CgmpMarches = () => {
       }
     }
 
-    // --- Si on publie, la dateLimite est obligatoire ---
-    if (action === 'publie' && !form.dateLimite) {
-      setError("La date limite de dépôt des offres est obligatoire pour publier le marché.");
-      return;
-    }
+    // --- Validation désactivée à la demande de l'utilisateur ---
+    // if (action === 'publie' && !form.dateLimite) {
+    //   setError("La date limite de dépôt des offres est obligatoire pour publier le marché.");
+    //   return;
+    // }
 
     // --- Si dateCloture et dateLimite sont toutes deux définies, dateCloture > dateLimite ---
     if (form.dateLimite && form.dateCloture) {
@@ -673,6 +677,19 @@ const CgmpMarches = () => {
           {/* Filtres Dropdowns */}
           <div className="flex flex-wrap gap-4 items-end">
             <div>
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-2 block">Affichage</label>
+              <select 
+                value={filterViewMode}
+                onChange={(e) => setFilterViewMode(e.target.value)}
+                className="px-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none text-xs font-bold text-gray-700 min-w-[150px] appearance-none"
+              >
+                <option value="actifs">Marchés Actifs</option>
+                <option value="archives">Marchés Relancés</option>
+                <option value="tous">Tous les Marchés</option>
+              </select>
+            </div>
+
+            <div>
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-2 block">Type</label>
               <select 
                 value={filterType}
@@ -715,18 +732,18 @@ const CgmpMarches = () => {
               </select>
             </div>
 
-            {(searchQuery || filterType || filterStatus || filterYear) && (
+            {(searchQuery || filterType || filterStatus || filterYear || filterViewMode !== 'actifs') && (
               <button 
                 onClick={() => {
                   setSearchQuery('');
                   setFilterType('');
                   setFilterStatus('');
                   setFilterYear('');
+                  setFilterViewMode('actifs');
                 }}
-                className="p-4 text-red-500 hover:bg-red-50 rounded-2xl transition-colors font-bold text-xs uppercase"
-                title="Réinitialiser"
+                className="px-4 py-4 bg-gray-100 text-gray-600 rounded-2xl hover:bg-gray-200 transition-all font-bold text-xs"
               >
-                Effacer
+                Réinitialiser
               </button>
             )}
           </div>
@@ -868,34 +885,9 @@ const CgmpMarches = () => {
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Date de Clôture du Marché</label>
-                      <div className="relative">
-                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        <input
-                          type="date"
-                          value={form.dateCloture}
-                          min={form.dateLimite ? form.dateLimite.split('T')[0] : (form.dateSelection || '')}
-                          onChange={(e) => setForm({...form, dateCloture: e.target.value})}
-                          className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                        />
-                      </div>
-                      <p className="text-[11px] text-gray-400 ml-1">Date à laquelle le marché sera clôturé (après attribution).</p>
-                    </div>
+                    
 
-                    <div className="space-y-2">
-                      <label className="text-xs font-black text-gray-500 uppercase tracking-widest ml-1">Responsable de Clôture</label>
-                      <div className="relative">
-                        <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        <input
-                          type="text"
-                          placeholder="Nom de la personne"
-                          value={form.cloturePar}
-                          onChange={(e) => setForm({...form, cloturePar: e.target.value})}
-                          className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                        />
-                      </div>
-                    </div>
+                    
 
                     <div className="space-y-2">
                       <label className="text-xs font-black text-gray-500 uppercase tracking-widest ml-1">Notes Additionnelles</label>
@@ -978,7 +970,7 @@ const CgmpMarches = () => {
                   activeTab === 'soumissions' ? 'text-primary border-b-2 border-primary bg-white' : 'text-gray-400 hover:text-gray-600'
                 }`}
               >
-                🤝 Soumissions ({marcheOffers.length})
+                🤝 Offres ({marcheOffers.length})
               </button>
               <button 
                 onClick={() => setActiveTab('tracking')}
@@ -1064,18 +1056,7 @@ const CgmpMarches = () => {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Validateur / Responsable</label>
-                    <div className="relative">
-                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                      <input
-                        type="text"
-                        value={updateForm.validateur || ''}
-                        onChange={(e) => setUpdateForm({...updateForm, validateur: e.target.value})}
-                        className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                      />
-                    </div>
-                  </div>
+                 
 
                   <div className="md:col-span-2 space-y-2">
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Justification du choix</label>
@@ -1245,7 +1226,7 @@ const CgmpMarches = () => {
                       <div 
                         className="absolute top-1/2 left-0 h-1 bg-primary -translate-y-1/2 z-0 transition-all duration-500"
                         style={{ 
-                          width: updateForm.statut === 'en attente' ? '0%' : 
+                          width: (updateForm.statut === 'en attente' || updateForm.statut === 'annule') ? '0%' : 
                                  updateForm.statut === 'publie' ? '33.33%' : 
                                  updateForm.statut === 'attribution' ? '66.66%' : 
                                  updateForm.statut === 'suspendu' ? '66.66%' : '100%' 
@@ -1259,7 +1240,8 @@ const CgmpMarches = () => {
                         { id: 'cloture', label: 'Clôture', icon: CheckCircle }
                       ].map((step) => {
                         const statusOrder = ['en attente', 'publie', 'attribution', 'cloture'];
-                        const currentIdx = statusOrder.indexOf(updateForm.statut === 'suspendu' ? 'attribution' : updateForm.statut);
+                        const effectiveStatus = updateForm.statut === 'suspendu' ? 'attribution' : updateForm.statut === 'annule' ? 'en attente' : updateForm.statut;
+                        const currentIdx = statusOrder.indexOf(effectiveStatus);
                         const stepIdx = statusOrder.indexOf(step.id);
                         
                         const isCompleted = currentIdx > stepIdx;
@@ -1321,19 +1303,7 @@ const CgmpMarches = () => {
                       </div>
                     </div>
 
-                    <div className="space-y-2 md:col-span-2">
-                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Clôturé Par</label>
-                      <div className="relative">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        <input
-                          type="text"
-                          placeholder="Nom du responsable de clôture"
-                          value={updateForm.cloturePar}
-                          onChange={(e) => setUpdateForm({...updateForm, cloturePar: e.target.value})}
-                          className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                        />
-                      </div>
-                    </div>
+                    
 
                     <div className="space-y-2 md:col-span-2">
                       <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Note Additionnelle</label>
@@ -1355,15 +1325,15 @@ const CgmpMarches = () => {
                   const currentStatus = updateForm.statut || 'en attente';
 
                   const changeStatus = async (newStatus) => {
-                    if (newStatus === 'publie' && !updateForm.dateLimite) {
-                      setError("La Date Limite de Dépôt des Offres est obligatoire avant la publication du marché.");
-                      return;
-                    }
+                    // if (newStatus === 'publie' && !updateForm.dateLimite) {
+                    //   setError("La Date Limite de Dépôt des Offres est obligatoire avant la publication du marché.");
+                    //   return;
+                    // }
                     const newForm = { ...updateForm, statut: newStatus };
                     setUpdateForm(newForm);
                     await handleUpdate({ preventDefault: () => {} }, newForm);
                     
-                    if (newStatus === 'attribution') {
+                    if (newStatus === 'attribution' || newStatus === 'publie') {
                        setActiveTab('soumissions');
                     }
                   };
@@ -1628,7 +1598,7 @@ const CgmpMarches = () => {
               {filteredMarches.length === 0 ? (
                 <tr>
                   <td colSpan="7" className="px-8 py-12 text-center text-gray-400">
-                    {searchQuery || filterType || filterStatus || filterYear ? "Aucun marché trouvé pour ces filtres." : "Aucun marché enregistré."}
+                    {searchQuery || filterType || filterStatus || filterYear || filterViewMode !== 'actifs' ? "Aucun marché trouvé pour ces filtres." : "Aucun marché enregistré."}
                   </td>
                 </tr>
               ) : (

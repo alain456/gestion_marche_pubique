@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: sans-serif;
+            margin: 40px;
+        }
+        .container {
+            display: flex;
+            align-items: center;
+            gap: 50px;
+        }
+        .sommaire {
+            border: 2px solid black;
+            padding: 20px;
+            border-radius: 10px;
+            background-color: white;
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+        }
+        .sommaire h3 {
+            margin-top: 0;
+            border-bottom: 2px solid black;
+            padding-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sommaire">
+            <h3>Sommaire d'identification</h3>
+            <p><b>Titre :</b> Créer un marché public</p>
+            <p><b>Acteur principal :</b> Agent CGMP</p>
+            <p><b>Objectif :</b> Regrouper les demandes validées pour créer un marché.</p>
+            <p><b>Description :</b> Le système calcule automatiquement<br> le seuil et le mode de passation selon le montant estimé.</p>
+        </div>
+        <div class="mermaid">
+            flowchart LR
+                classDef actorStyle fill:#ffffff,stroke:#000000,stroke-width:2px,color:#000000;
+                classDef usecaseStyle fill:#ffffff,stroke:#000000,stroke-width:2px,rx:20,ry:20,color:#000000;
+            
+                CGMP((Agent CGMP)):::actorStyle
+            
+                subgraph "Système de Gestion des Marchés"
+                    UC1([Créer un marché]):::usecaseStyle
+                    UC2([Appliquer seuil réglementaire]):::usecaseStyle
+                end
+            
+                CGMP ==>|"Sélectionne les demandes"| UC1
+                UC1 -. "<< include >>" .-> UC2
+        </div>
+    </div>
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'base', themeVariables: {
+            primaryColor: '#ffffff',
+            primaryTextColor: '#000000',
+            primaryBorderColor: '#000000',
+            lineColor: '#000000',
+            secondaryColor: '#ffffff',
+            tertiaryColor: '#ffffff'
+        }});
+    </script>
+</body>
+</html>
