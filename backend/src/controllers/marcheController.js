@@ -1,5 +1,7 @@
 const Marche = require('../models/marcheModel');
 const Demande = require('../models/demandeModel');
+const Soumission = require('../models/soumissionModel');
+const sendEmail = require('../config/email');
 
 // Liste des statuts autorisés
 const STATUTS_VALIDES = ['brouillon', 'en attente', 'publie', 'attribution', 'suspendu', 'cloture', 'annule'];
@@ -378,5 +380,51 @@ exports.rankSoumissions = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Erreur lors du calcul du classement" });
+    }
+};
+
+exports.attribuerMarche = async (req, res) => {
+    const { id } = req.params; // idMarche
+    const { idOffreGagnante } = req.body;
+
+    if (!idOffreGagnante) {
+        return res.status(400).json({ message: "L'identifiant de l'offre gagnante est requis." });
+    }
+
+    try {
+        // 1. Mettre le marché en statut 'attribution'
+        await Marche.updateStatus(id, 'attribution');
+
+        // 2. Mettre à jour les statuts des offres
+        const offres = await Soumission.findByMarche(id);
+        const gagnant = offres.find(o => o.idOffre === idOffreGagnante);
+
+        if (!gagnant) {
+            return res.status(404).json({ message: "L'offre sélectionnée n'existe pas pour ce marché." });
+        }
+
+        for (const offre of offres) {
+            const statut = offre.idOffre === idOffreGagnante ? 'retenu' : 'non retenu';
+            await Soumission.updateEvaluation(offre.idOffre, { statut });
+        }
+
+        // 3. Envoyer l'email au gagnant
+        if (gagnant.email) {
+            const subject = `Notification d'attribution de marché (Référence: ${gagnant.referenceAppelOffre || 'N/A'})`;
+            const text = `Bonjour ${gagnant.nomSoumissionnaire},\n\nTuraagukeje kuba watsindiye isoko ${gagnant.referenceAppelOffre || '#'+id} Urahawe ikaze.\n\nFélicitations !\n\nCordialement,\nLe Service des Marchés Publics`;
+            
+            try {
+                await sendEmail(gagnant.email, subject, text);
+            } catch (emailError) {
+                console.error("L'attribution a réussi mais l'envoi de l'email a échoué:", emailError.message);
+                // Non-bloquant pour le processus
+            }
+        }
+
+        res.json({ message: "Marché attribué avec succès et email envoyé." });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Erreur lors de l'attribution du marché." });
     }
 };

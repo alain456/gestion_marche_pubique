@@ -61,6 +61,7 @@ const CgmpMarches = () => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [isPublishingMode, setIsPublishingMode] = useState(false);
+  const [selectedWinnerId, setSelectedWinnerId] = useState(null);
 
   const [showDetails, setShowDetails] = useState(false);
   const [selectedMarche, setSelectedMarche] = useState(null);
@@ -539,8 +540,32 @@ const CgmpMarches = () => {
     }
   };
 
+  const handleAttribuer = async () => {
+    if (!selectedWinnerId) {
+      setError("Veuillez sélectionner une offre avant d'attribuer le marché.");
+      return;
+    }
+    try {
+      setLoading(true);
+      await api.post(`/marches/${selectedMarche.idMarche}/attribuer`, {
+        idOffreGagnante: selectedWinnerId
+      });
+      const newForm = { ...updateForm, statut: 'attribution' };
+      setUpdateForm(newForm);
+      setActiveTab('soumissions');
+      fetchData();
+      setMessage("Marché attribué avec succès. Un email a été envoyé au gagnant !");
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || "Erreur lors de l'attribution du marché.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleManage = async (marche) => {
     setIsPublishingMode(false);
+    setSelectedWinnerId(null);
     setSelectedMarche(marche);
     setActiveTab('info');
     setUpdateForm({
@@ -1227,10 +1252,9 @@ const CgmpMarches = () => {
                     <table className="min-w-full divide-y divide-gray-100">
                       <thead>
                         <tr className="bg-gray-50/50">
+                          <th className="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest w-16">Sélect.</th>
                           <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Soumissionnaire</th>
                           <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Date Dépôt</th>
-
-                          <th className="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest">Statut</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50">
@@ -1242,9 +1266,18 @@ const CgmpMarches = () => {
                           (soumissionsAnalysis?.ranked || marcheOffers.map(o => ({ offer: o }))).map((row) => {
                             const offer = row.offer || row;
                             const isBest = isMieuxDisantOffer(offer.idOffre, soumissionsAnalysis);
-                            const ineligible = soumissionsAnalysis && row.isEligible === false;
                             return (
-                            <tr key={offer.idOffre} className={`hover:bg-gray-50 transition-colors ${isBest ? 'bg-emerald-50/30' : ineligible ? 'bg-red-50/20' : ''}`}>
+                            <tr key={offer.idOffre} className={`hover:bg-gray-50 transition-colors ${isBest ? 'bg-emerald-50/30' : ''}`}>
+                              <td className="px-6 py-4 text-center">
+                                <input
+                                  type="radio"
+                                  name="winnerSelection"
+                                  checked={selectedWinnerId === offer.idOffre || offer.statut === 'gagnant' || offer.statut === 'retenu'}
+                                  onChange={() => setSelectedWinnerId(offer.idOffre)}
+                                  disabled={updateForm.statut === 'attribution' || updateForm.statut === 'cloture'}
+                                  className="w-4 h-4 text-emerald-600 focus:ring-emerald-500 cursor-pointer disabled:cursor-not-allowed"
+                                />
+                              </td>
                               <td className="px-6 py-4">
                                 <div className="flex items-center gap-3">
                                   {isBest && (
@@ -1260,14 +1293,6 @@ const CgmpMarches = () => {
                               </td>
                               <td className="px-6 py-4 text-sm text-gray-500 font-medium">
                                 {new Date(offer.dateSoumission).toLocaleDateString()}
-                              </td>
-                              
-                              <td className="px-6 py-4 text-center">
-                                <span className={`px-2 py-1 rounded-full text-[9px] font-bold uppercase ${
-                                  isBest ? 'bg-emerald-100 text-emerald-700' : ineligible ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600'
-                                }`}>
-                                  {isBest ? 'Mieux-disant' : ineligible ? 'Non admissible' : 'Reçu'}
-                                </span>
                               </td>
                             </tr>
                           );
@@ -1438,8 +1463,13 @@ const CgmpMarches = () => {
                         {currentStatus === 'publie' && (
                           <button
                             type="button"
-                            onClick={() => changeStatus('attribution')}
-                            className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all font-bold shadow-md shadow-emerald-200 flex items-center gap-2"
+                            onClick={handleAttribuer}
+                            disabled={!selectedWinnerId || loading}
+                            className={`px-6 py-2.5 rounded-xl transition-all font-bold shadow-md flex items-center gap-2 ${
+                              !selectedWinnerId || loading
+                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-none'
+                                : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200'
+                            }`}
                           >
                             Attribuer
                           </button>
