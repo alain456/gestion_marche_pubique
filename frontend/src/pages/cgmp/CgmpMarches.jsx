@@ -72,7 +72,8 @@ const CgmpMarches = () => {
     commentaire: '',
     dateLimite: '',
     dateDebutPublication: '',
-    dateFinPublication: ''
+    dateFinPublication: '',
+    dateAttribution: ''
   });
 
   const [showHistory, setShowHistory] = useState(false);
@@ -550,7 +551,7 @@ const CgmpMarches = () => {
       await api.post(`/marches/${selectedMarche.idMarche}/attribuer`, {
         idOffreGagnante: selectedWinnerId
       });
-      const newForm = { ...updateForm, statut: 'attribution' };
+      const newForm = { ...updateForm, statut: 'attribution', dateAttribution: new Date().toISOString().split('T')[0] };
       setUpdateForm(newForm);
       setActiveTab('soumissions');
       fetchData();
@@ -582,7 +583,8 @@ const CgmpMarches = () => {
       commentaire: marche.commentaire || '',
       dateLimite: marche.dateLimite ? new Date(new Date(marche.dateLimite).getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16) : '',
       dateDebutPublication: marche.dateDebutPublication ? new Date(marche.dateDebutPublication).toISOString().split('T')[0] : '',
-      dateFinPublication: marche.dateFinPublication ? new Date(marche.dateFinPublication).toISOString().split('T')[0] : ''
+      dateFinPublication: marche.dateFinPublication ? new Date(marche.dateFinPublication).toISOString().split('T')[0] : '',
+      dateAttribution: marche.dateAttribution ? new Date(marche.dateAttribution).toISOString().split('T')[0] : ''
     });
 
       // Récupérer les articles
@@ -1232,10 +1234,10 @@ const CgmpMarches = () => {
                         <Users className="h-5 w-5 text-primary" />
                         Offres Reçues ({marcheOffers.length})
                       </h3>
-                      <p className="text-[11px] text-gray-500 mt-1">
+                      {/* <p className="text-[11px] text-gray-500 mt-1">
                         Mieux-disant = offre la plus proche du montant estimé ({Number(selectedMarche?.montantEstime || 0).toLocaleString()} FBU),
                         sans être en dessous ni dépasser +{DEFAULT_MAX_ECART_PERCENT}%.
-                      </p>
+                      </p> */}
                     </div>
                     {marcheOffers.length >= 2 && (
                       <button 
@@ -1377,9 +1379,22 @@ const CgmpMarches = () => {
                       </div>
                     )} */}
 
-                    
+                
 
                     <div className="space-y-2 md:col-span-2">
+                      {updateForm.dateAttribution && (
+                        <div className="space-y-2 md:col-span-2 mb-6">
+                          <label className="text-xs font-bold text-emerald-600 uppercase tracking-wider ml-1">
+                            Date d&apos;Attribution
+                          </label>
+                          <div className="relative">
+                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
+                            <div className="w-full pl-10 pr-4 py-3 bg-emerald-50/50 border border-emerald-100 rounded-2xl text-emerald-900 font-bold text-sm">
+                              {new Date(updateForm.dateAttribution).toLocaleDateString('fr-FR')}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                       <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Note Additionnelle</label>
                       <div className="relative">
                         <input

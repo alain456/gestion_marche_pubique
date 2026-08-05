@@ -392,8 +392,8 @@ exports.attribuerMarche = async (req, res) => {
     }
 
     try {
-        // 1. Mettre le marché en statut 'attribution'
-        await Marche.updateStatus(id, 'attribution');
+        // 1. Mettre le marché en statut 'attribution' et enregistrer la date d'attribution
+        await Marche.update(id, { statut: 'attribution', dateAttribution: new Date() });
 
         // 2. Mettre à jour les statuts des offres
         const offres = await Soumission.findByMarche(id);
@@ -408,23 +408,37 @@ exports.attribuerMarche = async (req, res) => {
             await Soumission.updateEvaluation(offre.idOffre, { statut });
         }
 
-        // 3. Envoyer l'email au gagnant
+        // 3. Envoyer l'email au gagnant (retenu)
         if (gagnant.email) {
             const subject = `Notification d'attribution de marché (Référence: ${gagnant.referenceAppelOffre || 'N/A'})`;
-            const text = `Bonjour ${gagnant.nomSoumissionnaire},\n\nTuraagukeje kuba watsindiye isoko ${gagnant.referenceAppelOffre || '#'+id} Urahawe ikaze.\n\nFélicitations !\n\nCordialement,\nLe Service des Marchés Publics`;
+            const text = `Bonjour ${gagnant.nomSoumissionnaire},\n\nTuraagukeje kuba watsindiye isoko ${gagnant.referenceAppelOffre || '#'+id}. Urahawe ikaze.\n\nFélicitations !\n\nCordialement,\nLe Service des Marchés Publics`;
             
             try {
                 await sendEmail(gagnant.email, subject, text);
             } catch (emailError) {
-                console.error("L'attribution a réussi mais l'envoi de l'email a échoué:", emailError.message);
-                // Non-bloquant pour le processus
+                console.error("L'attribution a réussi mais l'envoi de l'email au gagnant a échoué:", emailError.message);
             }
         }
 
-        res.json({ message: "Marché attribué avec succès et email envoyé." });
+        // 4. Envoyer un email de notification à tous les soumissionnaires non retenus
+        const nonRetenus = offres.filter(o => o.idOffre !== idOffreGagnante);
+        for (const nonRetenu of nonRetenus) {
+            if (nonRetenu.email) {
+                const subject = `Notification concernant le marché (Référence: ${nonRetenu.referenceAppelOffre || 'N/A'})`;
+                const text = `Bonjour ${nonRetenu.nomSoumissionnaire},\n\nNous vous informons que votre offre n'a pas été retenue pour le marché ${nonRetenu.referenceAppelOffre || '#'+id}.\n\nNous vous remercions pour votre participation.\n\nCordialement,\nLe Service des Marchés Publics`;
+
+                try {
+                    await sendEmail(nonRetenu.email, subject, text);
+                } catch (emailError) {
+                    console.error(`L'envoi de l'email à ${nonRetenu.email} a échoué:`, emailError.message);
+                }
+            }
+        }
+
+        return res.json({ message: "Marché attribué avec succès. Les emails ont été envoyés au gagnant et aux soumissionnaires non retenus." });
 
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Erreur lors de l'attribution du marché." });
+        console.error("Erreur lors de l'attribution du marché:", error);
+        return res.status(500).json({ message: "Erreur lors de l'attribution du marché." });
     }
 };

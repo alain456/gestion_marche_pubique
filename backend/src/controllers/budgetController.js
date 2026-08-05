@@ -6,6 +6,7 @@ exports.getBudgets = async (req, res) => {
         const budgets = await Budget.findAll();
         res.json(budgets);
     } catch (error) {
+        console.error("Erreur GET /budgets :", error);
         res.status(500).json({ message: "Erreur lors de la récupération des budgets" });
     }
 };
@@ -41,6 +42,7 @@ exports.getBudgetsOuverts = async (req, res) => {
         const budgets = await Budget.getOuverts();
         res.json(budgets);
     } catch (error) {
+        console.error("Erreur GET /budgets/ouverts :", error);
         res.status(500).json({ message: "Erreur lors de la récupération des budgets ouverts" });
     }
 };
@@ -63,6 +65,7 @@ exports.createBudget = async (req, res) => {
         });
         res.status(201).json({ idBudget: id, message: "Ligne budgétaire créée avec succès" });
     } catch (error) {
+        console.error("Erreur création budget :", error);
         if (error.code === 'ER_DUP_ENTRY') {
             return res.status(400).json({ message: "Ce numéro de budget existe déjà." });
         }
