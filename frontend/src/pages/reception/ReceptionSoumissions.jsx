@@ -68,11 +68,29 @@ const ReceptionSoumissions = () => {
   };
 
   // Seuls les marchés publiés ou en attribution peuvent recevoir des offres
-  // ET dont la dateLimite n'est pas dépassée (si elle est définie)
+  // ET dont la période de publication est en cours
   const activeMarches = marches.filter(m => {
     const isActiveStatus = m.statut === 'publie' || m.statut === 'attribution';
-    const isNotExpired = !m.dateLimite || new Date(m.dateLimite) > new Date();
-    return isActiveStatus && isNotExpired;
+    
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    
+    let isStarted = true;
+    let isNotExpired = true;
+
+    if (m.dateDebutPublication) {
+        const debut = new Date(m.dateDebutPublication);
+        debut.setHours(0, 0, 0, 0);
+        isStarted = now >= debut;
+    }
+
+    if (m.dateFinPublication) {
+        const fin = new Date(m.dateFinPublication);
+        fin.setHours(23, 59, 59, 999);
+        isNotExpired = now <= fin;
+    }
+
+    return isActiveStatus && isStarted && isNotExpired;
   });
 
   // En mode édition, on s'assure que le marché déjà lié à l'offre apparaît toujours dans la liste

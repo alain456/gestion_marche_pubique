@@ -6,19 +6,22 @@ const Marche = {
         const { 
             idDemande, numeroBudget, montantEstime, modePassation, justificationChoix, 
             seuilReglementaireApplique, dateSelection, validateur, 
-            statut, dateCloture, cloturePar, commentaire, dateLimite, noteAdd
+            statut, dateCloture, cloturePar, commentaire, dateLimite, noteAdd,
+            dateDebutPublication, dateFinPublication
         } = data;
 
         const query = `INSERT INTO marche (
             idDemande, numeroBudget, montantEstime, modePassation, justificationChoix, 
             seuilReglementaireApplique, dateSelection, validateur, 
-            statut, dateCloture, cloturePar, commentaire, dateLimite, noteAdd
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+            statut, dateCloture, cloturePar, commentaire, dateLimite, noteAdd,
+            dateDebutPublication, dateFinPublication
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
         const [result] = await db.query(query, [
             idDemande, numeroBudget, montantEstime, modePassation, justificationChoix, 
             seuilReglementaireApplique, dateSelection, validateur, 
-            statut, dateCloture, cloturePar, commentaire, dateLimite, noteAdd || null
+            statut, dateCloture, cloturePar, commentaire, dateLimite, noteAdd || null,
+            dateDebutPublication || null, dateFinPublication || null
         ]);
         return result;
     },

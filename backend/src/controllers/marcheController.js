@@ -19,7 +19,9 @@ exports.createMarche = async (req, res) => {
         dateCloture, 
         cloturePar, 
         commentaire,
-        dateLimite
+        dateLimite,
+        dateDebutPublication,
+        dateFinPublication
     } = req.body;
 
     let finalCommentaire = commentaire;
@@ -64,7 +66,9 @@ exports.createMarche = async (req, res) => {
             cloturePar: cloturePar || null,
             commentaire: finalCommentaire || null,
             dateLimite: formattedDateLimite,
-            noteAdd: noteAdd
+            noteAdd: noteAdd,
+            dateDebutPublication: dateDebutPublication || null,
+            dateFinPublication: dateFinPublication || null
         };
         console.log('[DEBUG createMarche] sanitizedData.noteAdd:', sanitizedData.noteAdd);
 

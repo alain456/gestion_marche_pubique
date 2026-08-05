@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import api from '../../services/api';
 import { 
   FileText, 
@@ -82,6 +82,20 @@ const ReceptionDashboard = () => {
 
     return result;
   }, [data.soumissions, period, searchQuery, selectedMarketId]);
+
+  const groupedSoumissions = useMemo(() => {
+    return filteredSoumissions.reduce((acc, offer) => {
+      const marketKey = offer.idMarche;
+      if (!acc[marketKey]) {
+        acc[marketKey] = {
+          marketInfo: { idMarche: offer.idMarche, reference: offer.referenceAppelOffre },
+          offers: []
+        };
+      }
+      acc[marketKey].offers.push(offer);
+      return acc;
+    }, {});
+  }, [filteredSoumissions]);
 
   const stats = useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
@@ -198,36 +212,53 @@ const ReceptionDashboard = () => {
               <thead>
                 <tr className="bg-gray-50/50">
                   <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Soumissionnaire</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Marché</th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Téléphone</th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Date</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {filteredSoumissions.length === 0 ? (
+                {Object.keys(groupedSoumissions).length === 0 ? (
                   <tr>
-                    <td colSpan="4" className="px-6 py-8 text-center text-gray-400 italic">
+                    <td colSpan="3" className="px-6 py-8 text-center text-gray-400 italic">
                       Aucune offre trouvée.
                     </td>
                   </tr>
                 ) : (
-                  filteredSoumissions.map(s => (
-                    <tr key={s.idOffre} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="font-bold text-gray-900">{s.nomSoumissionnaire}</div>
-                        <div className="text-xs text-gray-500">{s.email}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-700">Marché #{s.idMarche}</div>
-                        <div className="text-[10px] text-gray-400 uppercase">{s.referenceAppelOffre}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-600">
-                        {s.telephone}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(s.dateSoumission).toLocaleDateString()}
-                      </td>
-                    </tr>
+                  Object.values(groupedSoumissions).map(group => (
+                    <React.Fragment key={group.marketInfo.idMarche}>
+                      {/* Market Header Row */}
+                      <tr className="bg-primary/5 border-y border-primary/10">
+                        <td colSpan="3" className="px-6 py-3">
+                          <div className="flex items-center gap-2">
+                            <Building className="h-4 w-4 text-primary" />
+                            <span className="font-bold text-primary">Marché #{group.marketInfo.idMarche}</span>
+                            {group.marketInfo.reference && (
+                              <span className="text-xs text-primary/70 font-semibold px-2 py-0.5 bg-primary/10 rounded-md">
+                                {group.marketInfo.reference}
+                              </span>
+                            )}
+                            <span className="text-xs text-gray-500 ml-auto font-medium">
+                              {group.offers.length} offre{group.offers.length > 1 ? 's' : ''}
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                      {/* Offers Rows */}
+                      {group.offers.map(s => (
+                        <tr key={s.idOffre} className="hover:bg-gray-50/50 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap pl-10">
+                            <div className="font-bold text-gray-900">{s.nomSoumissionnaire}</div>
+                            <div className="text-xs text-gray-500">{s.email}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-600">
+                            {s.telephone}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {new Date(s.dateSoumission).toLocaleDateString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </React.Fragment>
                   ))
                 )}
               </tbody>

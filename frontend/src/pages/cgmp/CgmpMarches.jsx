@@ -53,11 +53,14 @@ const CgmpMarches = () => {
     dateCloture: '',
     cloturePar: '',
     commentaire: '',
-    dateLimite: ''
+    dateLimite: '',
+    dateDebutPublication: '',
+    dateFinPublication: ''
   });
 
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [isPublishingMode, setIsPublishingMode] = useState(false);
 
   const [showDetails, setShowDetails] = useState(false);
   const [selectedMarche, setSelectedMarche] = useState(null);
@@ -66,7 +69,9 @@ const CgmpMarches = () => {
     dateCloture: '',
     cloturePar: '',
     commentaire: '',
-    dateLimite: ''
+    dateLimite: '',
+    dateDebutPublication: '',
+    dateFinPublication: ''
   });
 
   const [showHistory, setShowHistory] = useState(false);
@@ -418,7 +423,9 @@ const CgmpMarches = () => {
       dateCloture: '',
       cloturePar: '',
       commentaire: '',
-      dateLimite: ''
+      dateLimite: '',
+      dateDebutPublication: '',
+      dateFinPublication: ''
     });
   };
 
@@ -470,6 +477,17 @@ const CgmpMarches = () => {
     //   return;
     // }
 
+    if (action === 'publie') {
+      if (!form.dateDebutPublication || !form.dateFinPublication) {
+        setError("Les dates de début et de fin de publication sont obligatoires pour publier.");
+        return;
+      }
+      if (new Date(form.dateFinPublication) <= new Date(form.dateDebutPublication)) {
+        setError("La date de fin de publication doit être postérieure à la date de début.");
+        return;
+      }
+    }
+
     // --- Si dateCloture et dateLimite sont toutes deux définies, dateCloture > dateLimite ---
     if (form.dateLimite && form.dateCloture) {
       const dlDate = new Date(form.dateLimite);
@@ -492,7 +510,7 @@ const CgmpMarches = () => {
         'idDemande', 'numeroBudget', 'montantEstime', 'modePassation',
         'justificationChoix', 'seuilReglementaireApplique', 'dateSelection',
         'validateur', 'statut', 'dateCloture', 'cloturePar', 'commentaire',
-        'dateLimite'
+        'dateLimite', 'dateDebutPublication', 'dateFinPublication'
       ];
       scalarFields.forEach(key => {
         if (payload[key] !== null && payload[key] !== undefined && payload[key] !== '') {
@@ -522,6 +540,7 @@ const CgmpMarches = () => {
   };
 
   const handleManage = async (marche) => {
+    setIsPublishingMode(false);
     setSelectedMarche(marche);
     setActiveTab('info');
     setUpdateForm({
@@ -536,7 +555,9 @@ const CgmpMarches = () => {
       dateCloture: marche.dateCloture ? new Date(marche.dateCloture).toISOString().split('T')[0] : '',
       cloturePar: marche.cloturePar || '',
       commentaire: marche.commentaire || '',
-      dateLimite: marche.dateLimite ? new Date(new Date(marche.dateLimite).getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16) : ''
+      dateLimite: marche.dateLimite ? new Date(new Date(marche.dateLimite).getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16) : '',
+      dateDebutPublication: marche.dateDebutPublication ? new Date(marche.dateDebutPublication).toISOString().split('T')[0] : '',
+      dateFinPublication: marche.dateFinPublication ? new Date(marche.dateFinPublication).toISOString().split('T')[0] : ''
     });
 
       // Récupérer les articles
@@ -604,7 +625,7 @@ const CgmpMarches = () => {
         'idDemande', 'numeroBudget', 'montantEstime', 'modePassation',
         'justificationChoix', 'seuilReglementaireApplique', 'dateSelection',
         'validateur', 'statut', 'dateCloture', 'cloturePar', 'commentaire',
-        'dateLimite'
+        'dateLimite', 'dateDebutPublication', 'dateFinPublication'
       ];
       scalarFieldsUpd.forEach(key => {
         if (payload[key] !== null && payload[key] !== undefined && payload[key] !== '') {
@@ -885,9 +906,31 @@ const CgmpMarches = () => {
                       </div>
                     </div>
 
-                    
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Début de publication</label>
+                      <div className="relative">
+                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                          type="date"
+                          value={form.dateDebutPublication}
+                          onChange={(e) => setForm({...form, dateDebutPublication: e.target.value})}
+                          className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                        />
+                      </div>
+                    </div>
 
-                    
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Fin de publication</label>
+                      <div className="relative">
+                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                          type="date"
+                          value={form.dateFinPublication}
+                          onChange={(e) => setForm({...form, dateFinPublication: e.target.value})}
+                          className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                        />
+                      </div>
+                    </div>
 
                     <div className="space-y-2">
                       <label className="text-xs font-black text-gray-500 uppercase tracking-widest ml-1">Notes Additionnelles</label>
@@ -1056,7 +1099,35 @@ const CgmpMarches = () => {
                     </div>
                   </div>
 
-                 
+                  {(isPublishingMode || ['publie', 'attribution', 'cloture'].includes(updateForm.statut)) && (
+                    <>
+                      <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Début de publication</label>
+                        <div className="relative">
+                          <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                          <input
+                            type="date"
+                            value={updateForm.dateDebutPublication || ''}
+                            onChange={(e) => setUpdateForm({...updateForm, dateDebutPublication: e.target.value})}
+                            className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Fin de publication</label>
+                        <div className="relative">
+                          <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                          <input
+                            type="date"
+                            value={updateForm.dateFinPublication || ''}
+                            onChange={(e) => setUpdateForm({...updateForm, dateFinPublication: e.target.value})}
+                            className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
 
                   <div className="md:col-span-2 space-y-2">
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Justification du choix</label>
@@ -1158,7 +1229,7 @@ const CgmpMarches = () => {
                         <tr className="bg-gray-50/50">
                           <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Soumissionnaire</th>
                           <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Date Dépôt</th>
-                          <th className="px-6 py-4 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Montant Proposé</th>
+
                           <th className="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest">Statut</th>
                         </tr>
                       </thead>
@@ -1190,16 +1261,7 @@ const CgmpMarches = () => {
                               <td className="px-6 py-4 text-sm text-gray-500 font-medium">
                                 {new Date(offer.dateSoumission).toLocaleDateString()}
                               </td>
-                              <td className="px-6 py-4 text-right">
-                                <span className={`text-sm font-black ${isBest ? 'text-emerald-600' : 'text-primary'}`}>
-                                  {Number(offer.montantPropose).toLocaleString()} FBU
-                                </span>
-                                {soumissionsAnalysis && (
-                                  <p className="text-[10px] text-gray-400 mt-0.5">
-                                    {row.isBelow ? 'Sous le budget estimé' : row.isTooHigh ? `> +${soumissionsAnalysis.maxEcartPercent}%` : `Écart ${row.diffPercent >= 0 ? '+' : ''}${row.diffPercent?.toFixed(1)}%`}
-                                  </p>
-                                )}
-                              </td>
+                              
                               <td className="px-6 py-4 text-center">
                                 <span className={`px-2 py-1 rounded-full text-[9px] font-bold uppercase ${
                                   isBest ? 'bg-emerald-100 text-emerald-700' : ineligible ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600'
@@ -1290,19 +1352,6 @@ const CgmpMarches = () => {
                       </div>
                     )} */}
 
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Date de Clôture</label>
-                      <div className="relative">
-                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        <input
-                          type="date"
-                          value={updateForm.dateCloture}
-                          onChange={(e) => setUpdateForm({...updateForm, dateCloture: e.target.value})}
-                          className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                        />
-                      </div>
-                    </div>
-
                     
 
                     <div className="space-y-2 md:col-span-2">
@@ -1325,6 +1374,16 @@ const CgmpMarches = () => {
                   const currentStatus = updateForm.statut || 'en attente';
 
                   const changeStatus = async (newStatus) => {
+                    if (newStatus === 'publie') {
+                      if (!updateForm.dateDebutPublication || !updateForm.dateFinPublication) {
+                        setError("Les dates de début et de fin de publication sont obligatoires pour publier.");
+                        return;
+                      }
+                      if (new Date(updateForm.dateFinPublication) <= new Date(updateForm.dateDebutPublication)) {
+                        setError("La date de fin de publication doit être postérieure à la date de début.");
+                        return;
+                      }
+                    }
                     // if (newStatus === 'publie' && !updateForm.dateLimite) {
                     //   setError("La Date Limite de Dépôt des Offres est obligatoire avant la publication du marché.");
                     //   return;
@@ -1362,10 +1421,17 @@ const CgmpMarches = () => {
                             </button>
                             <button
                               type="button"
-                              onClick={() => changeStatus('publie')}
+                              onClick={() => {
+                                if (isPublishingMode) {
+                                  changeStatus('publie');
+                                } else {
+                                  setIsPublishingMode(true);
+                                  setActiveTab('info');
+                                }
+                              }}
                               className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all font-bold shadow-md shadow-blue-200 flex items-center gap-2"
                             >
-                              Publier
+                              {isPublishingMode ? 'Confirmer Publication' : 'Publier'}
                             </button>
                           </>
                         )}
