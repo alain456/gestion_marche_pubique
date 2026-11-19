@@ -1,0 +1,20 @@
+flowchart LR
+    CGMP((CGMP))
+    Auth(["S'authentifier"])
+    Consult(["Consulter les offres d'un marché"])
+    Eval(["Évaluer / Classer les offres"])
+    Attrib(["Valider l'attribution"])
+    
+    CGMP ---> Auth
+    CGMP ---> Consult
+    CGMP ---> Eval
+    CGMP ---> Attrib
+    
+    Consult -.->|<< include >>| Auth
+    Eval -.->|<< include >>| Auth
+    Attrib -.->|<< include >>| Auth
+    
+    Attrib -.->|<< include >>| Eval
+
+    style CGMP fill:#f9f,stroke:#333,stroke-width:2px
+    style Auth fill:#bbf,stroke:#f66,stroke-width:2px,stroke-dasharray: 5 5

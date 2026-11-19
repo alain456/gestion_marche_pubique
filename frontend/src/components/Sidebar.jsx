@@ -9,11 +9,12 @@ import {
   Gavel,
   ClipboardList,
   Shield,
-  UserCog
+  UserCog,
+  Activity
 } from 'lucide-react';
 import PropTypes from 'prop-types';
 
-const Sidebar = ({ user }) => {
+const Sidebar = ({ user, isMobileOpen, onNavigate }) => {
   const role = user?.role?.toUpperCase().replace(/\s+/g, '_') || '';
   const permissions = user?.permissions || [];
 
@@ -25,8 +26,13 @@ const Sidebar = ({ user }) => {
   const buildLinks = () => {
     const links = [];
 
+    links.push({ name: 'Mon activité', path: '/historique', icon: Activity });
+
     // Dashboard selon le rôle
-    if (role === 'ADMIN') links.push({ name: 'Dashboard', path: '/admin', icon: Home });
+    if (role === 'ADMIN') {
+      links.push({ name: 'Dashboard', path: '/admin', icon: Home });
+      links.push({ name: 'Journal d’audit', path: '/admin/audit', icon: Activity });
+    }
     else if (role === 'RAF') links.push({ name: 'Dashboard', path: '/raf', icon: Home });
     else if (role === 'CGMP') links.push({ name: 'Dashboard', path: '/cgmp', icon: Home });
     else if (role === 'CHEF_INSTITUTION') links.push({ name: 'Dashboard', path: '/chef', icon: Home });
@@ -104,9 +110,14 @@ const Sidebar = ({ user }) => {
   const links = buildLinks();
 
   return (
-    <div className="bg-primary w-64 shrink-0 flex flex-col text-white">
+    <aside
+      id="app-navigation"
+      aria-label="Navigation principale"
+      className="app-sidebar bg-primary shrink-0 flex flex-col text-white"
+      data-mobile-open={isMobileOpen}
+    >
       <div className="h-16 flex items-center justify-center border-b border-blue-800">
-        <h1 className="text-2xl font-bold tracking-wider text-accent">SETIC</h1>
+        <h1 className="app-sidebar-brand text-2xl font-bold text-accent">SETIC</h1>
       </div>
       <nav className="flex-1 overflow-y-auto py-4">
         <ul className="space-y-1 px-3">
@@ -118,22 +129,26 @@ const Sidebar = ({ user }) => {
                   to={link.path}
                   end={link.path.split('/').length === 2}
                   className={({ isActive }) =>
-                    `flex items-center px-4 py-3 rounded-md transition-colors ${
+                    `app-nav-link flex items-center px-4 py-3 rounded-lg ${
                       isActive
-                        ? 'bg-blue-800 text-accent font-medium'
+                        ? 'bg-blue-800 text-accent font-semibold'
                         : 'text-gray-300 hover:bg-blue-800 hover:text-white'
                     }`
                   }
+                  title={link.name}
+                  aria-label={link.name}
+                  data-label={link.name}
+                  onClick={onNavigate}
                 >
-                  <Icon className="h-5 w-5 mr-3" />
-                  {link.name}
+                  <Icon className="h-5 w-5 mr-3" aria-hidden="true" />
+                  <span className="app-nav-label">{link.name}</span>
                 </NavLink>
               </li>
             );
           })}
         </ul>
       </nav>
-    </div>
+    </aside>
   );
 };
 
@@ -141,7 +156,9 @@ Sidebar.propTypes = {
   user: PropTypes.shape({
     role: PropTypes.string,
     permissions: PropTypes.arrayOf(PropTypes.string)
-  })
+  }),
+  isMobileOpen: PropTypes.bool,
+  onNavigate: PropTypes.func
 };
 
 export default Sidebar;

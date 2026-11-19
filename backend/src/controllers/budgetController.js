@@ -1,5 +1,12 @@
 const Budget = require('../models/budgetModel');
 const Demande = require('../models/demandeModel');
+const parametreModel = require('../models/parametreModel');
+
+// Valeurs autorisées = dictionnaires gérés dans "Paramètres globaux"
+const getValeursDictionnaire = async (typeParam) => {
+    const rows = await parametreModel.getByType(typeParam);
+    return rows.map(r => r.valeur);
+};
 
 exports.getBudgets = async (req, res) => {
     try {
@@ -52,8 +59,18 @@ exports.createBudget = async (req, res) => {
     if (!numeroBudget || !typeBudget || !exerciceBudgetaire) {
         return res.status(400).json({ message: "Le numéro, le type et l'exercice sont requis." });
     }
-
     try {
+        const typesValides = await getValeursDictionnaire('TYPE_MARCHE');
+        if (typesValides.length > 0 && !typesValides.includes(typeBudget)) {
+            return res.status(400).json({ message: `Type de marché inconnu. Valeurs autorisées : ${typesValides.join(', ')}.` });
+        }
+        if (typeInstitution) {
+            const institutionsValides = await getValeursDictionnaire('TYPE_INSTITUTION');
+            if (institutionsValides.length > 0 && !institutionsValides.includes(typeInstitution)) {
+                return res.status(400).json({ message: `Type d'institution inconnu. Valeurs autorisées : ${institutionsValides.join(', ')}.` });
+            }
+        }
+
         const id = await Budget.create({
             numeroBudget,
             typeBudget,
@@ -68,6 +85,9 @@ exports.createBudget = async (req, res) => {
         console.error("Erreur création budget :", error);
         if (error.code === 'ER_DUP_ENTRY') {
             return res.status(400).json({ message: "Ce numéro de budget existe déjà." });
+        }
+        if (error.code === 'WARN_DATA_TRUNCATED') {
+            return res.status(400).json({ message: "Une valeur envoyée est invalide pour la base de données (type de budget ou exercice)." });
         }
         res.status(500).json({ message: "Erreur lors de la création" });
     }
@@ -133,6 +153,18 @@ exports.toggleBudgetStatus = async (req, res) => {
 exports.updateBudget = async (req, res) => {
     const { id } = req.params;
     try {
+        if (req.body.typeBudget) {
+            const typesValides = await getValeursDictionnaire('TYPE_MARCHE');
+            if (typesValides.length > 0 && !typesValides.includes(req.body.typeBudget)) {
+                return res.status(400).json({ message: `Type de marché inconnu. Valeurs autorisées : ${typesValides.join(', ')}.` });
+            }
+        }
+        if (req.body.typeInstitution) {
+            const institutionsValides = await getValeursDictionnaire('TYPE_INSTITUTION');
+            if (institutionsValides.length > 0 && !institutionsValides.includes(req.body.typeInstitution)) {
+                return res.status(400).json({ message: `Type d'institution inconnu. Valeurs autorisées : ${institutionsValides.join(', ')}.` });
+            }
+        }
         await Budget.update(id, req.body);
         res.json({ message: "Ligne budgétaire mise à jour avec succès" });
     } catch (error) {
@@ -168,16 +200,39 @@ exports.bulkValiderBudget = async (req, res) => {
     if (!idDemandes || !Array.isArray(idDemandes) || idDemandes.length === 0) {
         return res.status(400).json({ message: "Liste d'IDs de demandes requise." });
     }
+    if (idDemandes.some(id =>
+        (typeof id !== 'number' && typeof id !== 'string') ||
+        !/^\d+$/.test(String(id)) ||
+        !Number.isSafeInteger(Number(id)) ||
+        Number(id) <= 0
+    )) {
+        return res.status(400).json({ message: "Chaque ID de demande doit être un entier positif." });
+    }
 
-    try {
-        for (const id of idDemandes) {
+    const uniqueIds = [...new Set(idDemandes.map(Number))];
+    const results = [];
+    for (const id of uniqueIds) {
+        try {
             await Budget.createValidation({
                 idDemande: id,
                 motif: motif || "Validation groupée RAF",
                 responsableFinancier: req.user.nom,
-                montantEstime: null 
+                montantEstime: null
             });
+        } catch (error) {
+            console.error(`Erreur de validation budgétaire pour la demande ${id}:`, error);
+            results.push({
+                idDemande: id,
+                success: false,
+                message: error.message === "Demande introuvable."
+                    ? error.message
+                    : "La validation a échoué. Vérifiez la demande puis réessayez."
+            });
+            continue;
+        }
 
+        let message = "Validée avec succès.";
+        try {
             await Demande.addHistory(null, {
                 idDemande: id,
                 action: "Validation Groupée (RAF)",
@@ -187,13 +242,18 @@ exports.bulkValiderBudget = async (req, res) => {
                 roleUtilisateur: req.user.role,
                 motif: motif || "Validation groupée"
             });
+        } catch (error) {
+            console.error(`Erreur d'historique pour la demande ${id} après validation:`, error);
+            message = "Validée, mais l'historique n'a pas pu être enregistré.";
         }
-
-        res.json({ message: `${idDemandes.length} demandes validées avec succès.` });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Erreur lors de la validation groupée." });
+        results.push({ idDemande: id, success: true, message });
     }
+
+    const successCount = results.filter(result => result.success).length;
+    res.json({
+        message: `${successCount} demande(s) validée(s) sur ${results.length}.`,
+        results
+    });
 };
 
 exports.getDemandesGroupedByType = async (req, res) => {

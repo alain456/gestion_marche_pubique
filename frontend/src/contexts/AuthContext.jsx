@@ -32,12 +32,13 @@ export const AuthProvider = ({ children }) => {
   }, [user]);
 
   const applySessionUser = useCallback((sessionUser) => {
-    localStorage.setItem('user', JSON.stringify(sessionUser));
+    const storage = localStorage.getItem('token') ? localStorage : sessionStorage;
+    storage.setItem('user', JSON.stringify(sessionUser));
     setUser(sessionUser);
   }, []);
 
   const refreshSession = useCallback(async () => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
     if (!token) return;
 
     try {
@@ -52,14 +53,17 @@ export const AuthProvider = ({ children }) => {
       if (error.response?.status === 401 || error.response?.status === 403) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('user');
         setUser(null);
       }
     }
   }, [applySessionUser]);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
+    const storage = localStorage.getItem('token') ? localStorage : sessionStorage;
+    const token = storage.getItem('token');
+    const storedUser = storage.getItem('user');
 
     const init = async () => {
       if (token && storedUser) {
@@ -104,12 +108,16 @@ export const AuthProvider = ({ children }) => {
     };
   }, [user, refreshSession]);
 
-  const login = async (email, mot_de_passe) => {
+  const login = async (email, mot_de_passe, rememberMe = false) => {
     try {
       const response = await api.post('/auth/login', { email, password: mot_de_passe });
       const { token, user: loggedUser } = response.data;
 
-      localStorage.setItem('token', token);
+      const storage = rememberMe ? localStorage : sessionStorage;
+      const otherStorage = rememberMe ? sessionStorage : localStorage;
+      otherStorage.removeItem('token');
+      otherStorage.removeItem('user');
+      storage.setItem('token', token);
       applySessionUser(loggedUser);
 
       return { success: true };
@@ -121,6 +129,8 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
     setUser(null);
   };
 

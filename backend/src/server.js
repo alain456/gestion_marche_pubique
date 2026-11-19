@@ -21,12 +21,18 @@ const adminRoutes = require('./routes/adminRoutes');
 const permissionRoutes = require('./routes/permissionRoutes');
 const seuilRoutes = require('./routes/seuilRoutes');
 const parametreRoutes = require('./routes/parametreRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
+const dossierAttachmentRoutes = require('./routes/dossierAttachmentRoutes');
+const auditRoutes = require('./routes/auditRoutes');
+const activityRoutes = require('./routes/activityRoutes');
+const auditMiddleware = require('./middlewares/auditMiddleware');
 
 const app = express();
 
 // Middlewares globaux
 app.use(cors());
 app.use(express.json()); // Pour parser le JSON dans le corps des requêtes
+app.use(auditMiddleware);
 app.use('/api/marches', marcheRoutes);
 app.use('/api/demandes', demandeRoutes);
 app.use('/api/budgets', budgetRoutes);
@@ -39,9 +45,13 @@ app.use('/api/users', userRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/articles', articleRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/admin/audit', auditRoutes);
+app.use('/api/audit', activityRoutes);
 app.use('/api/permissions', permissionRoutes);
 app.use('/api/seuils', seuilRoutes);
 app.use('/api/parametres', parametreRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/attachments', dossierAttachmentRoutes);
 
 app.get('/api', (req, res) => {
     res.json({ message: "Bienvenue sur l'API de Gestion des Marchés Publics (SETIC) !" });

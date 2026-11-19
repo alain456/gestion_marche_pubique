@@ -1,4 +1,11 @@
 const Article = require('../models/articleModel');
+const parametreModel = require('../models/parametreModel');
+
+// Types d'articles = dictionnaire TYPE_MARCHE géré par la CGMP
+const getTypesValides = async () => {
+    const rows = await parametreModel.getByType('TYPE_MARCHE');
+    return rows.map(r => r.valeur);
+};
 
 exports.getArticles = async (req, res) => {
     try {
@@ -12,11 +19,14 @@ exports.getArticles = async (req, res) => {
 exports.createArticle = async (req, res) => {
     const { nomArticle, typeArticle } = req.body;
     if (!nomArticle) return res.status(400).json({ message: "Le nom de l'article est requis" });
-    if (!typeArticle || !['fourniture', 'travaux', 'service'].includes(typeArticle)) {
-        return res.status(400).json({ message: "Le type d'article est requis (fourniture, travaux, service)" });
-    }
+    if (!typeArticle) return res.status(400).json({ message: "Le type d'article est requis" });
 
     try {
+        const typesValides = await getTypesValides();
+        if (typesValides.length > 0 && !typesValides.includes(typeArticle)) {
+            return res.status(400).json({ message: `Type d'article inconnu. Valeurs autorisées : ${typesValides.join(', ')}.` });
+        }
+
         const id = await Article.create(nomArticle, typeArticle);
         res.status(201).json({ idArticle: id, nomArticle, typeArticle, message: "Article créé avec succès" });
     } catch (error) {
@@ -29,6 +39,12 @@ exports.updateArticle = async (req, res) => {
     const { nomArticle, typeArticle } = req.body;
 
     try {
+        if (typeArticle) {
+            const typesValides = await getTypesValides();
+            if (typesValides.length > 0 && !typesValides.includes(typeArticle)) {
+                return res.status(400).json({ message: `Type d'article inconnu. Valeurs autorisées : ${typesValides.join(', ')}.` });
+            }
+        }
         await Article.update(id, nomArticle, typeArticle);
         res.json({ message: "Article mis à jour avec succès" });
     } catch (error) {

@@ -55,7 +55,10 @@ const Budget = {
                         montantEstime = ? 
                     WHERE idDemande = ?
                 `;
-                await connection.query(queryUpdateDemande, [motif, responsableFinancier || 'RAF', montantEstime || 0, idDemande]);
+                const [result] = await connection.query(queryUpdateDemande, [motif, responsableFinancier || 'RAF', montantEstime || 0, idDemande]);
+                if (result.affectedRows === 0) {
+                    throw new Error('Demande introuvable.');
+                }
             } else {
                 // Mode validation groupée : ne pas écraser le montantEstime
                 const queryUpdateDemande = `
@@ -66,7 +69,10 @@ const Budget = {
                         responsableFinancier = ?
                     WHERE idDemande = ?
                 `;
-                await connection.query(queryUpdateDemande, [motif, responsableFinancier || 'RAF', idDemande]);
+                const [result] = await connection.query(queryUpdateDemande, [motif, responsableFinancier || 'RAF', idDemande]);
+                if (result.affectedRows === 0) {
+                    throw new Error('Demande introuvable.');
+                }
             }
 
             // 2. Mettre à jour les prix unitaires des articles si fournis
@@ -117,11 +123,33 @@ const Budget = {
 
     // Supprimer une ligne budgétaire
     delete: async (id) => {
+        // Vérifier que la ligne n'est pas utilisée (demandes non rejetées ou marchés)
+        const [budgetRows] = await db.query('SELECT numeroBudget FROM budget WHERE idBudget = ?', [id]);
+        if (budgetRows.length === 0) {
+            throw new Error('Ligne budgétaire introuvable.');
+        }
+
+        const [demandes] = await db.query(
+            "SELECT COUNT(*) as n FROM demande WHERE idBudget = ? AND statut <> 'Rejete'",
+            [id]
+        );
+        if (demandes[0].n > 0) {
+            throw new Error(`Impossible de supprimer : ${demandes[0].n} demande(s) sont rattachées à cette ligne budgétaire.`);
+        }
+
+        const [marches] = await db.query(
+            'SELECT COUNT(*) as n FROM marche WHERE numeroBudget = ?',
+            [budgetRows[0].numeroBudget]
+        );
+        if (marches[0].n > 0) {
+            throw new Error(`Impossible de supprimer : ${marches[0].n} marché(s) référencent cette ligne budgétaire.`);
+        }
+
         const connection = await db.getConnection();
         try {
             await connection.beginTransaction();
-            
-            // 1. Détacher les demandes liées (mettre idBudget à NULL)
+
+            // 1. Détacher les demandes rejetées restantes (mettre idBudget à NULL)
             await connection.query("UPDATE demande SET idBudget = NULL WHERE idBudget = ?", [id]);
             
             // 2. Supprimer la ligne budgétaire

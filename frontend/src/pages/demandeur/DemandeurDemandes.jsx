@@ -1,16 +1,23 @@
-import { useState, useEffect, useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect, useContext, useCallback } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { PlusCircle, ArrowLeft, Search, Trash2, ListPlus, Pencil, Save, Send, Package, MessageSquare, Info, Eye, Clock, Gavel, History, User, XCircle, Building } from 'lucide-react';
 
 import api from '../../services/api';
 import { AuthContext } from '../../contexts/AuthContext';
+import ConfirmDialog from '../../components/ConfirmDialog';
+import DemandeTimeline from '../../components/DemandeTimeline';
+import SavedFilters from '../../components/SavedFilters';
+import { getServiceOrRoleLabel } from '../../utils/formatters';
+import ReportExport from '../../components/ReportExport';
+import DossierAttachments from '../../components/DossierAttachments';
 
 const DemandeurDemandes = () => {
+  const location = useLocation();
   const [demandes, setDemandes] = useState([]);
   const [articles, setArticles] = useState([]);
   const [budgets, setBudgets] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(location.state?.demandeId?.toString() || '');
   const [filterStatut, setFilterStatut] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [message, setMessage] = useState('');
@@ -21,9 +28,13 @@ const DemandeurDemandes = () => {
   
   // Demande sélectionnée pour la visualisation
   const [viewingDemande, setViewingDemande] = useState(null);
+  const [timeline, setTimeline] = useState([]);
+  const [timelineLoading, setTimelineLoading] = useState(false);
+  const [timelineError, setTimelineError] = useState('');
   const [showHistory, setShowHistory] = useState(false);
   const [historyData, setHistoryData] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [confirmation, setConfirmation] = useState(null);
 
   const { user } = useContext(AuthContext);
   const hasPerm = (code) => user?.permissions?.includes(code);
@@ -50,7 +61,7 @@ const DemandeurDemandes = () => {
     idService: user?.idService || ''
   });
 
-  const loadDemandes = async () => {
+  const loadDemandes = useCallback(async () => {
     try {
       if (!canReadOwnDemandes && !canReadAllDemandes) {
         setDemandes([]);
@@ -63,7 +74,7 @@ const DemandeurDemandes = () => {
       console.error('Erreur chargement demandes:', err);
       setError('Impossible de charger vos demandes.');
     }
-  };
+  }, [canReadAllDemandes, canReadOwnDemandes]);
 
   const loadArticles = async () => {
     try {
@@ -92,7 +103,7 @@ const DemandeurDemandes = () => {
       }
     };
     init();
-  }, [user]);
+  }, [user, loadDemandes]);
 
   const resetForm = () => {
     setForm({ typeMarche: '', idBudget: '', idService: user?.idService || '' });
@@ -114,6 +125,22 @@ const DemandeurDemandes = () => {
       console.error('Erreur chargement historique:', err);
     } finally {
       setHistoryLoading(false);
+    }
+  };
+
+  const openDemandeDetails = async (demande) => {
+    setViewingDemande(demande);
+    setTimeline([]);
+    setTimelineError('');
+    setTimelineLoading(true);
+    try {
+      const { data } = await api.get(`/demandes/${demande.idDemande}/timeline`);
+      setTimeline(data);
+    } catch (err) {
+      console.error('Erreur lors du chargement du suivi de la demande:', err);
+      setTimelineError(err.response?.data?.message || 'Impossible de charger le suivi de cette demande.');
+    } finally {
+      setTimelineLoading(false);
     }
   };
 
@@ -178,43 +205,50 @@ const DemandeurDemandes = () => {
 
   const handleBudgetChange = (idBudget) => {
     const budget = budgets.find(b => b.idBudget === parseInt(idBudget));
-    setForm({
+    const updatedForm = {
       ...form,
       idBudget: idBudget,
       typeMarche: budget ? budget.typeBudget.toLowerCase() : ''
-    });
-    // Si on change de budget, on vide le panier car les types peuvent être différents
-    if (selectedItems.length > 0) {
-      if (window.confirm("Changer de ligne budgétaire videra votre liste d'articles car les types peuvent différer. Continuer ?")) {
-        setSelectedItems([]);
-      } else {
-        return;
-      }
+    };
+    if (selectedItems.length > 0 && form.idBudget && idBudget !== form.idBudget) {
+      setConfirmation({
+        title: 'Changer de ligne budgétaire ?',
+        message: "La liste d'articles sera vidée, car les types de budget peuvent différer.",
+        confirmLabel: 'Changer de ligne',
+        onConfirm: () => {
+          setForm(updatedForm);
+          setSelectedItems([]);
+          setConfirmation(null);
+        }
+      });
+      return;
     }
+    setForm(updatedForm);
   };
 
   const addArticleToList = () => {
     if (!currentItem.idArticle || !currentItem.quantite || currentItem.quantite <= 0) {
-      alert("Veuillez choisir un article et une quantité valide.");
+      setError('Veuillez choisir un article et saisir une quantité valide.');
       return;
     }
-    
+
     const articleIdNum = parseInt(currentItem.idArticle);
     const articleData = articles.find(a => a.idArticle === articleIdNum);
-    
+
     if (!articleData) {
-      alert("Erreur: L'article sélectionné est introuvable.");
+      setError("L'article sélectionné est introuvable. Veuillez le choisir à nouveau.");
       return;
     }
     const pu = currentItem.montant ? parseInt(currentItem.montant) : null;
-    setSelectedItems([...selectedItems, { 
-      idArticle: articleIdNum, 
+    setSelectedItems([...selectedItems, {
+      idArticle: articleIdNum,
       nomArticle: articleData.nomArticle,
       quantite: parseInt(currentItem.quantite),
       description: currentItem.description,
       prixUnitaire: pu,
       montant: pu ? pu * parseInt(currentItem.quantite) : null
     }]);
+    setError('');
     setCurrentItem({ idArticle: '', quantite: '', description: '', montant: '' });
   };
 
@@ -272,16 +306,25 @@ const DemandeurDemandes = () => {
     }
   };
 
-  const handleDeleteDemande = async (idDemande) => {
-    if (!window.confirm("Supprimer cette commande et tous ses articles ?")) return;
-    try {
-      await api.delete(`/demandes/${idDemande}`);
-      setMessage("Commande supprimée.");
-      loadDemandes();
-    } catch (err) {
-      console.error(err);
-      setError("Erreur lors de la suppression.");
-    }
+  const handleDeleteDemande = (idDemande) => {
+    setConfirmation({
+      title: 'Supprimer cette commande ?',
+      message: "Cette action supprimera également tous les articles associés et ne peut pas être annulée.",
+      confirmLabel: 'Supprimer la commande',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await api.delete(`/demandes/${idDemande}`);
+          setMessage('Commande supprimée.');
+          await loadDemandes();
+        } catch (err) {
+          console.error(err);
+          setError('Erreur lors de la suppression.');
+        } finally {
+          setConfirmation(null);
+        }
+      }
+    });
   };
 
   const userRole = user?.role?.toUpperCase().replace(/\s+/g, '_');
@@ -297,10 +340,17 @@ const DemandeurDemandes = () => {
 
   const filteredDemandes = demandes.filter((d) => {
     const searchLower = searchTerm.toLowerCase();
+    const serviceLabel = getServiceOrRoleLabel(d).toLowerCase();
     const matchSearch = !searchTerm ||
-      d.nomService?.toLowerCase().includes(searchLower) ||
-      d.articles.some(a => a.nomArticle?.toLowerCase().includes(searchLower)) ||
-      d.idDemande.toString().includes(searchLower);
+      serviceLabel.includes(searchLower) ||
+      d.nomDemandeur?.toLowerCase().includes(searchLower) ||
+      d.roleDemandeur?.toLowerCase().includes(searchLower) ||
+      d.numeroBudget?.toLowerCase().includes(searchLower) ||
+      d.motif?.toLowerCase().includes(searchLower) ||
+      String(d.idMarche || '').includes(searchLower) ||
+      d.marchesAssocies?.includes(searchLower) ||
+      d.articles?.some(a => a.nomArticle?.toLowerCase().includes(searchLower)) ||
+      String(d.idDemande).includes(searchLower);
     const matchStatut = !filterStatut || d.statut === filterStatut;
     return matchSearch && matchStatut;
   });
@@ -358,8 +408,8 @@ const DemandeurDemandes = () => {
         </div>
       </div>
 
-      {message && <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-sm text-emerald-700 mb-4">{message}</div>}
-      {error && <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-700 mb-4">{error}</div>}
+      {message && <div role="status" aria-live="polite" className="rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-sm text-emerald-700 mb-4">{message}</div>}
+      {error && <div role="alert" aria-live="assertive" className="rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-700 mb-4">{error}</div>}
 
       {/* Formulaire */}
       {showForm && (
@@ -526,19 +576,50 @@ const DemandeurDemandes = () => {
       )}
 
       {/* Filtres */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input type="text" placeholder="Rechercher par #ID, service ou article..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full rounded-xl border-gray-300 pl-10 py-2.5" />
+      <ReportExport
+        rows={filteredDemandes}
+        title="Demandes"
+        fileName="rapport-demandes"
+        dateField="dateDemande"
+        criteria={[
+          searchTerm && `Recherche : ${searchTerm}`,
+          filterStatut && `Statut : ${filterStatut}`
+        ].filter(Boolean).join(' · ')}
+        columns={[
+          { key: 'idDemande', label: 'N° demande', value: row => `#${row.idDemande}` },
+          { key: 'dateDemande', label: 'Date' },
+          { key: 'nomDemandeur', label: 'Demandeur' },
+          { key: 'nomService', label: 'Service', value: row => getServiceOrRoleLabel(row) },
+          { key: 'statut', label: 'Statut' },
+          { key: 'typeMarche', label: 'Type de marché' },
+          { key: 'numeroBudget', label: 'Budget' },
+          { key: 'marchesAssocies', label: 'N° marché' },
+          { key: 'montantEstime', label: 'Montant estimé (FBU)' }
+        ]}
+      />
+      <div className="space-y-3">
+        <div className="flex flex-col gap-4 sm:flex-row">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input type="text" placeholder="Rechercher par numéro, demandeur, service ou marché..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full rounded-xl border-gray-300 pl-10 py-2.5" />
+          </div>
+          <select value={filterStatut} onChange={(e) => setFilterStatut(e.target.value)} className="rounded-xl border-gray-300 bg-surface min-w-[180px]">
+            <option value="">Tous les statuts</option>
+            <option value="Brouillon">Brouillon</option>
+            <option value="En attente">En attente</option>
+            <option value="Valide">Valide</option>
+            <option value="Rejete">Rejete</option>
+            <option value="Inclus dans Marché">Inclus dans Marché</option>
+          </select>
         </div>
-        <select value={filterStatut} onChange={(e) => setFilterStatut(e.target.value)} className="rounded-xl border-gray-300 bg-surface min-w-[180px]">
-          <option value="">Tous les statuts</option>
-          <option value="Brouillon">Brouillon</option>
-          <option value="En attente">En attente</option>
-          <option value="Valide">Valide</option>
-          <option value="Rejete">Rejete</option>
-          <option value="Inclus dans Marché">Inclus dans Marché</option>
-        </select>
+        <SavedFilters
+          storageKey={`saved-filters:my-demands:${user?.idUser || 'guest'}`}
+          filters={{ searchTerm, filterStatut }}
+          onApply={(saved) => {
+            setSearchTerm(saved.searchTerm || '');
+            setFilterStatut(saved.filterStatut || '');
+          }}
+        />
       </div>
 
       {/* Liste des commandes - Layout card responsive */}
@@ -652,7 +733,7 @@ const DemandeurDemandes = () => {
                       <button onClick={() => fetchHistory(demande.idDemande)} className="p-1.5 text-gray-500 hover:bg-gray-50 rounded-lg border border-gray-100 transition" title="Historique">
                         <History className="h-4 w-4" />
                       </button>
-                      <button onClick={() => setViewingDemande(demande)} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg border border-blue-100 transition" title="Visualiser">
+                      <button onClick={() => openDemandeDetails(demande)} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg border border-blue-100 transition" title="Visualiser">
                         <Eye className="h-4 w-4" />
                       </button>
                       {canUpdateDemande && 
@@ -697,6 +778,25 @@ const DemandeurDemandes = () => {
               <button onClick={() => setViewingDemande(null)} className="text-gray-400 hover:text-gray-600">×</button>
             </div>
             <div className="p-6 overflow-y-auto">
+              {timelineLoading ? (
+                <div role="status" className="mb-5 flex items-center gap-3 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
+                  <span className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                  Chargement du suivi…
+                </div>
+              ) : timelineError ? (
+                <p role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                  {timelineError}
+                </p>
+              ) : timeline.length > 0 ? (
+                <div className="mb-6">
+                  <DemandeTimeline steps={timeline} />
+                </div>
+              ) : null}
+              <DossierAttachments
+                entityType="demande"
+                entityId={viewingDemande.idDemande}
+                canUpload={canCreateDemande || canUpdateDemande || hasPerm('AJUSTER_DEMANDE_CGMP') || hasPerm('VALIDER_BUDGET_DEMANDE')}
+              />
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
@@ -833,6 +933,16 @@ const DemandeurDemandes = () => {
             </div>
           </div>
         </div>
+      )}
+      {confirmation && (
+        <ConfirmDialog
+          title={confirmation.title}
+          message={confirmation.message}
+          confirmLabel={confirmation.confirmLabel}
+          danger={confirmation.danger}
+          onConfirm={confirmation.onConfirm}
+          onCancel={() => setConfirmation(null)}
+        />
       )}
     </div>
   );

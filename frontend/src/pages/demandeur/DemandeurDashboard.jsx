@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { FileText, Clock, CheckCircle, XCircle, PlusCircle, Package, Info } from 'lucide-react';
 import { AuthContext } from '../../contexts/AuthContext';
 import api from '../../services/api';
+import EcheanceAlerts from '../../components/EcheanceAlerts';
 
 const DemandeurDashboard = () => {
   const { user } = useContext(AuthContext);
@@ -89,6 +90,8 @@ const DemandeurDashboard = () => {
           Nouvelle demande
         </Link>
       </div>
+
+      <EcheanceAlerts />
 
       {/* Alertes & Notifications */}
       {(demandes.some(d => (d.modifieParCgmp === 1 || (d.statut === 'Rejete' && d.renvoyee === 1)) && d.alerteVue === 0)) && (

@@ -16,7 +16,8 @@ exports.effectuerPaiement = async (req, res) => {
         const result = await Paiement.create({
             idReception,
             montant,
-            datePaiement
+            datePaiement,
+            responsable: req.user.nom
         });
 
         if (!result) {

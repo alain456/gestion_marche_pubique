@@ -2,9 +2,14 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Users, Shield, Activity } from 'lucide-react';
 import api from '../../services/api';
+import DashboardMetrics from '../../components/DashboardMetrics';
+import EcheanceAlerts from '../../components/EcheanceAlerts';
+import EcheanceAlertSettings from '../../components/EcheanceAlertSettings';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({ totalUsers: 0, activeRoles: 0 });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -19,6 +24,9 @@ const AdminDashboard = () => {
         });
       } catch (error) {
         console.error('Erreur lors de la récupération des statistiques admin:', error);
+        setError('Les statistiques ne sont pas disponibles pour le moment.');
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -30,9 +38,15 @@ const AdminDashboard = () => {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-800 border-b pb-2">Tableau de Bord Administrateur</h1>
-          <p className="text-gray-600 mt-2">Turabire hamwe Aba Utilisateurs, rôles et actions rapides.</p>
+          <p className="text-gray-600 mt-2">Consultez les utilisateurs, les rôles et les actions rapides.</p>
         </div>
       </div>
+
+      {error && (
+        <div role="alert" aria-live="assertive" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {error}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-surface p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
@@ -41,7 +55,9 @@ const AdminDashboard = () => {
           </div>
           <div>
             <p className="text-sm font-medium text-gray-500">Utilisateurs Totaux</p>
-            <p className="text-2xl font-semibold text-gray-900">{stats.totalUsers}</p>
+            <p className="text-2xl font-semibold text-gray-900" aria-live="polite">
+              {loading ? '…' : stats.totalUsers}
+            </p>
           </div>
         </div>
 
@@ -51,7 +67,9 @@ const AdminDashboard = () => {
           </div>
           <div>
             <p className="text-sm font-medium text-gray-500">Rôles Actifs</p>
-            <p className="text-2xl font-semibold text-gray-900">{stats.activeRoles}</p>
+            <p className="text-2xl font-semibold text-gray-900" aria-live="polite">
+              {loading ? '…' : stats.activeRoles}
+            </p>
           </div>
         </div>
 
@@ -61,10 +79,14 @@ const AdminDashboard = () => {
           </div>
           <div>
             <p className="text-sm font-medium text-gray-500">Statut Système</p>
-            <p className="text-2xl font-semibold text-gray-900">En ligne1</p>
+            <p className="text-2xl font-semibold text-gray-900">Disponible</p>
           </div>
         </div>
       </div>
+
+      <DashboardMetrics />
+      <EcheanceAlerts />
+      <EcheanceAlertSettings />
 
       <div className="bg-surface rounded-xl shadow-sm border border-gray-100 p-6">
         <h2 className="text-lg font-semibold text-gray-800 mb-4">Actions Rapides</h2>
@@ -92,6 +114,13 @@ const AdminDashboard = () => {
             className="inline-flex items-center justify-center px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition"
           >
             Attribuer des permissions
+          </Link>
+          <Link
+            to="/admin/audit"
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-800 px-4 py-2 text-white transition hover:bg-slate-900"
+          >
+            <Activity className="h-4 w-4" />
+            Consulter le journal d’audit
           </Link>
         </div>
       </div>

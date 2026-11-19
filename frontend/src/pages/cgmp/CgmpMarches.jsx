@@ -1,6 +1,10 @@
-import { useState, useEffect, useMemo, Fragment } from 'react';
+import { useState, useEffect, useMemo, Fragment, useContext } from 'react';
 
 import api from '../../services/api';
+import { AuthContext } from '../../contexts/AuthContext';
+import SavedFilters from '../../components/SavedFilters';
+import ReportExport from '../../components/ReportExport';
+import DossierAttachments from '../../components/DossierAttachments';
 import { 
   FileText, 
   PlusCircle, 
@@ -29,6 +33,7 @@ import { analyzeMieuxDisant, isMieuxDisantOffer, DEFAULT_MAX_ECART_PERCENT } fro
 const normalizeTypeMarche = (value) => (value || '').toString().trim().toLowerCase();
 
 const CgmpMarches = () => {
+  const { user } = useContext(AuthContext);
   const [marches, setMarches] = useState([]);
   const [groupedDemands, setGroupedDemands] = useState([]); // Nouveau nom pour plus de clarté
   const [allDemands, setAllDemands] = useState([]); // Pour retrouver les articles des marchés existants
@@ -157,8 +162,17 @@ const CgmpMarches = () => {
   // Logique de filtrage des containers (Demandes validées)
   const filteredGroupedDemands = useMemo(() => {
     return groupedDemands.filter(group => {
-      const matchSearch = group.numeroBudget?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          group.typeMarche?.toLowerCase().includes(searchQuery.toLowerCase());
+      const query = searchQuery.trim().toLowerCase();
+      const matchSearch = !query ||
+        group.numeroBudget?.toLowerCase().includes(query) ||
+        group.typeMarche?.toLowerCase().includes(query) ||
+        group.demands.some(d =>
+          String(d.idDemande).includes(query) ||
+          d.nomDemandeur?.toLowerCase().includes(query) ||
+          d.nomService?.toLowerCase().includes(query) ||
+          d.roleDemandeur?.toLowerCase().includes(query) ||
+          d.articles?.some(article => article.nomArticle?.toLowerCase().includes(query))
+        );
       const matchType = filterType === '' || group.typeMarche === filterType;
       const matchYear = filterYear === '' || group.exerciceBudgetaire?.toString() === filterYear;
       
@@ -172,16 +186,32 @@ const CgmpMarches = () => {
       if (filterViewMode === 'actifs' && m.statut === 'annule') return false;
       if (filterViewMode === 'archives' && m.statut !== 'annule') return false;
 
-      const matchSearch = m.idMarche?.toString().includes(searchQuery) ||
-                          m.numeroBudget?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          m.typeMarche?.toLowerCase().includes(searchQuery.toLowerCase());
+      const query = searchQuery.trim().toLowerCase();
+      const demandeIds = String(m.idDemande || '').split(',').map(id => id.trim());
+      const linkedDemandMatches = allDemands.some(d =>
+        demandeIds.includes(String(d.idDemande)) &&
+        (
+          d.nomDemandeur?.toLowerCase().includes(query) ||
+          d.nomService?.toLowerCase().includes(query) ||
+          d.roleDemandeur?.toLowerCase().includes(query) ||
+          d.numeroBudget?.toLowerCase().includes(query) ||
+          d.articles?.some(article => article.nomArticle?.toLowerCase().includes(query))
+        )
+      );
+      const matchSearch = !query ||
+                          m.idMarche?.toString().includes(query) ||
+                          m.idDemande?.toLowerCase().includes(query) ||
+                          m.numeroBudget?.toLowerCase().includes(query) ||
+                          m.typeMarche?.toLowerCase().includes(query) ||
+                          m.statut?.toLowerCase().includes(query) ||
+                          linkedDemandMatches;
       const matchType = filterType === '' || m.typeMarche === filterType;
       const matchStatus = filterStatus === '' || m.statut === filterStatus;
       const matchYear = filterYear === '' || m.exerciceBudgetaire?.toString() === filterYear;
 
       return matchSearch && matchType && matchStatus && matchYear;
     });
-  }, [marches, searchQuery, filterType, filterStatus, filterYear, filterViewMode]);
+  }, [marches, allDemands, searchQuery, filterType, filterStatus, filterYear, filterViewMode]);
 
   const soumissionsAnalysis = useMemo(() => {
     if (!selectedMarche || marcheOffers.length === 0) return null;
@@ -705,6 +735,30 @@ const CgmpMarches = () => {
         </div>
       )}
       {/* Section des Filtres et Recherche */}
+      <ReportExport
+        rows={filteredMarches}
+        title="Marchés publics"
+        fileName="rapport-marches"
+        dateField="dateSelection"
+        criteria={[
+          searchQuery && `Recherche : ${searchQuery}`,
+          filterType && `Type : ${filterType}`,
+          filterStatus && `Statut : ${filterStatus}`,
+          filterYear && `Année : ${filterYear}`,
+          `Vue : ${filterViewMode}`
+        ].filter(Boolean).join(' · ')}
+        columns={[
+          { key: 'idMarche', label: 'N° marché', value: row => `#${row.idMarche}` },
+          { key: 'idDemande', label: 'Demandes associées' },
+          { key: 'numeroBudget', label: 'Budget' },
+          { key: 'typeMarche', label: 'Type' },
+          { key: 'modePassation', label: 'Mode de passation' },
+          { key: 'montantEstime', label: 'Montant estimé (FBU)' },
+          { key: 'dateSelection', label: 'Date de sélection' },
+          { key: 'dateLimite', label: 'Date limite' },
+          { key: 'statut', label: 'Statut' }
+        ]}
+      />
       <div className="bg-surface rounded-3xl border border-gray-100 shadow-sm p-6 mb-8">
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Barre de recherche */}
@@ -712,9 +766,9 @@ const CgmpMarches = () => {
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-2 block">Recherche intelligente</label>
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <input 
+              <input
                 type="text"
-                placeholder="Rechercher un marché, un budget ou un ID..."
+                placeholder="Rechercher par marché, demande, demandeur, service ou budget..."
                 className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-primary/10 transition-all font-medium text-sm"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -795,6 +849,19 @@ const CgmpMarches = () => {
               </button>
             )}
           </div>
+        </div>
+        <div className="mt-4">
+          <SavedFilters
+            storageKey={`saved-filters:cgmp-markets:${user?.idUser || 'guest'}`}
+            filters={{ searchQuery, filterType, filterStatus, filterYear, filterViewMode }}
+            onApply={(saved) => {
+              setSearchQuery(saved.searchQuery || '');
+              setFilterType(saved.filterType || '');
+              setFilterStatus(saved.filterStatus || '');
+              setFilterYear(saved.filterYear || '');
+              setFilterViewMode(saved.filterViewMode || 'actifs');
+            }}
+          />
         </div>
       </div>
 
@@ -1017,38 +1084,51 @@ const CgmpMarches = () => {
             </div>
             
             {/* Onglets */}
-            <div className="flex border-b border-gray-100 bg-gray-50/50">
+            <div className="flex overflow-x-auto border-b border-gray-100 bg-gray-50/50">
               <button 
+                type="button"
                 onClick={() => setActiveTab('info')}
-                className={`flex-1 py-4 text-xs font-black uppercase tracking-widest transition-all ${
+                className={`min-w-32 flex-1 py-4 text-xs font-black uppercase tracking-widest transition-all ${
                   activeTab === 'info' ? 'text-primary border-b-2 border-primary bg-white' : 'text-gray-400 hover:text-gray-600'
                 }`}
               >
                 📋 Informations
               </button>
               <button 
+                type="button"
                 onClick={() => setActiveTab('articles')}
-                className={`flex-1 py-4 text-xs font-black uppercase tracking-widest transition-all ${
+                className={`min-w-32 flex-1 py-4 text-xs font-black uppercase tracking-widest transition-all ${
                   activeTab === 'articles' ? 'text-primary border-b-2 border-primary bg-white' : 'text-gray-400 hover:text-gray-600'
                 }`}
               >
                 📦 Articles ({marcheArticles.length})
               </button>
               <button 
+                type="button"
                 onClick={() => setActiveTab('soumissions')}
-                className={`flex-1 py-4 text-xs font-black uppercase tracking-widest transition-all ${
+                className={`min-w-32 flex-1 py-4 text-xs font-black uppercase tracking-widest transition-all ${
                   activeTab === 'soumissions' ? 'text-primary border-b-2 border-primary bg-white' : 'text-gray-400 hover:text-gray-600'
                 }`}
               >
                 🤝 Offres ({marcheOffers.length})
               </button>
               <button 
+                type="button"
                 onClick={() => setActiveTab('tracking')}
-                className={`flex-1 py-4 text-xs font-black uppercase tracking-widest transition-all ${
+                className={`min-w-32 flex-1 py-4 text-xs font-black uppercase tracking-widest transition-all ${
                   activeTab === 'tracking' ? 'text-primary border-b-2 border-primary bg-white' : 'text-gray-400 hover:text-gray-600'
                 }`}
               >
                 📈 Suivi & Clôture
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('documents')}
+                className={`min-w-32 flex-1 py-4 text-xs font-black uppercase tracking-widest transition-all ${
+                  activeTab === 'documents' ? 'text-primary border-b-2 border-primary bg-white' : 'text-gray-400 hover:text-gray-600'
+                }`}
+              >
+                Documents
               </button>
             </div>
             
@@ -1407,6 +1487,13 @@ const CgmpMarches = () => {
                     </div>
                   </div>
                 </div>
+              )}
+              {activeTab === 'documents' && selectedMarche && (
+                <DossierAttachments
+                  entityType="marche"
+                  entityId={selectedMarche.idMarche}
+                  canUpload={user?.permissions?.includes('GERER_MARCHES')}
+                />
               )}
 
               <div className="flex justify-end gap-4 pt-4 border-t border-gray-50 sticky bottom-0 bg-surface pb-2">

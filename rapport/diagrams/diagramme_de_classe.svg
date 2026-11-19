@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1420" height="1020" viewBox="0 0 1420 1020">
+  <rect width="100%" height="100%" fill="#ffffff"/>
+
+  <!-- Package UML -->
+  <rect x="28" y="40" width="1364" height="962"
+        fill="#ffffff" stroke="#111111" stroke-width="1.6"/>
+  <rect x="28" y="18" width="318" height="22" fill="#ffffff" stroke="#111111" stroke-width="1.6"/>
+  <text x="38" y="34" font-family="Liberation Sans, Arial, sans-serif" font-size="13" fill="#111">pkg</text>
+  <text x="70" y="34" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" font-weight="700" fill="#111">MODULE DE GESTION D'UN MARCHÉ</text>
+
+  <!-- Associations (behind boxes) -->
+  <line x1="430" y1="223.56" x2="580" y2="280" stroke="#111" stroke-width="1.3"/>
+  <text x="440" y="213.56" text-anchor="start" font-family="Liberation Sans, Arial, sans-serif" font-size="12" font-weight="600" fill="#111">1</text>
+  <text x="554" y="270" text-anchor="end" font-family="Liberation Sans, Arial, sans-serif" font-size="12" font-weight="600" fill="#111">0..*</text>
+  <text x="499.0" y="209.56" text-anchor="middle" font-family="Liberation Sans, Arial, sans-serif" font-size="12" font-style="italic" fill="#111">créer / publier</text>
+
+  <line x1="689.2" y1="473" x2="302.5" y2="590" stroke="#111" stroke-width="1.3"/>
+  <text x="673.2" y="495" text-anchor="end" font-family="Liberation Sans, Arial, sans-serif" font-size="12" font-weight="600" fill="#111">1</text>
+  <text x="280.5" y="582" text-anchor="end" font-family="Liberation Sans, Arial, sans-serif" font-size="12" font-weight="600" fill="#111">0..*</text>
+  <text x="531.85" y="535.5" text-anchor="middle" font-family="Liberation Sans, Arial, sans-serif" font-size="12" font-style="italic" fill="#111">publier / postuler</text>
+
+  <line x1="884.2" y1="473" x2="1128.5" y2="610" stroke="#111" stroke-width="1.3"/>
+  <text x="902.2" y="495" text-anchor="start" font-family="Liberation Sans, Arial, sans-serif" font-size="12" font-weight="600" fill="#111">1</text>
+  <text x="1150.5" y="602" text-anchor="start" font-family="Liberation Sans, Arial, sans-serif" font-size="12" font-weight="600" fill="#111">0..*</text>
+  <text x="1028.35" y="541.5" text-anchor="middle" font-family="Liberation Sans, Arial, sans-serif" font-size="12" font-style="italic" fill="#111">avoir</text>
+
+  
+  <rect x="70" y="90" width="360" height="318" fill="#ffffff" stroke="#111111" stroke-width="1.4"/>
+  <text x="250.0" y="109" text-anchor="middle" font-family="Liberation Sans, Arial, sans-serif"
+        font-size="14.5" font-weight="700" fill="#111">Utilisateur</text>
+  <line x1="70" y1="118" x2="430" y2="118" stroke="#111" stroke-width="1.2"/>
+  <text x="84" y="138" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">- idUser : int</text><text x="84" y="155" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">- idRole : int</text><text x="84" y="172" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">- idService : int</text><text x="84" y="189" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">- nom : char</text><text x="84" y="206" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">- prenom : char</text><text x="84" y="223" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">- email : char</text><text x="84" y="240" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">- password : char</text><text x="84" y="257" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">- tel : int</text><text x="84" y="274" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">- dateCreation : date</text>
+  <line x1="70" y1="280" x2="430" y2="280" stroke="#111" stroke-width="1.2"/>
+  <text x="84" y="300" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">+ sAuthentifier(email, password) : boolean</text><text x="84" y="317" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">+ seDeconnecter() : void</text><text x="84" y="334" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">+ creerMarche() : Marche</text><text x="84" y="351" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">+ publierMarche() : void</text><text x="84" y="368" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">+ cloturerMarche() : void</text><text x="84" y="385" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">+ attribuerMarche(idOffre) : void</text><text x="84" y="402" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">+ consulterMarches() : List</text>
+
+  
+  <rect x="580" y="70" width="390" height="403" fill="#ffffff" stroke="#111111" stroke-width="1.4"/>
+  <text x="775.0" y="89" text-anchor="middle" font-family="Liberation Sans, Arial, sans-serif"
+        font-size="14.5" font-weight="700" fill="#111">Marche</text>
+  <line x1="580" y1="98" x2="970" y2="98" stroke="#111" stroke-width="1.2"/>
+  <text x="594" y="118" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">- idMarche : int</text><text x="594" y="135" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">- montantEstime : int</text><text x="594" y="152" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">- modePassation : char</text><text x="594" y="169" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">- justificationChoix : char</text><text x="594" y="186" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">- seuilReglementaireApplique : char</text><text x="594" y="203" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">- dateSelection : char</text><text x="594" y="220" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">- validateur : char</text><text x="594" y="237" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">- statut : char</text><text x="594" y="254" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">- dateCloture : date</text><text x="594" y="271" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">- cloturePar : char</text><text x="594" y="288" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">- commentaire : char</text>
+  <line x1="580" y1="294" x2="970" y2="294" stroke="#111" stroke-width="1.2"/>
+  <text x="594" y="314" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">+ creer() : void</text><text x="594" y="331" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">+ modifier() : void</text><text x="594" y="348" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">+ publier() : void</text><text x="594" y="365" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">+ appliquerSeuil() : void</text><text x="594" y="382" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">+ definirCriteres() : void</text><text x="594" y="399" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">+ classerOffres() : Soumissionnaire</text><text x="594" y="416" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">+ attribuer(idOffre) : void</text><text x="594" y="433" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">+ relancer() : Marche</text><text x="594" y="450" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">+ cloturer() : void</text><text x="594" y="467" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">+ supprimer() : void</text>
+
+  
+  <rect x="110" y="590" width="350" height="284" fill="#ffffff" stroke="#111111" stroke-width="1.4"/>
+  <text x="285.0" y="609" text-anchor="middle" font-family="Liberation Sans, Arial, sans-serif"
+        font-size="14.5" font-weight="700" fill="#111">Soumissionnaire</text>
+  <line x1="110" y1="618" x2="460" y2="618" stroke="#111" stroke-width="1.2"/>
+  <text x="124" y="638" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">- idOffre : int</text><text x="124" y="655" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">- nomSoumissionnaire : char</text><text x="124" y="672" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">- adresse : char</text><text x="124" y="689" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">- telephone : int</text><text x="124" y="706" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">- email : char</text><text x="124" y="723" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">- referenceAppelOffre : int</text><text x="124" y="740" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">- dateSoumission : date</text><text x="124" y="757" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">- montantPropose : int</text>
+  <line x1="110" y1="763" x2="460" y2="763" stroke="#111" stroke-width="1.2"/>
+  <text x="124" y="783" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">+ deposerOffre() : void</text><text x="124" y="800" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">+ modifierOffre() : void</text><text x="124" y="817" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">+ demanderModification() : void</text><text x="124" y="834" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">+ evaluerOffre() : void</text><text x="124" y="851" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">+ consulterOffres() : List</text><text x="124" y="868" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">+ supprimerOffre() : void</text>
+
+  
+  <rect x="1020" y="610" width="310" height="199" fill="#ffffff" stroke="#111111" stroke-width="1.4"/>
+  <text x="1175.0" y="629" text-anchor="middle" font-family="Liberation Sans, Arial, sans-serif"
+        font-size="14.5" font-weight="700" fill="#111">Notification</text>
+  <line x1="1020" y1="638" x2="1330" y2="638" stroke="#111" stroke-width="1.2"/>
+  <text x="1034" y="658" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">- idNotification : int</text><text x="1034" y="675" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">- idMarche : int</text><text x="1034" y="692" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">- message : char</text><text x="1034" y="709" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">- dateEnvoi : date</text><text x="1034" y="726" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">- modeNotification : char</text>
+  <line x1="1020" y1="732" x2="1330" y2="732" stroke="#111" stroke-width="1.2"/>
+  <text x="1034" y="752" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">+ envoyer() : void</text><text x="1034" y="769" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">+ consulter() : void</text><text x="1034" y="786" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">+ notifierDepotOffre() : void</text><text x="1034" y="803" font-family="Liberation Sans, Arial, sans-serif" font-size="12.5" fill="#111">+ notifierAttribution() : void</text>
+
+</svg>

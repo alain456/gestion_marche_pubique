@@ -1,6 +1,88 @@
 const db = require('../config/db');
 
 const Demande = {
+    // Requête commune : récupère les demandes avec leurs lignes groupées.
+    // Filtres optionnels : idUser, idService, typeMarche (+ statut 'En attente' si onlyPending)
+    findDemandes: async ({ idUser, idService, typeMarche, onlyPending } = {}) => {
+        const conditions = [];
+        const params = [];
+
+        if (idUser !== undefined) {
+            conditions.push('d.idUser = ?');
+            params.push(idUser);
+        }
+        if (idService !== undefined) {
+            conditions.push('(d.idService = ? OR (? IS NULL AND d.idService IS NULL))');
+            params.push(idService, idService);
+        }
+        if (typeMarche !== undefined) {
+            conditions.push('d.typeMarche = ?');
+            params.push(typeMarche);
+        }
+        if (onlyPending) {
+            conditions.push("d.statut = 'En attente'");
+        }
+
+        const whereClause = conditions.length > 0
+            ? `WHERE ${conditions.join(' AND ')}`
+            : '';
+
+        const query = `
+            SELECT
+                d.*,
+                s.nomService,
+                (
+                    SELECT GROUP_CONCAT(DISTINCT m.idMarche ORDER BY m.idMarche)
+                    FROM marche m
+                    WHERE FIND_IN_SET(d.idDemande, m.idDemande) > 0
+                ) as marchesAssocies,
+                da.numeroBudget,
+                da.exerciceBudgetaire,
+                da.sourceFinancier,
+                da.typeInstitution,
+                da.montantEstime as montantEstimeBudget,
+                u.nom as nomDemandeur,
+                r.nomRole as roleDemandeur,
+                c.nomChef,
+                GROUP_CONCAT(
+                    JSON_OBJECT(
+                        'idLigne', l.idLigne,
+                        'idArticle', l.idArticle,
+                        'nomArticle', a.nomArticle,
+                        'quantite', l.quantite,
+                        'prixUnitaire', l.prixUnitaire,
+                        'montant', l.montant,
+                        'description', l.description
+                    )
+                ) as articles
+            FROM demande d
+            LEFT JOIN budget da ON d.idBudget = da.idBudget
+            LEFT JOIN servicedemandeur s ON d.idService = s.idService
+            LEFT JOIN utilisateur u ON d.idUser = u.idUser
+            LEFT JOIN role r ON u.idRole = r.idRole
+            LEFT JOIN (
+                SELECT u.idService, u.nom as nomChef
+                FROM utilisateur u
+                JOIN role r ON u.idRole = r.idRole
+                WHERE r.nomRole IN ('CHEF_SERVICE', 'CHEF_INSTITUTION')
+            ) c ON d.idService = c.idService
+            LEFT JOIN ligne_demande l ON d.idDemande = l.idDemande
+            LEFT JOIN article a ON l.idArticle = a.idArticle
+            ${whereClause}
+            GROUP BY d.idDemande
+            ORDER BY d.dateDemande DESC
+        `;
+
+        const [rows] = await db.query(query, params);
+
+        return rows.map(row => ({
+            ...row,
+            articles: row.articles
+                ? JSON.parse(`[${row.articles}]`)
+                : []
+        }));
+    },
+
     // Créer une demande avec plusieurs lignes (transactionnel)
     create: async (data) => {
         const { idService, idUser, typeMarche, priorite, statut, articles, idBudget } = data;
@@ -61,141 +143,13 @@ const Demande = {
     },
 
     // Récupérer toutes les demandes avec leurs lignes groupées
-    findAll: async () => {
-        const query = `
-            SELECT 
-                d.*, 
-                s.nomService,
-                da.numeroBudget,
-                da.exerciceBudgetaire,
-                da.sourceFinancier,
-                da.typeInstitution,
-                da.montantEstime as montantEstimeBudget,
-                u.nom as nomDemandeur,
-                r.nomRole as roleDemandeur,
-                c.nomChef,
-                GROUP_CONCAT(
-                    JSON_OBJECT(
-                        'idLigne', l.idLigne,
-                        'idArticle', l.idArticle,
-                        'nomArticle', a.nomArticle,
-                        'quantite', l.quantite,
-                        'prixUnitaire', l.prixUnitaire,
-                        'montant', l.montant,
-                        'description', l.description
-                    )
-                ) as articles
-            FROM demande d
-            LEFT JOIN budget da ON d.idBudget = da.idBudget
-            LEFT JOIN servicedemandeur s ON d.idService = s.idService
-            LEFT JOIN utilisateur u ON d.idUser = u.idUser
-            LEFT JOIN role r ON u.idRole = r.idRole
-            LEFT JOIN (
-                SELECT u.idService, u.nom as nomChef 
-                FROM utilisateur u 
-                JOIN role r ON u.idRole = r.idRole 
-                WHERE r.nomRole IN ('CHEF_SERVICE', 'CHEF_INSTITUTION')
-            ) c ON d.idService = c.idService
-            LEFT JOIN ligne_demande l ON d.idDemande = l.idDemande
-            LEFT JOIN article a ON l.idArticle = a.idArticle
-            GROUP BY d.idDemande
-            ORDER BY d.dateDemande DESC
-        `;
-
-        const [rows] = await db.query(query);
-
-        return rows.map(row => ({
-            ...row,
-            articles: row.articles
-                ? JSON.parse(`[${row.articles}]`)
-                : []
-        }));
-    },
+    findAll: async () => Demande.findDemandes(),
 
     // Récupérer par service
-    findByService: async (idService) => {
-        const query = `
-            SELECT 
-                d.*,
-                s.nomService,
-                da.numeroBudget,
-                da.typeInstitution,
-                u.nom as nomDemandeur,
-                r.nomRole as roleDemandeur,
-                GROUP_CONCAT(
-                    JSON_OBJECT(
-                        'idLigne', l.idLigne,
-                        'idArticle', l.idArticle,
-                        'nomArticle', a.nomArticle,
-                        'quantite', l.quantite,
-                        'prixUnitaire', l.prixUnitaire,
-                        'montant', l.montant,
-                        'description', l.description
-                    )
-                ) as articles
-            FROM demande d
-            LEFT JOIN budget da ON d.idBudget = da.idBudget
-            LEFT JOIN servicedemandeur s ON d.idService = s.idService
-            LEFT JOIN ligne_demande l ON d.idDemande = l.idDemande
-            LEFT JOIN article a ON l.idArticle = a.idArticle
-            LEFT JOIN utilisateur u ON d.idUser = u.idUser
-            LEFT JOIN role r ON u.idRole = r.idRole
-            WHERE (d.idService = ? OR (? IS NULL AND d.idService IS NULL))
-            GROUP BY d.idDemande
-            ORDER BY d.dateDemande DESC
-        `;
+    findByService: async (idService) => Demande.findDemandes({ idService }),
 
-        const [rows] = await db.query(query, [idService, idService]);
-        return rows.map(row => ({
-            ...row,
-            articles: row.articles
-                ? JSON.parse(`[${row.articles}]`)
-                : []
-        }));
-    },
-    
     // Récupérer par utilisateur (Strictement mes demandes)
-    findByUser: async (idUser) => {
-        const query = `
-            SELECT 
-                d.*,
-                s.nomService,
-                da.numeroBudget,
-                da.typeInstitution,
-                u.nom as nomDemandeur,
-                r.nomRole as roleDemandeur,
-                GROUP_CONCAT(
-                    JSON_OBJECT(
-                        'idLigne', l.idLigne,
-                        'idArticle', l.idArticle,
-                        'nomArticle', a.nomArticle,
-                        'quantite', l.quantite,
-                        'prixUnitaire', l.prixUnitaire,
-                        'montant', l.montant,
-                        'description', l.description
-                    )
-                ) as articles
-            FROM demande d
-            LEFT JOIN budget da ON d.idBudget = da.idBudget
-            LEFT JOIN servicedemandeur s ON d.idService = s.idService
-            LEFT JOIN ligne_demande l ON d.idDemande = l.idDemande
-            LEFT JOIN article a ON l.idArticle = a.idArticle
-            LEFT JOIN utilisateur u ON d.idUser = u.idUser
-            LEFT JOIN role r ON u.idRole = r.idRole
-            WHERE d.idUser = ?
-            GROUP BY d.idDemande
-            ORDER BY d.dateDemande DESC
-        `;
-
-        const [rows] = await db.query(query, [idUser]);
-
-        return rows.map(row => ({
-            ...row,
-            articles: row.articles
-                ? JSON.parse(`[${row.articles}]`)
-                : []
-        }));
-    },
+    findByUser: async (idUser) => Demande.findDemandes({ idUser }),
 
     // Mettre à jour les articles d'une demande
     updateArticles: async (idDemande, articles) => {
@@ -392,48 +346,9 @@ const Demande = {
         }));
     },
 
-    // Récupérer les demandes d'un typeMarche spécifique
-    findByTypeMarche: async (typeMarche) => {
-        const query = `
-            SELECT 
-                d.*,
-                s.nomService,
-                da.numeroBudget,
-                da.exerciceBudgetaire,
-                da.sourceFinancier,
-                da.typeInstitution,
-                da.montantEstime as montantEstimeBudget,
-                u.nom as nomDemandeur,
-                r.nomRole as roleDemandeur,
-                GROUP_CONCAT(
-                    JSON_OBJECT(
-                        'idLigne', l.idLigne,
-                        'idArticle', l.idArticle,
-                        'nomArticle', a.nomArticle,
-                        'quantite', l.quantite,
-                        'prixUnitaire', l.prixUnitaire,
-                        'montant', l.montant,
-                        'description', l.description
-                    )
-                ) as articles
-            FROM demande d
-            LEFT JOIN budget da ON d.idBudget = da.idBudget
-            LEFT JOIN servicedemandeur s ON d.idService = s.idService
-            LEFT JOIN utilisateur u ON d.idUser = u.idUser
-            LEFT JOIN role r ON u.idRole = r.idRole
-            LEFT JOIN ligne_demande l ON d.idDemande = l.idDemande
-            LEFT JOIN article a ON l.idArticle = a.idArticle
-            WHERE d.typeMarche = ? AND d.statut = 'En attente'
-            GROUP BY d.idDemande
-            ORDER BY d.dateDemande DESC
-        `;
-        const [rows] = await db.query(query, [typeMarche]);
-        
-        return rows.map(row => ({
-            ...row,
-            articles: row.articles ? JSON.parse(`[${row.articles}]`) : []
-        }));
-    }
+    // Récupérer les demandes d'un typeMarche spécifique (en attente)
+    findByTypeMarche: async (typeMarche) =>
+        Demande.findDemandes({ typeMarche, onlyPending: true })
 };
 
 module.exports = Demande;

@@ -45,11 +45,12 @@ exports.validerReception = async (req, res) => {
 
     try {
         const query = `
-            INSERT INTO reception (idExecution, idContrat, typeReception, dateReception, conformite, observation, etat) 
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO reception (idExecution, idContrat, typeReception, dateReception, conformite, observation, etat, responsable)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `;
         const [result] = await db.query(query, [
-            idExecution, idContrat, typeReception, dateReception, conformite, observation, etat
+            idExecution, idContrat, typeReception, dateReception, conformite, observation, etat,
+            req.user.nom
         ]);
 
         res.status(201).json({ 

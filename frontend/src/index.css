@@ -1,55 +1,280 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #1e3a8a; /* blue-900 */
-  --color-secondary: #f8fafc; /* slate-50 */
-  --color-accent: #f59e0b; /* amber-500 */
-  --color-surface: #fdfdfd; /* premium near-white */
+  --color-primary: #1e3a8a;
+  --color-secondary: #f3f6fb;
+  --color-accent: #f59e0b;
+  --color-surface: #ffffff;
 }
 
 @layer base {
+  :root {
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: #1e293b;
+    background: #f3f6fb;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-optical-sizing: auto;
+    --app-border: #e2e8f0;
+    --app-muted: #64748b;
+    --app-radius: 0.875rem;
+    --app-shadow: 0 8px 24px rgb(15 23 42 / 5%);
+  }
+
   html {
-    overflow-y: scroll; /* toujours afficher le scrollbar vertical pour éviter les décalages de layout */
+    min-width: 320px;
+    overflow-y: scroll;
+    scrollbar-width: thin;
+    scrollbar-color: #1e3a8a55 transparent;
   }
 
   body {
-    background-color: var(--color-secondary);
-    color: #1e293b;
-    font-family: 'Inter', system-ui, sans-serif;
+    min-width: 320px;
+    min-height: 100vh;
+    margin: 0;
+    background: var(--color-secondary);
   }
 
-  /* ═══════════════════════════════════════════════
-     SCROLLBAR VERTICAL — Style global (WebKit + Firefox)
-  ═══════════════════════════════════════════════ */
-
-  /* Firefox */
   * {
     scrollbar-width: thin;
     scrollbar-color: #1e3a8a44 transparent;
   }
 
-  /* Chrome, Edge, Safari */
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 7px;
+    height: 7px;
   }
 
-  ::-webkit-scrollbar-track {
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
     background: transparent;
-    border-radius: 999px;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #1e3a8a55;
+    border: 2px solid transparent;
     border-radius: 999px;
-    transition: background 0.2s ease;
+    background: #1e3a8a55;
+    background-clip: padding-box;
   }
 
   ::-webkit-scrollbar-thumb:hover {
     background: #1e3a8a;
+    background-clip: padding-box;
   }
 
-  ::-webkit-scrollbar-corner {
-    background: transparent;
+  ::selection {
+    color: #1e3a8a;
+    background: #dbeafe;
+  }
+
+  :where(button, input, select, textarea, a):focus-visible {
+    outline: 3px solid rgb(245 158 11 / 65%);
+    outline-offset: 2px;
+  }
+
+  :where(button, a) {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+    border-color: #cbd5e1;
+    border-radius: 0.625rem;
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+  }
+
+  :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea):focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgb(59 130 246 / 13%);
+  }
+
+  :where(button) {
+    transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease,
+      box-shadow 160ms ease, transform 160ms ease;
+  }
+
+  :where(button:active:not(:disabled)) {
+    transform: translateY(1px);
+  }
+
+  :where(button:disabled) {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  :where(table) {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  :where(thead th) {
+    color: #475569;
+    background: #f8fafc;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.035em;
+    text-transform: uppercase;
+  }
+
+  :where(tbody tr) {
+    transition: background-color 140ms ease;
+  }
+
+  :where(tbody tr:hover) {
+    background-color: #f8fafc;
+  }
+}
+
+@layer components {
+  .app-shell {
+    min-height: 100dvh;
+  }
+
+  .app-sidebar {
+    z-index: 20;
+    width: 16rem;
+    box-shadow: 6px 0 24px rgb(15 23 42 / 8%);
+  }
+
+  .app-sidebar-backdrop {
+    display: none;
+  }
+
+  .app-menu-toggle {
+    display: none;
+  }
+
+  .app-sidebar-brand {
+    letter-spacing: 0.16em;
+  }
+
+  .app-nav-link {
+    position: relative;
+    min-height: 2.75rem;
+    border: 1px solid transparent;
+    transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease,
+      padding 160ms ease;
+  }
+
+  .app-nav-link:hover {
+    border-color: rgb(255 255 255 / 8%);
+  }
+
+  .app-nav-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .app-nav-link::after {
+    content: attr(data-label);
+    position: absolute;
+    z-index: 30;
+    left: calc(100% + 0.75rem);
+    max-width: 16rem;
+    border-radius: 0.5rem;
+    background: #0f172a;
+    padding: 0.5rem 0.75rem;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+    box-shadow: 0 8px 20px rgb(15 23 42 / 20%);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-0.25rem);
+    transition: opacity 140ms ease, transform 140ms ease;
+  }
+
+  .app-navbar {
+    z-index: 10;
+    box-shadow: 0 1px 5px rgb(15 23 42 / 3%);
+  }
+
+  .app-content {
+    background-image: radial-gradient(ellipse at top left, rgb(219 234 254 / 38%), transparent 34rem);
+  }
+}
+
+@media (max-width: 767px) {
+  .app-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: min(18rem, 82vw);
+    transform: translateX(-105%);
+    transition: transform 180ms ease;
+    z-index: 40;
+  }
+
+  .app-sidebar[data-mobile-open="true"] {
+    transform: translateX(0);
+  }
+
+  .app-sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    display: block;
+    background: rgb(15 23 42 / 45%);
+  }
+
+  .app-menu-toggle {
+    display: inline-flex;
+  }
+
+  .app-nav-link:hover::after,
+  .app-nav-link:focus-visible::after {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  button:not(:disabled) {
+    transition: filter 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  }
+
+  button:not(:disabled):hover {
+    filter: brightness(0.96);
+    box-shadow: 0 5px 14px rgb(15 23 42 / 14%);
+    transform: translateY(-2px);
+  }
+
+  .app-nav-link:hover {
+    border-color: rgb(255 255 255 / 16%);
+    background-color: rgb(255 255 255 / 14%);
+    color: #ffffff;
+    transform: translateX(3px);
+  }
+
+  .app-nav-link[aria-current="page"]:hover {
+    background-color: #24469c;
+    color: #fbbf24;
+  }
+
+  [class*="shadow-sm"]:hover,
+  [class*="shadow-md"]:hover,
+  [class*="shadow-lg"]:hover,
+  [class*="shadow-xl"]:hover {
+    box-shadow: 0 14px 30px rgb(15 23 42 / 12%);
+    transform: translateY(-2px);
+  }
+}
+
+@media (max-width: 767px) and (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .app-nav-link:hover {
+    transform: translateY(-2px);
   }
 }

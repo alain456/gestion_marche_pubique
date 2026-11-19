@@ -7,7 +7,7 @@ const Paiement = {
      * @returns {Promise<object>} Le résultat de l'insertion.
      */
     create: async (data) => {
-        const { idReception, montant, datePaiement } = data;
+        const { idReception, montant, datePaiement, responsable } = data;
         const connection = await db.getConnection();
 
         try {
@@ -15,10 +15,10 @@ const Paiement = {
 
             // 1. Enregistrer le paiement
             const queryPaiement = `
-                INSERT INTO paiement (idReception, montant, datePaiement) 
-                VALUES (?, ?, ?)
+                INSERT INTO paiement (idReception, montant, datePaiement, responsable)
+                VALUES (?, ?, ?, ?)
             `;
-            const [result] = await connection.query(queryPaiement, [idReception, montant, datePaiement]);
+            const [result] = await connection.query(queryPaiement, [idReception, montant, datePaiement, responsable || null]);
 
             // 2. Mettre à jour le statut du marché à 'cloture' via une jointure
             const queryUpdateMarche = `

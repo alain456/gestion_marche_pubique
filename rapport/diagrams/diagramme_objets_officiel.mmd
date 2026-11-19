@@ -1,0 +1,39 @@
+classDiagram
+    class Agent_Prime {
+        <<Agent CGMP>>
+        nom = "M. Prime"
+        role = "CGMP"
+    }
+
+    class Marche_M1 {
+        <<Marche>>
+        idMarche = 1
+        montantEstime = 2500000 FBU
+        statut = "Publié"
+    }
+
+    class Soumissionnaire_S1 {
+        <<Soumissionnaire>>
+        idOffre = 101
+        nom = "TechnoBurundi SARL"
+        montantPropose = 2400000 FBU
+    }
+
+    class Soumissionnaire_S2 {
+        <<Soumissionnaire>>
+        idOffre = 102
+        nom = "InfoTech Burundi"
+        montantPropose = 2450000 FBU
+    }
+
+    class Notification_N1 {
+        <<Notification>>
+        idNotification = 50
+        message = "Marché M1 Publié"
+        dateEnvoi = "2026-05-10"
+    }
+
+    Agent_Prime -- Marche_M1 : gère
+    Marche_M1 -- Soumissionnaire_S1 : reçoit l'offre
+    Marche_M1 -- Soumissionnaire_S2 : reçoit l'offre
+    Marche_M1 -- Notification_N1 : génère

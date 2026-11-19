@@ -19,6 +19,12 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import { AuthContext } from '../../contexts/AuthContext';
+import ConfirmDialog from '../../components/ConfirmDialog';
+import DashboardMetrics from '../../components/DashboardMetrics';
+import SavedFilters from '../../components/SavedFilters';
+import EcheanceAlerts from '../../components/EcheanceAlerts';
+import ReportExport from '../../components/ReportExport';
+import DossierAttachments from '../../components/DossierAttachments';
 
 const RafDashboard = () => {
   const { user } = useContext(AuthContext);
@@ -32,7 +38,7 @@ const RafDashboard = () => {
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(location.state?.demandeId?.toString() || '');
   const [selectedDemandeIds, setSelectedDemandeIds] = useState([]);
 
   // États pour les modals/formulaires
@@ -60,6 +66,9 @@ const RafDashboard = () => {
   const [tempArticles, setTempArticles] = useState([]);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [confirmation, setConfirmation] = useState(null);
+  const [bulkResults, setBulkResults] = useState([]);
+  const [bulkMotif, setBulkMotif] = useState('');
 
   const hasPermission = (perm) => user?.permissions?.includes(perm);
   const canViewDemandes = hasPermission('VOIR_TOUTES_DEMANDES') || hasPermission('DEMANDE_READ_ALL') || hasPermission('VALIDER_BUDGET_DEMANDE');
@@ -70,7 +79,7 @@ const RafDashboard = () => {
   const canUsePaiementsTab = canViewPaiements && canViewReceptions;
   const demandeScope = location.pathname === '/raf/mes-demandes' ? 'mine' : 'all';
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const requests = [];
@@ -103,7 +112,7 @@ const RafDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [canViewDemandes, canViewMyDemandes, canViewReceptions, canViewPaiements, canViewOffers]);
 
   useEffect(() => {
     // Eviter les boucles de navigation: une seule redirection de garde selon permissions
@@ -127,7 +136,7 @@ const RafDashboard = () => {
 
   useEffect(() => {
     fetchData();
-  }, [user?.idUser, user?.permissions]);
+  }, [fetchData, user?.idUser]);
 
   const openBudgetModal = async (demande) => {
     if (demande.alerteRaf === 0) {
@@ -175,20 +184,41 @@ const RafDashboard = () => {
   };
 
   const handleBulkValidate = async (idsToValidate = selectedDemandeIds) => {
-    if (idsToValidate.length === 0) return;
-    
-    const motif = window.prompt("Motif de validation groupée (Optionnel) :");
-    if (window.confirm(`Voulez-vous valider ${idsToValidate.length} demandes en une seule fois ?`)) {
-      try {
-        await api.post('/budgets/bulk-valider', { idDemandes: idsToValidate, motif });
-        setMessage(`${idsToValidate.length} demandes validées.`);
-        setSelectedDemandeIds(prev => prev.filter(id => !idsToValidate.includes(id)));
-        fetchData();
-      } catch (err) {
-        console.error(err);
-        setError('Erreur lors de la validation groupée.');
-      }
+    if (idsToValidate.length === 0) {
+      setError('Sélectionnez au moins une demande à valider.');
+      return;
     }
+    setBulkMotif('');
+    setBulkResults([]);
+    setConfirmation({
+      title: 'Confirmer la validation groupée',
+      message: `${idsToValidate.length} demande(s) vont être validées. Vérifiez la sélection avant de confirmer.`,
+      confirmLabel: 'Valider les demandes',
+      ids: idsToValidate,
+      onConfirm: async () => {
+        setError('');
+        try {
+          const response = await api.post('/budgets/bulk-valider', {
+            idDemandes: idsToValidate,
+            motif: bulkMotif
+          });
+          const results = response.data.results;
+          if (!Array.isArray(results)) {
+            throw new Error('Le serveur n’a pas retourné le détail des validations.');
+          }
+          setBulkResults(results);
+          const succeededIds = new Set(results.filter(result => result.success).map(result => Number(result.idDemande)));
+          setMessage(`${succeededIds.size} demande(s) validée(s), ${results.length - succeededIds.size} échec(s).`);
+          setSelectedDemandeIds(prev => prev.filter(id => !succeededIds.has(Number(id))));
+          await fetchData();
+        } catch (err) {
+          console.error('Erreur lors de la validation groupée:', err);
+          setError(err.response?.data?.message || err.message || 'Erreur lors de la validation groupée.');
+        } finally {
+          setConfirmation(null);
+        }
+      }
+    });
   };
 
   const markRafAlerteAsVue = async (idDemande) => {
@@ -197,6 +227,7 @@ const RafDashboard = () => {
       fetchData();
     } catch (err) {
       console.error('Erreur lors du marquage de la notification RAF:', err);
+      setError('Impossible de mettre à jour la notification de cette demande.');
     }
   };
 
@@ -214,15 +245,16 @@ const RafDashboard = () => {
 
   const handleBudgetSubmit = async (status) => {
     if (!budgetForm.motif || budgetForm.motif.trim() === '') {
-      alert("Le motif ou la note est obligatoire pour valider ou rejeter une demande.");
+      setError('Le motif ou la note est obligatoire pour valider ou rejeter une demande.');
       return;
     }
 
     if (status === 'valider' && (!budgetForm.montantEstime || budgetForm.montantEstime <= 0)) {
-      alert("Veuillez saisir les prix des articles pour valider.");
+      setError('Saisissez un montant valide pour chaque article avant de valider.');
       return;
     }
 
+    setError('');
     try {
       const endpoint = status === 'valider' ? '/budgets/valider' : '/budgets/rejeter';
       await api.post(endpoint, {
@@ -233,42 +265,50 @@ const RafDashboard = () => {
         articles: tempArticles,
         responsableFinancier: user?.nom || 'RAF'
       });
-      alert(status === 'valider' ? "Budget validé avec succès !" : "Demande rejetée.");
+      setMessage(status === 'valider' ? 'Budget validé avec succès.' : 'Demande rejetée.');
       setShowBudgetModal(false);
       fetchData();
-    } catch {
-      alert("Erreur lors du traitement budgétaire.");
+    } catch (err) {
+      console.error('Erreur lors du traitement budgétaire:', err);
+      setError(err.response?.data?.message || 'Erreur lors du traitement budgétaire.');
     }
   };
 
   const handlePaiementSubmit = async () => {
     if (!paiementForm.montant || !paiementForm.datePaiement) {
-      alert("Veuillez remplir tous les champs.");
+      setError('Veuillez renseigner le montant et la date du paiement.');
       return;
     }
 
+    setError('');
     try {
       await api.post('/paiements', {
         ...paiementForm,
         idReception: selectedReception.idReception
       });
-      alert("Paiement enregistré et marché clôturé !");
+      setMessage('Paiement enregistré et marché clôturé.');
       setShowPaiementModal(false);
       fetchData();
-    } catch {
-      alert("Erreur lors de l'enregistrement du paiement.");
+    } catch (err) {
+      console.error('Erreur lors de l’enregistrement du paiement:', err);
+      setError(err.response?.data?.message || 'Erreur lors de l’enregistrement du paiement.');
     }
   };
 
   const demandesSource = demandeScope === 'mine' ? mesDemandes : demandes;
   const filteredDemandes = demandesSource.filter(d => {
     const label = getServiceOrRoleLabel(d);
-    const q = searchTerm.toLowerCase();
+    const q = searchTerm.trim().toLowerCase();
     return (d.statut === 'En attente' || d.statut === 'Soumis' || d.statut === 'Valide' || d.statut === 'Rejete' || d.statut === 'Inclus dans Marché') &&
       (!searchTerm ||
         label.toLowerCase().includes(q) ||
         d.nomDemandeur?.toLowerCase().includes(q) ||
         d.roleDemandeur?.toLowerCase().includes(q) ||
+        d.numeroBudget?.toLowerCase().includes(q) ||
+        d.motif?.toLowerCase().includes(q) ||
+        String(d.idMarche || '').includes(q) ||
+        d.marchesAssocies?.includes(q) ||
+        d.articles?.some(article => article.nomArticle?.toLowerCase().includes(q)) ||
         d.idDemande.toString().includes(q));
   });
 
@@ -290,12 +330,46 @@ const RafDashboard = () => {
   const handleAuthorizeModification = async (idOffre) => {
     try {
       await api.post(`/soumissions/${idOffre}/authorize-modification`);
-      alert("Modification autorisée.");
+      setMessage('Modification autorisée.');
       fetchData();
-    } catch {
-      alert("Erreur lors de l'autorisation.");
+    } catch (err) {
+      console.error('Erreur lors de l’autorisation:', err);
+      setError(err.response?.data?.message || 'Erreur lors de l’autorisation.');
     }
 
+  };
+
+  const handleRejectSelected = () => {
+    if (!budgetForm.motif.trim()) {
+      setError('Saisissez un motif pour rejeter la demande.');
+      return;
+    }
+    setConfirmation({
+      title: 'Rejeter cette demande ?',
+      message: `La demande #${selectedDemande.idDemande} sera rejetée avec le motif indiqué.`,
+      confirmLabel: 'Rejeter la demande',
+      danger: true,
+      onConfirm: async () => {
+        setError('');
+        try {
+          await api.post('/budgets/rejeter', {
+            idDemande: selectedDemande.idDemande,
+            exerciceBudgetaire: new Date().getFullYear(),
+            montantEstime: 0,
+            motif: budgetForm.motif,
+            responsableFinancier: user?.nom || 'RAF'
+          });
+          setMessage('Demande rejetée.');
+          setShowDetailsModal(false);
+          await fetchData();
+        } catch (err) {
+          console.error('Erreur lors du rejet:', err);
+          setError(err.response?.data?.message || 'Erreur lors du rejet de la demande.');
+        } finally {
+          setConfirmation(null);
+        }
+      }
+    });
   };
 
   const handleOpenDetails = (demande) => {
@@ -320,16 +394,29 @@ const RafDashboard = () => {
     <div className="space-y-6">
       {/* Banners de feedback */}
       {message && (
-        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-2xl flex justify-between items-center animate-in fade-in slide-in-from-top-2">
+        <div role="status" aria-live="polite" className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-2xl flex justify-between items-center animate-in fade-in slide-in-from-top-2">
           <span className="text-sm font-bold">✓ {message}</span>
-          <button onClick={() => setMessage('')} className="text-emerald-500 hover:text-emerald-700 font-bold text-lg leading-none">&times;</button>
+          <button onClick={() => setMessage('')} aria-label="Fermer le message" className="text-emerald-500 hover:text-emerald-700 font-bold text-lg leading-none">&times;</button>
         </div>
       )}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-2xl flex justify-between items-center animate-in fade-in slide-in-from-top-2">
+        <div role="alert" aria-live="assertive" className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-2xl flex justify-between items-center animate-in fade-in slide-in-from-top-2">
           <span className="text-sm font-bold">⚠ {error}</span>
-          <button onClick={() => setError('')} className="text-red-500 hover:text-red-700 font-bold text-lg leading-none">&times;</button>
+          <button onClick={() => setError('')} aria-label="Fermer le message" className="text-red-500 hover:text-red-700 font-bold text-lg leading-none">&times;</button>
         </div>
+      )}
+      {bulkResults.length > 0 && (
+        <section aria-label="Résultat des validations groupées" className="rounded-xl border border-gray-200 bg-surface p-4">
+          <h2 className="font-semibold text-gray-800">Résultat par demande</h2>
+          <ul className="mt-2 max-h-52 space-y-2 overflow-y-auto text-sm">
+            {bulkResults.map(result => (
+              <li key={result.idDemande} className={`flex flex-col gap-1 rounded-lg px-3 py-2 sm:flex-row sm:justify-between ${result.success ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-800'}`}>
+                <span>Demande #{result.idDemande} — {result.success ? 'Réussite' : 'Échec'}</span>
+                <span>{result.message}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {/* En-tête */}
@@ -358,7 +445,7 @@ const RafDashboard = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input 
               type="text" 
-              placeholder="Rechercher..." 
+              placeholder="Rechercher numéro, demandeur, service ou marché..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-9 pr-4 py-2 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 w-64"
@@ -366,6 +453,14 @@ const RafDashboard = () => {
           </div>
         </div>
       </div>
+
+      <SavedFilters
+        storageKey={`saved-filters:raf-dashboard:${user?.idUser || 'guest'}`}
+        filters={{ searchTerm }}
+        onApply={(saved) => setSearchTerm(saved.searchTerm || '')}
+      />
+
+      <EcheanceAlerts />
 
       {/* Statistiques Rapides */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -419,6 +514,8 @@ const RafDashboard = () => {
           </div>
         )}
       </div>
+
+      {demandeScope === 'all' && <DashboardMetrics />}
 
       {/* Onglets */}
       <div className="flex border-b border-gray-200">
@@ -669,6 +766,20 @@ const RafDashboard = () => {
       {/* Contenu de l'onglet Paiements */}
       {activeTab === 'paiements' && canUsePaiementsTab && (
         <div className="space-y-6">
+          <ReportExport
+            rows={paiements}
+            title="Paiements"
+            fileName="rapport-paiements"
+            dateField="datePaiement"
+            columns={[
+              { key: 'idPaiement', label: 'N° paiement', value: row => `#${row.idPaiement}` },
+              { key: 'idReception', label: 'N° réception' },
+              { key: 'titulaireMarche', label: 'Titulaire' },
+              { key: 'montant', label: 'Montant (FBU)' },
+              { key: 'datePaiement', label: 'Date de paiement' },
+              { key: 'responsable', label: 'Responsable' }
+            ]}
+          />
           <div className="bg-surface rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="p-6 border-b border-gray-50 flex justify-between items-center">
               <h2 className="font-bold text-gray-800">Réceptions à payer</h2>
@@ -697,12 +808,19 @@ const RafDashboard = () => {
                         <td className="px-6 py-4 text-sm font-bold text-emerald-600">{r.montant?.toLocaleString()} FBU</td>
                         <td className="px-6 py-4 text-sm text-gray-500">{new Date(r.dateReception).toLocaleDateString('fr-FR')}</td>
                         <td className="px-6 py-4 text-right">
-                          <button 
-                            onClick={() => { setSelectedReception(r); setPaiementForm({...paiementForm, montant: r.montant}); setShowPaiementModal(true); }}
-                            className="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition shadow-sm"
-                          >
-                            Payer
-                          </button>
+                          <div className="flex min-w-36 flex-col items-end gap-2">
+                            <button
+                              onClick={() => { setSelectedReception(r); setPaiementForm({...paiementForm, montant: r.montant}); setShowPaiementModal(true); }}
+                              className="min-h-11 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700"
+                            >
+                              Payer
+                            </button>
+                            <DossierAttachments
+                              entityType="reception"
+                              entityId={r.idReception}
+                              canUpload={user?.permissions?.some(permission => ['VALIDER_RECEPTION', 'ENREGISTRER_EXECUTION'].includes(permission))}
+                            />
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -724,6 +842,7 @@ const RafDashboard = () => {
                     <th className="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase">Titulaire</th>
                     <th className="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase">Montant</th>
                     <th className="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase">Date</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase">Documents</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -733,6 +852,13 @@ const RafDashboard = () => {
                       <td className="px-6 py-4 text-sm">{p.titulaireMarche}</td>
                       <td className="px-6 py-4 text-sm font-bold text-blue-600">{p.montant?.toLocaleString()} FBU</td>
                       <td className="px-6 py-4 text-sm text-gray-500">{new Date(p.datePaiement).toLocaleDateString('fr-FR')}</td>
+                      <td className="px-6 py-4">
+                        <DossierAttachments
+                          entityType="paiement"
+                          entityId={p.idPaiement}
+                          canUpload={user?.permissions?.includes('EFFECTUER_PAIEMENT')}
+                        />
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -875,6 +1001,12 @@ const RafDashboard = () => {
                 />
               </div>
 
+              {error && (
+                <p role="alert" aria-live="assertive" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  {error}
+                </p>
+              )}
+
               <div>
                 <label className="flex text-xs font-bold text-gray-400 uppercase mb-1 justify-between">
                   Justification Budgétaire <span className="text-red-500 font-bold">* Obligatoire</span>
@@ -919,6 +1051,11 @@ const RafDashboard = () => {
               </button>
             </div>
             <div className="space-y-4">
+              {error && (
+                <p role="alert" aria-live="assertive" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  {error}
+                </p>
+              )}
               <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 mb-4">
                 <p className="text-xs text-gray-400 uppercase font-bold">Prestataire</p>
                 <p className="text-sm font-bold text-gray-800">{selectedReception.titulaireMarche}</p>
@@ -1051,6 +1188,11 @@ const RafDashboard = () => {
 
               {selectedDemande.statut === 'En attente' && (
                 <div className="mt-6 p-4 bg-red-50 rounded-2xl border border-red-100">
+                  {error && (
+                    <p role="alert" aria-live="assertive" className="mb-3 rounded-lg bg-white px-3 py-2 text-sm text-red-700">
+                      {error}
+                    </p>
+                  )}
                   <label className="flex text-xs font-bold text-red-600 uppercase mb-2 justify-between">
                     Motif de décision <span className="font-bold">* Obligatoire pour Rejeter</span>
                   </label>
@@ -1075,28 +1217,7 @@ const RafDashboard = () => {
               {selectedDemande.statut === 'En attente' && (
                 <>
                   <button 
-                    onClick={async () => {
-                      if (!budgetForm.motif || budgetForm.motif.trim() === '') {
-                        alert("Veuillez saisir un motif pour rejeter la demande.");
-                        return;
-                      }
-                      if(window.confirm("Êtes-vous sûr de vouloir rejeter cette demande ?")) {
-                        try {
-                          await api.post('/budgets/rejeter', {
-                            idDemande: selectedDemande.idDemande,
-                            exerciceBudgetaire: new Date().getFullYear(),
-                            montantEstime: 0,
-                            motif: budgetForm.motif,
-                            responsableFinancier: user?.nom || 'RAF'
-                          });
-                          alert("Demande rejetée.");
-                          setShowDetailsModal(false);
-                          fetchData();
-                        } catch {
-                          alert("Erreur lors du rejet.");
-                        }
-                      }
-                    }}
+                    onClick={handleRejectSelected}
                     className="flex-1 py-3.5 bg-red-50 text-red-600 rounded-2xl font-bold hover:bg-red-100 transition order-2"
                   >
                     REJETER LA DEMANDE
@@ -1215,6 +1336,36 @@ const RafDashboard = () => {
             </div>
           </div>
         </div>
+      )}
+      {confirmation && (
+        <ConfirmDialog
+          title={confirmation.title}
+          message={confirmation.message}
+          confirmLabel={confirmation.confirmLabel}
+          danger={confirmation.danger}
+          onConfirm={confirmation.onConfirm}
+          onCancel={() => setConfirmation(null)}
+        >
+          {confirmation.title === 'Confirmer la validation groupée' && (
+            <>
+              <ul className="mt-4 max-h-36 space-y-1 overflow-y-auto rounded-lg border border-slate-200 p-3 text-sm text-slate-700">
+                {confirmation.ids.map(id => {
+                  const demande = demandes.find(item => Number(item.idDemande) === Number(id));
+                  return <li key={id}>#{id} — {demande?.nomDemandeur || getServiceOrRoleLabel(demande || {})}</li>;
+                })}
+              </ul>
+              <label className="mt-4 block text-sm font-medium text-slate-700">
+                Motif de validation (facultatif)
+                <textarea
+                  rows="3"
+                  value={bulkMotif}
+                  onChange={(event) => setBulkMotif(event.target.value)}
+                  className="mt-1 w-full rounded-lg border border-slate-300 p-3 text-sm"
+                />
+              </label>
+            </>
+          )}
+        </ConfirmDialog>
       )}
     </div>
   );

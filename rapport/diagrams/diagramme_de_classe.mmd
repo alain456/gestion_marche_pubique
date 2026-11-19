@@ -1,0 +1,78 @@
+classDiagram
+    direction TB
+
+    class Utilisateur {
+        - idUser : int
+        - idRole : int
+        - idService : int
+        - nom : char
+        - prenom : char
+        - email : char
+        - password : char
+        - tel : int
+        - dateCreation : date
+        + sAuthentifier(email, password) : boolean
+        + seDeconnecter() : void
+        + creerMarche() : Marche
+        + publierMarche() : void
+        + cloturerMarche() : void
+        + attribuerMarche(idOffre) : void
+        + consulterMarches() : List~Marche~
+    }
+
+    class Marche {
+        - idMarche : int
+        - montantEstime : int
+        - modePassation : char
+        - justificationChoix : char
+        - seuilReglementaireApplique : char
+        - dateSelection : char
+        - validateur : char
+        - statut : char
+        - dateCloture : date
+        - cloturePar : char
+        - commentaire : char
+        + creer() : void
+        + modifier() : void
+        + publier() : void
+        + appliquerSeuil() : void
+        + definirCriteres() : void
+        + classerOffres() : Soumissionnaire
+        + attribuer(idOffre) : void
+        + relancer() : Marche
+        + cloturer() : void
+        + supprimer() : void
+    }
+
+    class Soumissionnaire {
+        - idOffre : int
+        - nomSoumissionnaire : char
+        - adresse : char
+        - telephone : int
+        - email : char
+        - referenceAppelOffre : int
+        - dateSoumission : date
+        - montantPropose : int
+        + deposerOffre() : void
+        + modifierOffre() : void
+        + demanderModification() : void
+        + evaluerOffre() : void
+        + consulterOffres() : List~Soumissionnaire~
+        + supprimerOffre() : void
+    }
+
+    class Notification {
+        - idNotification : int
+        - idMarche : int
+        - message : char
+        - dateEnvoi : date
+        - modeNotification : char
+        + envoyer() : void
+        + consulter() : void
+        + notifierDepotOffre() : void
+        + notifierAttribution() : void
+    }
+
+    Utilisateur "1" --> "0..*" Marche : créer / publier
+    Marche "1" --> "0..*" Soumissionnaire : publier / postuler
+    Marche "1" --> "0..*" Notification : avoir

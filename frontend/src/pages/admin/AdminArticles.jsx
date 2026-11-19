@@ -14,24 +14,46 @@ import {
   Server,
   Monitor,
   Cpu,
-  Laptop
+  Laptop,
+  Wrench,
+  Briefcase,
+  Boxes
 } from 'lucide-react';
 
-const TYPES = [
-  { key: 'tous', label: 'Tous', icon: Laptop, color: 'gray', bgLight: 'bg-gray-50', textColor: 'text-primary', borderColor: 'border-primary/30', bgActive: 'bg-primary' },
-  { key: 'fourniture', label: 'Fourniture', icon: Monitor, color: 'blue', bgLight: 'bg-blue-50', textColor: 'text-blue-600', borderColor: 'border-blue-200', bgActive: 'bg-blue-600' },
-  { key: 'travaux', label: 'Travaux', icon: Server, color: 'amber', bgLight: 'bg-amber-50', textColor: 'text-amber-600', borderColor: 'border-amber-200', bgActive: 'bg-amber-600' },
-  { key: 'service', label: 'Service', icon: Cpu, color: 'emerald', bgLight: 'bg-emerald-50', textColor: 'text-emerald-600', borderColor: 'border-emerald-200', bgActive: 'bg-emerald-600' },
+// Onglet "Tous" (pseudo-catégorie)
+const ALL_TAB = { key: 'tous', label: 'Tous', icon: Laptop, bgLight: 'bg-gray-50', textColor: 'text-primary', borderColor: 'border-primary/30', bgActive: 'bg-primary' };
+
+// Palette de styles cyclée pour les types dynamiques (classes Tailwind littérales requises)
+const TYPE_STYLES = [
+  { icon: Monitor,    bgLight: 'bg-blue-50',    textColor: 'text-blue-600',    borderColor: 'border-blue-200',    bgActive: 'bg-blue-600' },
+  { icon: Server,     bgLight: 'bg-amber-50',   textColor: 'text-amber-600',   borderColor: 'border-amber-200',   bgActive: 'bg-amber-600' },
+  { icon: Cpu,        bgLight: 'bg-emerald-50', textColor: 'text-emerald-600', borderColor: 'border-emerald-200', bgActive: 'bg-emerald-600' },
+  { icon: Wrench,     bgLight: 'bg-violet-50',  textColor: 'text-violet-600',  borderColor: 'border-violet-200',  bgActive: 'bg-violet-600' },
+  { icon: Briefcase,  bgLight: 'bg-rose-50',    textColor: 'text-rose-600',    borderColor: 'border-rose-200',    bgActive: 'bg-rose-600' },
+  { icon: Boxes,      bgLight: 'bg-cyan-50',    textColor: 'text-cyan-600',    borderColor: 'border-cyan-200',    bgActive: 'bg-cyan-600' },
 ];
 
 const AdminArticles = () => {
   const [articles, setArticles] = useState([]);
+  const [typesMarche, setTypesMarche] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('tous');
-  const [form, setForm] = useState({ idArticle: null, nomArticle: '', typeArticle: 'fourniture' });
+  const [form, setForm] = useState({ idArticle: null, nomArticle: '', typeArticle: '' });
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+
+  // Types = dictionnaire TYPE_MARCHE (géré par la CGMP dans Paramètres globaux)
+  const types = [
+    ALL_TAB,
+    ...typesMarche.map((t, i) => {
+      const s = TYPE_STYLES[i % TYPE_STYLES.length];
+      const label = t.valeur.charAt(0).toUpperCase() + t.valeur.slice(1);
+      return { key: t.valeur, label, ...s };
+    }),
+  ];
+  const typesForm = types.filter(t => t.key !== 'tous');
+  const premierType = typesMarche[0]?.valeur || '';
 
   const loadArticles = async () => {
     try {
@@ -43,24 +65,41 @@ const AdminArticles = () => {
     }
   };
 
+  const loadTypes = async () => {
+    try {
+      const res = await api.get('/parametres?type=TYPE_MARCHE');
+      setTypesMarche(res.data || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   useEffect(() => {
     const init = async () => {
       setLoading(true);
+      await loadTypes();
       await loadArticles();
       setLoading(false);
     };
     init();
   }, []);
 
+  // Initialise le type du formulaire dès que le dictionnaire est chargé
+  useEffect(() => {
+    if (!form.typeArticle && premierType) {
+      setForm(prev => ({ ...prev, typeArticle: premierType }));
+    }
+  }, [premierType]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const resetForm = () => {
-    setForm({ idArticle: null, nomArticle: '', typeArticle: activeTab });
+    setForm({ idArticle: null, nomArticle: '', typeArticle: activeTab === 'tous' ? premierType : activeTab });
     setMessage('');
     setError('');
   };
 
   const handleTabChange = (type) => {
     setActiveTab(type);
-    setForm(prev => ({ ...prev, typeArticle: type }));
+    setForm(prev => ({ ...prev, typeArticle: type === 'tous' ? (premierType || prev.typeArticle) : type }));
     setMessage('');
     setError('');
   };
@@ -96,7 +135,8 @@ const AdminArticles = () => {
   };
 
   const handleEdit = (article) => {
-    setActiveTab(article.typeArticle);
+    // Si le type n'existe plus dans le dictionnaire, retomber sur "Tous"
+    setActiveTab(typesMarche.some(t => t.valeur === article.typeArticle) ? article.typeArticle : 'tous');
     setForm({ idArticle: article.idArticle, nomArticle: article.nomArticle, typeArticle: article.typeArticle });
     setMessage('');
     setError('');
@@ -115,7 +155,7 @@ const AdminArticles = () => {
     }
   };
 
-  const currentType = TYPES.find(t => t.key === activeTab);
+  const currentType = types.find(t => t.key === activeTab) || types[0] || ALL_TAB;
   const TypeIcon = currentType.icon;
 
   const filteredArticles = articles.filter(article => {
@@ -126,7 +166,7 @@ const AdminArticles = () => {
 
   const countByType = (type) => type === 'tous' ? articles.length : articles.filter(a => a.typeArticle === type).length;
 
-  const getTypeInfo = (typeKey) => TYPES.find(t => t.key === typeKey);
+  const getTypeInfo = (typeKey) => types.find(t => t.key === typeKey) || ALL_TAB;
 
   if (loading) {
     return (
@@ -146,7 +186,7 @@ const AdminArticles = () => {
             <Package className="h-7 w-7 text-primary" />
             Gestion des Articles
           </h1>
-          <p className="text-gray-500 mt-1">Classifiez les articles par type : Fourniture, Travaux ou Service.</p>
+          <p className="text-gray-500 mt-1">Classifiez les articles par type de marché.</p>
         </div>
         <Link
           to="/admin"
@@ -158,8 +198,8 @@ const AdminArticles = () => {
       </div>
 
       {/* Onglets de Type */}
-      <div className="grid grid-cols-4 gap-4">
-        {TYPES.map(type => {
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        {types.map(type => {
           const Icon = type.icon;
           const count = countByType(type.key);
           const isActive = activeTab === type.key;
@@ -329,8 +369,8 @@ const AdminArticles = () => {
               {/* Type Selector */}
               <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">Type d&apos;article</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {TYPES.map(type => {
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {typesForm.map(type => {
                     const Icon = type.icon;
                     const isSelected = form.typeArticle === type.key;
                     return (
@@ -361,11 +401,7 @@ const AdminArticles = () => {
                 <div className="relative">
                   <Package className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <input
-                    placeholder={
-                      form.typeArticle === 'fourniture' ? 'Ex: Papier A4, Encre imprimante' :
-                      form.typeArticle === 'travaux' ? 'Ex: Construction bâtiment, Réfection route' :
-                      'Ex: Consultation IT, Formation personnel'
-                    }
+                    placeholder="Ex: nom de l'article"
                     value={form.nomArticle}
                     onChange={(e) => setForm((prev) => ({ ...prev, nomArticle: e.target.value }))}
                     className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm"

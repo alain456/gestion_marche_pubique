@@ -15,6 +15,11 @@ router.put('/:id/statut', requirePermission(['VALIDER_BUDGET_DEMANDE', 'AJUSTER_
 router.put('/:id/mark-vue', requirePermission(['DEMANDE_READ_OWN', 'DEMANDE_READ_ALL', 'CREER_DEMANDE', 'VOIR_MES_DEMANDES', 'VOIR_TOUTES_DEMANDES']), demandeController.markAlerteAsVue);
 router.put('/:id/mark-raf-vue', requirePermission('VALIDER_BUDGET_DEMANDE'), demandeController.markAlerteRafAsVue);
 router.put('/:id/mark-chef-vue', requirePermission('VOIR_STATISTIQUES'), demandeController.markAlerteChefAsVue);
+router.get('/:id/timeline', requirePermission([
+    'DEMANDE_READ_OWN', 'DEMANDE_READ_ALL', 'VOIR_MES_DEMANDES',
+    'VOIR_TOUTES_DEMANDES', 'VALIDER_BUDGET_DEMANDE', 'AJUSTER_DEMANDE_CGMP',
+    'VOIR_MARCHES', 'GERER_MARCHES', 'VOIR_STATISTIQUES'
+]), demandeController.getDemandeTimeline);
 router.get('/:id/history', requirePermission(['DEMANDE_READ_OWN', 'DEMANDE_READ_ALL', 'VOIR_MES_DEMANDES', 'VOIR_TOUTES_DEMANDES', 'VALIDER_BUDGET_DEMANDE', 'AJUSTER_DEMANDE_CGMP']), demandeController.getDemandeHistory);
 router.delete('/:id', requirePermission(['DEMANDE_DELETE', 'SUPPRIMER_DEMANDE']), demandeController.deleteDemande);
 

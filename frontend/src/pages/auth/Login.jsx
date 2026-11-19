@@ -4,11 +4,13 @@ import { AuthContext } from '../../contexts/AuthContext';
 import { Lock, Mail, Eye, EyeOff } from 'lucide-react';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
+  const rememberedEmail = localStorage.getItem('rememberedEmail') || '';
+  const [email, setEmail] = useState(rememberedEmail);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(Boolean(rememberedEmail));
   
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -18,15 +20,25 @@ const Login = () => {
     setError('');
     setIsLoading(true);
     
-    const result = await login(email.trim(), password);
-    
-    if (result.success) {
-      navigate('/');
-    } else {
-      setError(result.message);
+    try {
+      const normalizedEmail = email.trim();
+      const result = await login(normalizedEmail, password, rememberMe);
+      if (result.success) {
+        if (rememberMe) {
+          localStorage.setItem('rememberedEmail', normalizedEmail);
+        } else {
+          localStorage.removeItem('rememberedEmail');
+        }
+        navigate('/');
+      } else {
+        setError(result.message);
+      }
+    } catch (loginError) {
+      console.error('Erreur lors de la connexion:', loginError);
+      setError('La connexion est momentanément indisponible. Veuillez réessayer.');
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   };
 
   return (
@@ -41,16 +53,12 @@ const Login = () => {
           <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">Connexion</h2>
           
           {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-6 border border-red-100">
+            <div role="alert" aria-live="assertive" className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-6 border border-red-100">
               {error}
             </div>
           )}
           
-          <form onSubmit={handleSubmit} className="space-y-5" autoComplete="off">
-            {/* Fake fields to catch autofill */}
-            <input type="text" name="fake_email" style={{ display: 'none' }} tabIndex="-1" aria-hidden="true" />
-            <input type="password" name="fake_password" style={{ display: 'none' }} tabIndex="-1" aria-hidden="true" />
-
+          <form onSubmit={handleSubmit} className="space-y-5" autoComplete="on">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="email">
                 Email
@@ -65,9 +73,7 @@ const Login = () => {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    autoComplete="one-time-code"
-                    onFocus={(e) => e.target.removeAttribute('readonly')}
-                    readOnly
+                    autoComplete="email"
                     className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary text-gray-900 placeholder-gray-400"
                     placeholder="votre@email.com"
                   />
@@ -88,9 +94,7 @@ const Login = () => {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    autoComplete="one-time-code"
-                    onFocus={(e) => e.target.removeAttribute('readonly')}
-                    readOnly
+                    autoComplete="current-password"
                     className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary text-gray-900 placeholder-gray-400"
                     placeholder="••••••••"
                   />
@@ -98,11 +102,24 @@ const Login = () => {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                    aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                    aria-pressed={showPassword}
                   >
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
               </div>
             </div>
+
+            <label htmlFor="remember-me" className="flex items-center gap-2 text-sm text-gray-600">
+              <input
+                id="remember-me"
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+              />
+              Se souvenir de moi
+            </label>
             
             <button
               type="submit"

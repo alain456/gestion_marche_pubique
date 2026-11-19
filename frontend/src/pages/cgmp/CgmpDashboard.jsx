@@ -9,6 +9,8 @@ import {
   TrendingUp,
   Package
 } from 'lucide-react'
+import DashboardMetrics from '../../components/DashboardMetrics';
+import EcheanceAlerts from '../../components/EcheanceAlerts';
 
 const CgmpDashboard = () => {
   const [stats, setStats] = useState({
@@ -120,6 +122,9 @@ const CgmpDashboard = () => {
           </div>
         ))}
       </div>
+
+      <DashboardMetrics />
+      <EcheanceAlerts />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
         <section className="bg-surface p-8 rounded-3xl border border-gray-100 shadow-sm">

@@ -1,0 +1,55 @@
+classDiagram
+    %% Instances de Marchés
+    class Marche_M1 {
+        idMarche: 1
+        montantEstime: 2000000
+    }
+    class Marche_M2 {
+        idMarche: 2
+        montantEstime: 1500000
+    }
+    class Marche_M3 {
+        idMarche: 3
+        montantEstime: 500000
+    }
+
+    %% Instances de Soumissionnaires
+    class Soumissionnaire_S1 {
+        idOffre: 101
+        nom: "Entreprise A"
+    }
+    class Soumissionnaire_S2 {
+        idOffre: 102
+        nom: "Entreprise B"
+    }
+    class Soumissionnaire_S3 {
+        idOffre: 103
+        nom: "Entreprise C"
+    }
+
+    %% Instances de Notifications
+    class Notification_N1 {
+        idNotification: 50
+        message: "Marché M1 Publié"
+    }
+    class Notification_N2 {
+        idNotification: 51
+        message: "Attribution provisoire M1"
+    }
+    class Notification_N3 {
+        idNotification: 52
+        message: "Marché M2 Publié"
+    }
+
+    %% Relations pour expliquer les cardinalités (postuler/publier)
+    Marche_M1 -- Soumissionnaire_S1 : postule pour
+    Marche_M1 -- Soumissionnaire_S2 : postule pour
+    Marche_M2 -- Soumissionnaire_S1 : postule pour
+    Marche_M2 -- Soumissionnaire_S3 : postule pour
+    %% Marche_M3 n'a pas encore de soumissionnaire (0..*)
+
+    %% Relations pour expliquer les cardinalités (avoir notification)
+    Marche_M1 -- Notification_N1 : a
+    Marche_M1 -- Notification_N2 : a
+    Marche_M2 -- Notification_N3 : a
+    %% Marche_M3 n'a pas encore de notification (0..*)

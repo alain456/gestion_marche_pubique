@@ -7,6 +7,9 @@ import {
 import api from '../../services/api';
 import { AuthContext } from '../../contexts/AuthContext';
 import { getServiceOrRoleLabel } from '../../utils/formatters';
+import SavedFilters from '../../components/SavedFilters';
+import ReportExport from '../../components/ReportExport';
+import DossierAttachments from '../../components/DossierAttachments';
 
 const ToutesDemandes = () => {
   const [demandes, setDemandes] = useState([]);
@@ -81,6 +84,10 @@ const ToutesDemandes = () => {
       label.toLowerCase().includes(searchLower) ||
       d.roleDemandeur?.toLowerCase().includes(searchLower) ||
       d.nomDemandeur?.toLowerCase().includes(searchLower) ||
+      d.numeroBudget?.toLowerCase().includes(searchLower) ||
+      d.motif?.toLowerCase().includes(searchLower) ||
+      String(d.idMarche || '').includes(searchLower) ||
+      d.marchesAssocies?.includes(searchLower) ||
       d.articles?.some(a => a.nomArticle?.toLowerCase().includes(searchLower)) ||
       d.idDemande.toString().includes(searchLower);
     const matchStatut = !filterStatut || d.statut === filterStatut;
@@ -217,26 +224,57 @@ const ToutesDemandes = () => {
       {error && <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-700">{error}</div>}
 
       {/* Filtres */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Rechercher par #ID, service, demandeur ou article..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full rounded-xl border-gray-300 pl-10 py-2.5"
-          />
+      <ReportExport
+        rows={filteredDemandes}
+        title="Demandes du système"
+        fileName="rapport-demandes-systeme"
+        dateField="dateDemande"
+        criteria={[
+          searchTerm && `Recherche : ${searchTerm}`,
+          filterStatut && `Statut : ${filterStatut}`
+        ].filter(Boolean).join(' · ')}
+        columns={[
+          { key: 'idDemande', label: 'N° demande', value: row => `#${row.idDemande}` },
+          { key: 'dateDemande', label: 'Date' },
+          { key: 'nomDemandeur', label: 'Demandeur' },
+          { key: 'nomService', label: 'Service', value: row => getServiceOrRoleLabel(row) },
+          { key: 'statut', label: 'Statut' },
+          { key: 'typeMarche', label: 'Type de marché' },
+          { key: 'numeroBudget', label: 'Budget' },
+          { key: 'marchesAssocies', label: 'N° marché' },
+          { key: 'montantEstime', label: 'Montant estimé (FBU)' }
+        ]}
+      />
+      <div className="space-y-3">
+        <div className="flex flex-col gap-4 sm:flex-row">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Rechercher par numéro, demandeur, service ou marché..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full rounded-xl border-gray-300 pl-10 py-2.5"
+            />
+          </div>
+          <select value={filterStatut} onChange={(e) => setFilterStatut(e.target.value)} className="rounded-xl border-gray-300 bg-surface min-w-[180px]">
+            <option value="">Tous les statuts</option>
+            <option value="Brouillon">Brouillon</option>
+            <option value="Soumis">Soumis</option>
+            <option value="En attente">En attente</option>
+            <option value="Valide">Validé</option>
+            <option value="Rejete">Rejeté</option>
+            <option value="Inclus dans Marché">Inclus dans Marché</option>
+          </select>
         </div>
-        <select value={filterStatut} onChange={(e) => setFilterStatut(e.target.value)} className="rounded-xl border-gray-300 bg-surface min-w-[180px]">
-          <option value="">Tous les statuts</option>
-          <option value="Brouillon">Brouillon</option>
-          <option value="Soumis">Soumis</option>
-          <option value="En attente">En attente</option>
-          <option value="Valide">Validé</option>
-          <option value="Rejete">Rejeté</option>
-          <option value="Inclus dans Marché">Inclus dans Marché</option>
-        </select>
+        <SavedFilters
+          storageKey={`saved-filters:all-demands:${user?.idUser || 'guest'}`}
+          filters={{ searchTerm, filterStatut }}
+          onApply={(saved) => {
+            setSearchTerm(saved.searchTerm || '');
+            setFilterStatut(saved.filterStatut || '');
+          }}
+        />
       </div>
 
       {/* === Section 1 : Mes demandes dans la liste globale === */}
@@ -289,6 +327,14 @@ const ToutesDemandes = () => {
               <button onClick={() => setViewingDemande(null)} className="text-gray-400 hover:text-gray-600 text-2xl">×</button>
             </div>
             <div className="p-6 overflow-y-auto">
+              <DossierAttachments
+                entityType="demande"
+                entityId={viewingDemande.idDemande}
+                canUpload={user?.permissions?.some(permission => [
+                  'DEMANDE_CREATE', 'CREER_DEMANDE', 'DEMANDE_UPDATE', 'MODIFIER_DEMANDE',
+                  'AJUSTER_DEMANDE_CGMP', 'VALIDER_BUDGET_DEMANDE'
+                ].includes(permission))}
+              />
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>

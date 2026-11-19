@@ -35,6 +35,17 @@ exports.createParametre = async (req, res) => {
 
 exports.deleteParametre = async (req, res) => {
   try {
+    const parametre = await parametreModel.getById(req.params.id);
+    if (!parametre) return res.status(404).json({ message: 'Paramètre non trouvé.' });
+
+    // Interdire la suppression d'une valeur encore utilisée dans les données métier
+    const usage = await parametreModel.isValeurUtilisee(parametre.typeParam, parametre.valeur);
+    if (usage.utilise) {
+      return res.status(400).json({
+        message: `Impossible de supprimer « ${parametre.valeur} » : valeur encore utilisée dans la table ${usage.table} (${usage.count} enregistrement(s)).`
+      });
+    }
+
     const success = await parametreModel.delete(req.params.id);
     if (!success) return res.status(404).json({ message: 'Paramètre non trouvé.' });
     res.json({ message: 'Paramètre supprimé avec succès.' });

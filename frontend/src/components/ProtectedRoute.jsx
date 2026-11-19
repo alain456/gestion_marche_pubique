@@ -1,4 +1,4 @@
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
 import Navbar from './Navbar';
@@ -7,6 +7,7 @@ import PropTypes from 'prop-types';
 
 const ProtectedRoute = ({ allowedRoles, requiredPermission }) => {
   const { user, loading, hasPermission } = useContext(AuthContext) || {};
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   if (loading) {
     return <div className="h-screen w-full flex items-center justify-center text-primary">Chargement...</div>;
@@ -33,11 +34,23 @@ const ProtectedRoute = ({ allowedRoles, requiredPermission }) => {
   }
 
   return (
-    <div className="flex h-screen bg-secondary overflow-hidden">
-      <Sidebar user={user} />
+    <div className="app-shell flex h-screen bg-secondary overflow-hidden">
+      {mobileMenuOpen && (
+        <button
+          type="button"
+          className="app-sidebar-backdrop"
+          aria-label="Fermer le menu de navigation"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+      <Sidebar user={user} isMobileOpen={mobileMenuOpen} onNavigate={() => setMobileMenuOpen(false)} />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Navbar user={user} />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-secondary p-4 md:p-8 lg:px-12 lg:py-10">
+        <Navbar
+          user={user}
+          isMenuOpen={mobileMenuOpen}
+          onMenuToggle={() => setMobileMenuOpen((isOpen) => !isOpen)}
+        />
+        <main className="app-content flex-1 overflow-x-hidden overflow-y-auto bg-secondary p-4 md:p-8 lg:px-12 lg:py-10">
           <div className="max-w-[1600px] mx-auto w-full">
             <Outlet />
           </div>

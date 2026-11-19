@@ -1,4 +1,5 @@
 const Demande = require('../models/demandeModel');
+const DemandeTimeline = require('../models/demandeTimelineModel');
 
 // Types de marchés autorisés
 const TYPES_MARCHE_VALIDES = ['travaux', 'fourniture', 'service'];
@@ -268,6 +269,24 @@ exports.getDemandeHistory = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Erreur lors de la récupération de l'historique." });
+    }
+};
+
+exports.getDemandeTimeline = async (req, res) => {
+    const idDemande = Number(req.params.id);
+    if (!Number.isInteger(idDemande) || idDemande < 1) {
+        return res.status(400).json({ message: "Identifiant de demande invalide." });
+    }
+
+    try {
+        const timeline = await DemandeTimeline.getTimeline(idDemande, req.user);
+        if (!timeline) {
+            return res.status(404).json({ message: "Demande non trouvée." });
+        }
+        res.json(timeline);
+    } catch (error) {
+        console.error("Erreur lors de la récupération du suivi de la demande:", error);
+        res.status(500).json({ message: "Erreur lors de la récupération du suivi de la demande." });
     }
 };
 

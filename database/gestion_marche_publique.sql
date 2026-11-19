@@ -1,12 +1,13 @@
 -- SETIC Database Dump
 SET FOREIGN_KEY_CHECKS=0;
+DROP TABLE IF EXISTS `notification_lue`;
 
 -- Table structure for table `article`
 DROP TABLE IF EXISTS `article`;
 CREATE TABLE `article` (
   `idArticle` int(11) NOT NULL AUTO_INCREMENT,
   `nomArticle` varchar(100) DEFAULT NULL,
-  `typeArticle` enum('fourniture','travaux','service') NOT NULL DEFAULT 'fourniture',
+  `typeArticle` varchar(50) NOT NULL DEFAULT 'fourniture',
   `est_actif` tinyint(1) DEFAULT 1,
   PRIMARY KEY (`idArticle`)
 ) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -29,7 +30,7 @@ DROP TABLE IF EXISTS `budget`;
 CREATE TABLE `budget` (
   `idBudget` int(11) NOT NULL AUTO_INCREMENT,
   `numeroBudget` varchar(50) DEFAULT NULL,
-  `typeBudget` enum('fourniture','travaux','service') DEFAULT NULL,
+  `typeBudget` varchar(50) DEFAULT NULL,
   `exerciceBudgetaire` int(11) DEFAULT NULL,
   `montantEstime` int(11) DEFAULT NULL,
   `sourceFinancier` varchar(100) DEFAULT NULL,
@@ -485,6 +486,7 @@ CREATE TABLE `paiement` (
   `idReception` int(11) DEFAULT NULL,
   `montant` int(11) DEFAULT NULL,
   `datePaiement` date DEFAULT NULL,
+  `responsable` varchar(100) DEFAULT NULL,
   PRIMARY KEY (`idPaiement`),
   KEY `idReception` (`idReception`),
   CONSTRAINT `paiement_ibfk_1` FOREIGN KEY (`idReception`) REFERENCES `reception` (`idReception`)
@@ -499,6 +501,19 @@ CREATE TABLE `parametre_global` (
   PRIMARY KEY (`idParam`),
   UNIQUE KEY `typeParam` (`typeParam`,`valeur`)
 ) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Seuils organisationnels des alertes d’échéance
+CREATE TABLE `alerte_echeance_config` (
+  `cle` varchar(50) NOT NULL,
+  `jours` int unsigned NOT NULL,
+  `modifieLe` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`cle`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+INSERT INTO `alerte_echeance_config` (`cle`, `jours`) VALUES
+('demandeValidationJours', 5),
+('marcheEcheanceJours', 3),
+('paiementJours', 5);
 
 -- Dumping data for table `parametre_global`
 INSERT INTO `parametre_global` (`idParam`, `typeParam`, `valeur`) VALUES
@@ -569,6 +584,7 @@ CREATE TABLE `reception` (
   `conformite` varchar(50) DEFAULT NULL,
   `observation` text DEFAULT NULL,
   `etat` varchar(50) DEFAULT NULL,
+  `responsable` varchar(100) DEFAULT NULL,
   PRIMARY KEY (`idReception`),
   KEY `idExecution` (`idExecution`),
   KEY `idContrat` (`idContrat`),
@@ -782,5 +798,18 @@ INSERT INTO `utilisateur_permission` (`idUser`, `idPermission`, `typePermission`
 (13, 18, 'REVOKE'),
 (13, 1885, 'REVOKE'),
 (13, 1886, 'REVOKE');
+
+-- Notifications lues par utilisateur (indépendantes des indicateurs globaux de demande)
+CREATE TABLE `notification_lue` (
+  `idUser` int(11) NOT NULL,
+  `idHistorique` int(11) NOT NULL,
+  `dateLecture` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`idUser`, `idHistorique`),
+  KEY `notification_lue_historique_idx` (`idHistorique`),
+  CONSTRAINT `notification_lue_user_fk`
+    FOREIGN KEY (`idUser`) REFERENCES `utilisateur` (`idUser`) ON DELETE CASCADE,
+  CONSTRAINT `notification_lue_historique_fk`
+    FOREIGN KEY (`idHistorique`) REFERENCES `historique_demande` (`idHistorique`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 SET FOREIGN_KEY_CHECKS=1;

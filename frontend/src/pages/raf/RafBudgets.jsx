@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { 
   ArrowLeft, 
   Search, 
-  Download,
   CreditCard,
   Building,
   Package,
@@ -17,9 +16,12 @@ import api from '../../services/api';
 import { getServiceOrRoleLabel } from '../../utils/formatters';
 import { useContext } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
+import SavedFilters from '../../components/SavedFilters';
+import ReportExport from '../../components/ReportExport';
+import ConfirmDialog from '../../components/ConfirmDialog';
 
 const RafBudgets = () => {
-  const { hasPermission } = useContext(AuthContext);
+  const { hasPermission, user } = useContext(AuthContext);
   const canValidate = hasPermission('VALIDER_BUDGET_DEMANDE');
   
   const [budgets, setBudgets] = useState([]);
@@ -35,6 +37,9 @@ const RafBudgets = () => {
   const [showGroupedView, setShowGroupedView] = useState(true);
   const [selectedForValidation, setSelectedForValidation] = useState([]);
   const [motif, setMotif] = useState('');
+  const [confirmation, setConfirmation] = useState(false);
+  const [bulkResults, setBulkResults] = useState([]);
+  const [feedback, setFeedback] = useState('');
 
   const fetchData = async () => {
     try {
@@ -70,8 +75,19 @@ const RafBudgets = () => {
   
   const filteredBudgets = budgets.filter(b => {
     const searchLower = searchTerm.toLowerCase();
-    const matchesSearch = !searchTerm || 
-      b.numeroBudget.toLowerCase().includes(searchLower);
+    const relatedDemandes = demandes.filter(d => d.idBudget === b.idBudget);
+    const matchesSearch = !searchTerm ||
+      b.numeroBudget?.toLowerCase().includes(searchLower) ||
+      relatedDemandes.some(d =>
+        String(d.idDemande).includes(searchLower) ||
+        d.nomDemandeur?.toLowerCase().includes(searchLower) ||
+        getServiceOrRoleLabel(d).toLowerCase().includes(searchLower) ||
+        d.roleDemandeur?.toLowerCase().includes(searchLower) ||
+        d.motif?.toLowerCase().includes(searchLower) ||
+        String(d.idMarche || '').includes(searchLower) ||
+        d.marchesAssocies?.includes(searchLower) ||
+        d.articles?.some(article => article.nomArticle?.toLowerCase().includes(searchLower))
+      );
     const matchesType = filterType === 'Tous' || b.typeBudget === filterType;
     
     // Filtrer par service (si au moins une demande du service est liée à ce budget)
@@ -82,6 +98,31 @@ const RafBudgets = () => {
     return matchesSearch && matchesType && matchesService;
   });
 
+  const filteredTypeGroups = groupedDemandes.map(group => {
+    const matchingDemands = demandes.filter(d => {
+      if (d.statut !== 'En attente' || d.typeMarche !== group.typeMarche) return false;
+      const label = getServiceOrRoleLabel(d);
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch = !searchTerm ||
+        label.toLowerCase().includes(searchLower) ||
+        d.nomDemandeur?.toLowerCase().includes(searchLower) ||
+        d.roleDemandeur?.toLowerCase().includes(searchLower) ||
+        d.numeroBudget?.toLowerCase().includes(searchLower) ||
+        d.motif?.toLowerCase().includes(searchLower) ||
+        d.marchesAssocies?.includes(searchLower) ||
+        String(d.idDemande).includes(searchLower) ||
+        d.articles?.some(article => article.nomArticle?.toLowerCase().includes(searchLower));
+      const matchesService = !filterService || label === filterService;
+      const matchesPriority = !filterPriority || d.priorite === filterPriority;
+      return matchesSearch && matchesService && matchesPriority;
+    });
+
+    return { ...group, matchingCount: matchingDemands.length };
+  }).filter(group =>
+    (filterType === 'Tous' || group.typeMarche === filterType) &&
+    group.matchingCount > 0
+  );
+
   const filteredGroupDemandes = groupDemandes.filter(d => {
     const label = getServiceOrRoleLabel(d);
     const searchLower = searchTerm.toLowerCase();
@@ -89,6 +130,11 @@ const RafBudgets = () => {
       label.toLowerCase().includes(searchLower) ||
       d.roleDemandeur?.toLowerCase().includes(searchLower) ||
       d.nomDemandeur?.toLowerCase().includes(searchLower) ||
+      d.motif?.toLowerCase().includes(searchLower) ||
+      d.numeroBudget?.toLowerCase().includes(searchLower) ||
+      String(d.idMarche || '').includes(searchLower) ||
+      d.marchesAssocies?.includes(searchLower) ||
+      d.articles?.some(article => article.nomArticle?.toLowerCase().includes(searchLower)) ||
       d.idDemande.toString().includes(searchTerm);
     const matchesService = !filterService || label === filterService;
     const matchesPriority = !filterPriority || d.priorite === filterPriority;
@@ -134,24 +180,38 @@ const RafBudgets = () => {
 
   const handleBulkValidate = async () => {
     if (selectedForValidation.length === 0) {
-      alert('Veuillez sélectionner au moins une demande');
+      setFeedback('Veuillez sélectionner au moins une demande.');
       return;
     }
+    setBulkResults([]);
+    setFeedback('');
+    setConfirmation(true);
+  };
+
+  const confirmBulkValidate = async () => {
     try {
-      await api.post('/budgets/bulk-valider', {
+      const response = await api.post('/budgets/bulk-valider', {
         idDemandes: selectedForValidation,
         motif: motif || 'Validation groupée par type de marché'
       });
-      alert(`${selectedForValidation.length} demandes validées avec succès`);
-      setSelectedForValidation([]);
+      const results = response.data.results;
+      if (!Array.isArray(results)) {
+        throw new Error('Le serveur n’a pas retourné le détail des validations.');
+      }
+      setBulkResults(results);
+      const succeededIds = new Set(results.filter(result => result.success).map(result => Number(result.idDemande)));
+      setFeedback(`${succeededIds.size} demande(s) validée(s), ${results.length - succeededIds.size} échec(s).`);
+      setSelectedForValidation(prev => prev.filter(id => !succeededIds.has(Number(id))));
       setMotif('');
-      fetchData();
+      await fetchData();
       if (selectedGroup) {
-        fetchGroupDemandes(selectedGroup);
+        await fetchGroupDemandes(selectedGroup);
       }
     } catch (err) {
       console.error('Erreur lors de la validation:', err);
-      alert('Erreur lors de la validation');
+      setFeedback(err.response?.data?.message || err.message || 'Erreur lors de la validation.');
+    } finally {
+      setConfirmation(false);
     }
   };
 
@@ -164,6 +224,24 @@ const RafBudgets = () => {
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* Header */}
+      {feedback && (
+        <p role="status" aria-live="polite" className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+          {feedback}
+        </p>
+      )}
+      {bulkResults.length > 0 && (
+        <section aria-label="Résultat des validations groupées" className="rounded-xl border border-gray-200 bg-surface p-4">
+          <h2 className="font-semibold text-gray-800">Résultat par demande</h2>
+          <ul className="mt-2 max-h-52 space-y-2 overflow-y-auto text-sm">
+            {bulkResults.map(result => (
+              <li key={result.idDemande} className={`flex flex-col gap-1 rounded-lg px-3 py-2 sm:flex-row sm:justify-between ${result.success ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-800'}`}>
+                <span>Demande #{result.idDemande} — {result.success ? 'Réussite' : 'Échec'}</span>
+                <span>{result.message}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
@@ -204,9 +282,6 @@ const RafBudgets = () => {
               <Layers className="h-4 w-4" /> {showGroupedView ? 'Vue Standard' : 'Vue Groupée'}
             </button>
           )}
-          <button className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl hover:bg-blue-800 transition font-medium shadow-sm shadow-blue-100">
-            <Download className="h-4 w-4" /> Exporter Rapport
-          </button>
         </div>
       </div>
 
@@ -249,7 +324,30 @@ const RafBudgets = () => {
 
       {/* Filtres */}
       {!selectedGroup && (
+        <ReportExport
+          rows={filteredBudgets}
+          title="Budgets"
+          fileName="rapport-budgets"
+          yearField="exerciceBudgetaire"
+          criteria={[
+            searchTerm && `Recherche : ${searchTerm}`,
+            filterType !== 'Tous' && `Type : ${filterType}`,
+            filterService && `Service : ${filterService}`
+          ].filter(Boolean).join(' · ')}
+          columns={[
+            { key: 'idBudget', label: 'N° budget', value: row => row.numeroBudget || `#${row.idBudget}` },
+            { key: 'exerciceBudgetaire', label: 'Exercice' },
+            { key: 'typeBudget', label: 'Type' },
+            { key: 'montantEstime', label: 'Montant alloué (FBU)' },
+            { key: 'sourceFinancier', label: 'Source de financement' },
+            { key: 'statusValidation', label: 'Statut' },
+            { key: 'typeInstitution', label: 'Institution' }
+          ]}
+        />
+      )}
+      {!selectedGroup && (
         <div className="bg-surface p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4">
+          <div className="flex flex-col gap-4">
           <div className="flex flex-col md:flex-row gap-4 justify-between items-end">
             <div className="flex-1 space-y-2">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Recherche globale</label>
@@ -257,7 +355,7 @@ const RafBudgets = () => {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input 
                   type="text" 
-                  placeholder="Rechercher budget, service ou ID..." 
+                  placeholder="Rechercher par budget, numéro de demande, demandeur, service ou marché..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-9 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 w-full font-medium"
@@ -307,7 +405,6 @@ const RafBudgets = () => {
                   </select>
                 </div>
               )}
-
               {(searchTerm || filterType !== 'Tous' || filterService || filterPriority) && (
                 <button 
                   onClick={() => {
@@ -322,6 +419,16 @@ const RafBudgets = () => {
                 </button>
               )}
             </div>
+          </div>
+          <SavedFilters
+            storageKey={`saved-filters:raf-budgets:${user?.idUser || 'guest'}`}
+            filters={{ searchTerm, filterType, filterService }}
+            onApply={(saved) => {
+              setSearchTerm(saved.searchTerm || '');
+              setFilterType(saved.filterType || 'Tous');
+              setFilterService(saved.filterService || '');
+            }}
+          />
           </div>
         </div>
       )}
@@ -338,10 +445,10 @@ const RafBudgets = () => {
           <div className="divide-y divide-gray-50">
             {loading ? (
               <div className="p-10 text-center">Chargement...</div>
-            ) : groupedDemandes.length === 0 ? (
-              <div className="p-10 text-center text-gray-500">Aucune demande en attente.</div>
+            ) : filteredTypeGroups.length === 0 ? (
+              <div className="p-10 text-center text-gray-500">Aucune demande ne correspond à ces filtres.</div>
             ) : (
-              groupedDemandes.map((group) => (
+              filteredTypeGroups.map((group) => (
                 <div key={group.typeMarche} className="p-6 hover:bg-gray-50/50 transition">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -354,7 +461,7 @@ const RafBudgets = () => {
                       </div>
                       <div>
                         <h3 className="font-bold text-gray-900 capitalize">{group.typeMarche}</h3>
-                        <p className="text-sm text-gray-500">{group.count} demandes en attente</p>
+                        <p className="text-sm text-gray-500">{group.matchingCount} demande(s) correspondant aux filtres</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
@@ -398,18 +505,18 @@ const RafBudgets = () => {
               </span>
             </div>
             {canValidate && (
-              <div className="flex items-center gap-3">
+              <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center md:w-auto">
                 <input
                   type="text"
                   placeholder="Motif de validation..."
                   value={motif}
                   onChange={(e) => setMotif(e.target.value)}
-                  className="px-4 py-2 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 w-64"
+                  className="min-h-11 w-full rounded-xl border px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20 sm:w-64"
                 />
                 <button
                   onClick={handleBulkValidate}
                   disabled={selectedForValidation.length === 0}
-                  className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 font-medium text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                 >
                   <CheckCircle className="h-4 w-4" /> Valider ({selectedForValidation.length})
                 </button>
@@ -574,6 +681,22 @@ const RafBudgets = () => {
             </table>
           </div>
         </div>
+      )}
+      {confirmation && (
+        <ConfirmDialog
+          title="Confirmer la validation groupée"
+          message={`${selectedForValidation.length} demande(s) vont être validées. Vérifiez la sélection avant de confirmer.`}
+          confirmLabel="Valider les demandes"
+          onConfirm={confirmBulkValidate}
+          onCancel={() => setConfirmation(false)}
+        >
+          <ul className="mt-4 max-h-36 space-y-1 overflow-y-auto rounded-lg border border-slate-200 p-3 text-sm text-slate-700">
+            {selectedForValidation.map(id => {
+              const demande = groupDemandes.find(item => Number(item.idDemande) === Number(id));
+              return <li key={id}>#{id} — {demande?.nomDemandeur || getServiceOrRoleLabel(demande || {})}</li>;
+            })}
+          </ul>
+        </ConfirmDialog>
       )}
     </div>
   );

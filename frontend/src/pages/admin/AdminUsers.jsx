@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { Link } from 'react-router-dom';
+import ConfirmDialog from '../../components/ConfirmDialog';
 import { 
   Users, 
   UserPlus, 
@@ -27,6 +28,7 @@ const AdminUsers = () => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [confirmation, setConfirmation] = useState(null);
 
   const loadUsers = async () => {
     try {
@@ -140,16 +142,21 @@ const AdminUsers = () => {
   };
 
 
-  const handleDelete = async (idUser) => {
-    if (!window.confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.')) return;
-    try {
-      await api.delete(`/users/${idUser}`);
-      setMessage('Utilisateur supprimé avec succès.');
-      loadUsers();
-    } catch (err) {
-      console.error(err);
-      setError(err.response?.data?.message || 'Impossible de supprimer cet utilisateur.');
-    }
+  const handleDelete = (idUser) => {
+    setConfirmation({
+      onConfirm: async () => {
+        try {
+          await api.delete(`/users/${idUser}`);
+          setMessage('Utilisateur supprimé avec succès.');
+          await loadUsers();
+        } catch (err) {
+          console.error(err);
+          setError(err.response?.data?.message || 'Impossible de supprimer cet utilisateur.');
+        } finally {
+          setConfirmation(null);
+        }
+      }
+    });
   };
 
   const handleToggleStatus = async (idUser) => {
@@ -331,29 +338,28 @@ const AdminUsers = () => {
             </h2>
 
             {message && (
-              <div className="mb-6 flex items-center gap-2 text-emerald-700 bg-emerald-50 border border-emerald-100 p-3 rounded-xl text-sm animate-in fade-in slide-in-from-top-1">
+              <div role="status" aria-live="polite" className="mb-6 flex items-center gap-2 text-emerald-700 bg-emerald-50 border border-emerald-100 p-3 rounded-xl text-sm animate-in fade-in slide-in-from-top-1">
                 <CheckCircle className="h-4 w-4 shrink-0" />
                 {message}
               </div>
             )}
             
             {error && (
-              <div className="mb-6 flex items-center gap-2 text-red-700 bg-red-50 border border-red-100 p-3 rounded-xl text-sm animate-in fade-in slide-in-from-top-1">
+              <div role="alert" aria-live="assertive" className="mb-6 flex items-center gap-2 text-red-700 bg-red-50 border border-red-100 p-3 rounded-xl text-sm animate-in fade-in slide-in-from-top-1">
                 <XCircle className="h-4 w-4 shrink-0" />
                 {error}
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-5" autoComplete="off">
-              {/* Fake fields to prevent browser autofill */}
-              <input type="text" name="fake_email_prevent_autofill" style={{ display: 'none' }} />
-              <input type="password" name="fake_password_prevent_autofill" style={{ display: 'none' }} />
-
+            <form onSubmit={handleSubmit} className="space-y-5" autoComplete="on">
               <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">Nom complet</label>
+                <label htmlFor="user-name" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">Nom complet</label>
                 <div className="relative">
                   <Users className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <input
+                    id="user-name"
+                    name="name"
+                    required
                     placeholder="Jean Dupont"
                     value={form.nom}
                     onChange={(e) => setForm((prev) => ({ ...prev, nom: e.target.value }))}
@@ -363,25 +369,25 @@ const AdminUsers = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">Adresse Email</label>
+                <label htmlFor="user-email" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">Adresse Email</label>
                 <div className="relative">
                   <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <input
+                    id="user-email"
                     type="email"
+                    required
                     placeholder="jean.dupont@setic.gov.bi"
                     value={form.email}
                     onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
-                    autoComplete="one-time-code"
-                    onFocus={(e) => e.target.removeAttribute('readonly')}
-                    readOnly
-                    name="user_email_no_fill"
+                    autoComplete="email"
+                    name="email"
                     className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">
+                <label htmlFor="user-password" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">
                   Mot de passe {form.idUser && <span className="text-[10px] font-normal text-gray-400 normal-case">(Laisser vide pour ne pas changer)</span>}
                 </label>
                 <div className="relative">
@@ -390,18 +396,20 @@ const AdminUsers = () => {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none z-10"
                     title={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                    aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                    aria-pressed={showPassword}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                   <input
+                    id="user-password"
                     type={showPassword ? "text" : "password"}
+                    required={!form.idUser}
                     placeholder={form.idUser ? "••••••••" : "Mot de passe sécurisé"}
                     value={form.password}
                     onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
-                    autoComplete="one-time-code"
-                    onFocus={(e) => e.target.removeAttribute('readonly')}
-                    readOnly
-                    name="user_password_new"
+                    autoComplete="new-password"
+                    name="new-password"
                     className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm"
                   />
                 </div>
@@ -409,10 +417,12 @@ const AdminUsers = () => {
 
               <div className="space-y-5">
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">Rôle</label>
+                  <label htmlFor="user-role" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">Rôle</label>
                   <div className="relative">
                     <Shield className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <select
+                      id="user-role"
+                      required
                       value={form.idRole}
                       onChange={(e) => setForm((prev) => ({ ...prev, idRole: e.target.value }))}
                       className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm appearance-none"
@@ -428,12 +438,14 @@ const AdminUsers = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">
+                  <label htmlFor="user-service" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">
                     Service {requiresService(form.idRole) && <span className="text-red-500">*</span>}
                   </label>
                   <div className="relative">
                     <Building className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <select
+                      id="user-service"
+                      required={requiresService(form.idRole)}
                       value={form.idService}
                       onChange={(e) => setForm((prev) => ({ ...prev, idService: e.target.value }))}
                       className={`w-full pl-10 pr-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm appearance-none ${
@@ -472,12 +484,19 @@ const AdminUsers = () => {
             </form>
           </section>
         </div>
-
+        {confirmation && (
+          <ConfirmDialog
+            title="Supprimer cet utilisateur ?"
+            message="Cette action est irréversible et supprimera le compte sélectionné."
+            confirmLabel="Supprimer l’utilisateur"
+            danger
+            onConfirm={confirmation.onConfirm}
+            onCancel={() => setConfirmation(null)}
+          />
+        )}
       </div>
     </div>
   );
 };
 
 export default AdminUsers;
-
-

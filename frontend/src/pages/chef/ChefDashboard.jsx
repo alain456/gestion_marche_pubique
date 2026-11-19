@@ -29,6 +29,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 import api from '../../services/api';
+import DashboardMetrics from '../../components/DashboardMetrics';
+import EcheanceAlerts from '../../components/EcheanceAlerts';
 
 const ChefDashboard = () => {
   const { user } = useContext(AuthContext);
@@ -337,6 +339,9 @@ const ChefDashboard = () => {
           </div>
         </div>
       </div>
+
+      <DashboardMetrics />
+      <EcheanceAlerts />
 
       {/* Tabs */}
       <div className="flex flex-wrap border-b border-gray-100 gap-6">

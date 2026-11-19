@@ -23,6 +23,7 @@ import ReceptionSoumissions from './pages/reception/ReceptionSoumissions';
 import CgmpSoumissions from './pages/cgmp/CgmpSoumissions';
 import AdminUserPermissions from './pages/admin/AdminUserPermissions';
 import AdminPermissions from './pages/admin/AdminPermissions';
+import AdminAudit from './pages/admin/AdminAudit';
 const Unauthorized = () => <div className="p-8 text-red-600 font-bold">Accès non autorisé</div>;
 
 // Composant pour rediriger l'utilisateur vers son dashboard par défaut
@@ -69,6 +70,10 @@ const App = () => {
           {/* Admin Dashboard - Seulement pour le rôle ADMIN */}
           <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/audit" element={<AdminAudit />} />
+          </Route>
+          <Route element={<ProtectedRoute />}>
+            <Route path="/historique" element={<AdminAudit personal />} />
           </Route>
           
           <Route element={<ProtectedRoute allowedRoles={['ADMIN']} requiredPermission="GERER_PARAMETRES_SEUILS" />}>

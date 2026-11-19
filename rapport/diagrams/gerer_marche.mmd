@@ -1,0 +1,20 @@
+flowchart LR
+    CGMP((CGMP))
+    Auth(["S'authentifier"])
+    CreerMarche(["Créer un marché"])
+    GroupDemande(["Regrouper les demandes"])
+    Seuil(["Appliquer le seuil réglementaire"])
+    Publier(["Publier l'appel d'offres"])
+    
+    CGMP ---> Auth
+    CGMP ---> CreerMarche
+    CGMP ---> Publier
+    
+    CreerMarche -.->|<< include >>| Auth
+    Publier -.->|<< include >>| Auth
+    
+    CreerMarche -.->|<< include >>| GroupDemande
+    CreerMarche -.->|<< include >>| Seuil
+
+    style CGMP fill:#f9f,stroke:#333,stroke-width:2px
+    style Auth fill:#bbf,stroke:#f66,stroke-width:2px,stroke-dasharray: 5 5

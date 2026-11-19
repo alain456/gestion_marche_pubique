@@ -1,47 +1,55 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useContext } from 'react';
 import api from '../../services/api';
+import EcheanceAlerts from '../../components/EcheanceAlerts';
+import DossierAttachments from '../../components/DossierAttachments';
+import { AuthContext } from '../../contexts/AuthContext';
 import { 
   FileText, 
   TrendingUp,
-  Clock,
   Search,
   Filter,
-  Calendar,
   Building
 } from 'lucide-react';
 
 const ReceptionDashboard = () => {
+  const { user } = useContext(AuthContext);
   const [data, setData] = useState({
     marches: [],
-    soumissions: []
+    soumissions: [],
+    receptions: []
   });
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMarketId, setSelectedMarketId] = useState('all');
 
-  const fetchData = async () => {
+  const canViewReceptions = user?.permissions?.includes('VOIR_RECEPTIONS');
+  const canUploadReceptionDocuments = user?.permissions?.some(permission =>
+    ['VALIDER_RECEPTION', 'ENREGISTRER_EXECUTION'].includes(permission)
+  );
+
+  const fetchData = useCallback(async () => {
     try {
-      const [marchesRes, soumissionsRes] = await Promise.all([
-        api.get('/marches'),
-        api.get('/soumissions')
-      ]);
+      const requests = [api.get('/marches'), api.get('/soumissions')];
+      const receptionIndex = canViewReceptions ? requests.push(api.get('/receptions')) - 1 : -1;
+      const responses = await Promise.all(requests);
       setData({
-        marches: marchesRes.data,
-        soumissions: soumissionsRes.data
+        marches: responses[0].data,
+        soumissions: responses[1].data,
+        receptions: receptionIndex === -1 ? [] : responses[receptionIndex].data
       });
     } catch (err) {
-      console.error(err);
+      console.error('Erreur lors du chargement du tableau de réception:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [canViewReceptions]);
 
   useEffect(() => {
     fetchData();
     const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchData]);
 
   const filteredSoumissions = useMemo(() => {
     let result = [...data.soumissions];
@@ -169,6 +177,36 @@ const ReceptionDashboard = () => {
           </div>
         </div>
       </div>
+
+      <EcheanceAlerts />
+
+      {canViewReceptions && data.receptions.length > 0 && (
+        <section className="space-y-3 rounded-2xl border border-slate-100 bg-surface p-4 shadow-sm sm:p-6">
+          <div>
+            <h2 className="text-lg font-bold text-slate-800">Dossiers de réception</h2>
+            <p className="text-sm text-slate-500">Procès-verbaux et versions des pièces du dossier.</p>
+          </div>
+          <ul className="divide-y divide-slate-100">
+            {data.receptions.map(reception => (
+              <li key={reception.idReception} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="font-semibold text-slate-800">
+                    Réception #{reception.idReception} · {reception.typeReception || 'Réception'}
+                  </p>
+                  <p className="text-sm text-slate-500">
+                    Contrat #{reception.idContrat} · {reception.dateReception ? new Date(reception.dateReception).toLocaleDateString('fr-FR') : 'Date non précisée'} · {reception.conformite || 'Conformité non précisée'}
+                  </p>
+                </div>
+                <DossierAttachments
+                  entityType="reception"
+                  entityId={reception.idReception}
+                  canUpload={canUploadReceptionDocuments}
+                />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-surface p-6 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group">

@@ -3,26 +3,18 @@ import api from '../../services/api';
 import { 
   Users, 
   Search, 
-  Filter, 
   Building, 
   Calendar,
   FileText,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
   Eye,
   MapPin,
   Phone,
   Mail,
   Clock,
-  X,
-  Settings,
-  Star,
-  Calculator
+  X
 } from 'lucide-react';
 
-import CriteresModal from './CriteresModal';
-import EvalModal from './EvalModal';
+
 
 const CgmpSoumissions = () => {
   const [data, setData] = useState({
@@ -33,14 +25,8 @@ const CgmpSoumissions = () => {
   const [period, setPeriod] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMarketId, setSelectedMarketId] = useState('all');
-  const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedOffer, setSelectedOffer] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  
-  const [showCriteresModal, setShowCriteresModal] = useState(false);
-  const [showEvalModal, setShowEvalModal] = useState(false);
-  const [targetOffer, setTargetOffer] = useState(null);
-  const [isRanking, setIsRanking] = useState(false);
   
   const fetchData = async () => {
     try {
@@ -83,10 +69,7 @@ const CgmpSoumissions = () => {
       result = result.filter(s => s.idMarche.toString() === selectedMarketId);
     }
 
-    // 3. Filtrage par statut
-    if (selectedStatus !== 'all') {
-      result = result.filter(s => s.statut === selectedStatus);
-    }
+
 
     // 4. Recherche textuelle intelligente
     if (searchQuery) {
@@ -106,26 +89,11 @@ const CgmpSoumissions = () => {
     }
 
     return result;
-  }, [data.soumissions, period, searchQuery, selectedMarketId, selectedStatus]);
+  }, [data.soumissions, period, searchQuery, selectedMarketId]);
 
-  const selectedMarket = useMemo(() => {
-    if (selectedMarketId === 'all') return null;
-    return data.marches.find(m => m.idMarche.toString() === selectedMarketId);
-  }, [selectedMarketId, data.marches]);
 
-  const handleRank = async () => {
-    if (!selectedMarketId || selectedMarketId === 'all') return;
-    setIsRanking(true);
-    try {
-      await api.post(`/marches/${selectedMarketId}/rank`);
-      fetchData();
-      alert("Mieux-disant identifié : offre la plus proche du montant estimé du marché (≥ budget, dans la tolérance autorisée).");
-    } catch (err) {
-      alert(err.response?.data?.message || "Erreur lors du calcul du classement.");
-    } finally {
-      setIsRanking(false);
-    }
-  };
+
+
 
   if (loading) return <div className="p-8 text-center text-gray-500 animate-pulse">Chargement des soumissions...</div>;
 
@@ -159,20 +127,7 @@ const CgmpSoumissions = () => {
             </select>
           </div>
 
-          {/* Filtre Statut */}
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <select 
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="pl-10 pr-8 py-2.5 bg-surface border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary/20 outline-none appearance-none cursor-pointer"
-            >
-              <option value="all">Tous les statuts</option>
-              <option value="en attente">En attente</option>
-              <option value="conforme">Conforme</option>
-              <option value="rejete">Rejeté</option>
-            </select>
-          </div>
+
 
           {/* Barre de Recherche */}
           <div className="relative">
@@ -186,34 +141,15 @@ const CgmpSoumissions = () => {
             />
           </div>
 
-          {/* Boutons d'Action Conditionnels */}
-          {selectedMarketId !== 'all' && (
-            <div className="flex gap-2 border-l border-gray-200 pl-3">
-              <button 
-                onClick={() => setShowCriteresModal(true)}
-                className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl text-sm font-bold hover:bg-gray-200 transition-colors flex items-center gap-2"
-              >
-                <Settings size={16} /> Paramètres Évaluation
-              </button>
-              
-              <button 
-                onClick={handleRank}
-                disabled={isRanking}
-                className="px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-colors flex items-center gap-2 disabled:opacity-50"
-              >
-                <Calculator size={16} /> {isRanking ? 'Calcul...' : 'Calculer Classement'}
-              </button>
-            </div>
-          )}
+
 
           {/* Bouton Reset */}
-          {(searchQuery || selectedMarketId !== 'all' || period !== 'all' || selectedStatus !== 'all') && (
+          {(searchQuery || selectedMarketId !== 'all' || period !== 'all') && (
             <button 
               onClick={() => {
                 setSearchQuery('');
                 setSelectedMarketId('all');
                 setPeriod('all');
-                setSelectedStatus('all');
               }}
               className="px-4 py-2.5 bg-gray-50 text-gray-500 rounded-xl text-sm font-medium hover:bg-gray-100 transition-colors"
             >
@@ -224,7 +160,7 @@ const CgmpSoumissions = () => {
       </div>
 
       {/* Résumé Statistique */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
         <div className="bg-surface p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4">
           <div className="h-12 w-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
             <FileText size={24} />
@@ -232,33 +168,6 @@ const CgmpSoumissions = () => {
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase">Total Offres</p>
             <h3 className="text-2xl font-black text-gray-900">{filteredSoumissions.length}</h3>
-          </div>
-        </div>
-        <div className="bg-surface p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4">
-          <div className="h-12 w-12 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600">
-            <AlertCircle size={24} />
-          </div>
-          <div>
-            <p className="text-xs font-bold text-gray-400 uppercase">En Attente</p>
-            <h3 className="text-2xl font-black text-gray-900">{data.soumissions.filter(s => s.statut === 'en attente').length}</h3>
-          </div>
-        </div>
-        <div className="bg-surface p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4">
-          <div className="h-12 w-12 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600">
-            <CheckCircle size={24} />
-          </div>
-          <div>
-            <p className="text-xs font-bold text-gray-400 uppercase">Conformes</p>
-            <h3 className="text-2xl font-black text-gray-900">{data.soumissions.filter(s => s.statut === 'conforme').length}</h3>
-          </div>
-        </div>
-        <div className="bg-surface p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4">
-          <div className="h-12 w-12 bg-red-100 rounded-2xl flex items-center justify-center text-red-600">
-            <XCircle size={24} />
-          </div>
-          <div>
-            <p className="text-xs font-bold text-gray-400 uppercase">Rejetées</p>
-            <h3 className="text-2xl font-black text-gray-900">{data.soumissions.filter(s => s.statut === 'rejete').length}</h3>
           </div>
         </div>
       </div>
@@ -269,12 +178,10 @@ const CgmpSoumissions = () => {
           <table className="min-w-full divide-y divide-gray-100">
             <thead>
               <tr className="bg-gray-50/50">
-                <th className="px-8 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Soumissionnaire</th>
-                <th className="px-8 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Marché</th>
-                <th className="px-8 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Montant</th>
-                <th className="px-8 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Statut</th>
-                <th className="px-8 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Score</th>
-                <th className="px-8 py-5 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Soumissionnaire & Contacts</th>
+                <th className="px-6 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Marché & Réf. AO</th>
+                <th className="px-6 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Date Dépôt</th>
+                <th className="px-6 py-5 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -287,50 +194,33 @@ const CgmpSoumissions = () => {
               ) : (
                 filteredSoumissions.map(s => (
                   <tr key={s.idOffre} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="px-8 py-6">
+                    <td className="px-6 py-5">
                       <div className="font-bold text-gray-900">{s.nomSoumissionnaire}</div>
-                      <div className="text-xs text-gray-500">{s.email}</div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="text-sm font-medium text-gray-700">Marché #{s.idMarche}</div>
-                      <div className="text-[10px] text-gray-400 uppercase font-bold">{s.referenceAppelOffre}</div>
-                    </td>
-                    <td className="px-8 py-6">
-                       <div className="text-sm font-black text-primary">{Number(s.montantPropose).toLocaleString()} FBU</div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                        s.statut === 'conforme' ? 'bg-emerald-100 text-emerald-700' :
-                        s.statut === 'rejete' ? 'bg-red-100 text-red-700' :
-                        'bg-amber-100 text-amber-700'
-                      }`}>
-                        {s.statut}
-                      </span>
-                      {s.motif && s.statut === 'rejete' && (
-                        <div className="text-[10px] text-red-400 italic mt-1 max-w-[200px] truncate" title={s.motif}>
-                          Motif: {s.motif}
+                      <div className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                        <Mail className="h-3 w-3 text-gray-400 shrink-0" /> {s.email || 'N/A'}
+                      </div>
+                      <div className="text-xs text-primary font-semibold flex items-center gap-1 mt-0.5">
+                        <Phone className="h-3 w-3 shrink-0" /> {s.telephone || 'N/A'}
+                      </div>
+                      {s.adresse && (
+                        <div className="text-[11px] text-gray-400 flex items-center gap-1 mt-0.5">
+                          <MapPin className="h-3 w-3 shrink-0" /> {s.adresse}
                         </div>
                       )}
                     </td>
-                    <td className="px-8 py-6">
-                      <div className="font-bold text-gray-900">{s.scoreGlobal ? `${s.scoreGlobal} pts` : '-'}</div>
-                      {s.recommande === 1 && (
-                        <span className="flex items-center gap-1 text-[10px] bg-indigo-100 text-indigo-700 font-bold px-2 py-1 rounded-full mt-1 w-max">
-                          <Star size={12} className="fill-indigo-700" /> MIEUX DISANT
-                        </span>
-                      )}
+                    <td className="px-6 py-5">
+                      <div className="text-sm font-bold text-gray-800">Marché #{s.idMarche}</div>
+                      <div className="text-xs text-gray-500 font-semibold mt-0.5">{s.referenceAppelOffre || 'N/A'}</div>
                     </td>
-                    <td className="px-8 py-6 text-right whitespace-nowrap text-xs font-bold text-gray-400">
+                    <td className="px-6 py-5 text-xs text-gray-600 font-medium whitespace-nowrap">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-3.5 w-3.5 text-gray-400" />
+                        {s.dateSoumission ? new Date(s.dateSoumission).toLocaleDateString('fr-FR') : 'N/A'}
+                      </div>
+                    </td>
+
+                    <td className="px-6 py-5 text-right whitespace-nowrap text-xs font-bold text-gray-400">
                       <div className="flex items-center justify-end gap-2">
-                        {selectedMarketId !== 'all' && (
-                          <button 
-                            onClick={() => { setTargetOffer(s); setShowEvalModal(true); }}
-                            className="px-3 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white rounded-xl transition-colors flex items-center gap-1"
-                            title="Évaluer"
-                          >
-                            <FileText size={16} /> Évaluer
-                          </button>
-                        )}
                         <button 
                           onClick={() => { setSelectedOffer(s); setShowModal(true); }}
                           className="px-3 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl transition-colors flex items-center gap-1"
@@ -395,17 +285,7 @@ const CgmpSoumissions = () => {
                   <p className="text-2xl font-black text-primary">{Number(selectedOffer.montantPropose).toLocaleString()} FBU</p>
                 </div>
                 
-                {/* Statut */}
-                <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100">
-                  <p className="text-xs font-bold text-gray-400 uppercase mb-1">Statut Actuel</p>
-                  <p className={`text-lg font-black uppercase ${
-                        selectedOffer.statut === 'conforme' ? 'text-emerald-600' :
-                        selectedOffer.statut === 'rejete' ? 'text-red-600' :
-                        'text-amber-600'
-                  }`}>
-                    {selectedOffer.statut}
-                  </p>
-                </div>
+
 
                 {/* Délai de livraison */}
                 <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100 flex flex-col justify-center">
@@ -440,21 +320,7 @@ const CgmpSoumissions = () => {
         </div>
       )}
 
-      {/* Modals d'Evaluation */}
-      <CriteresModal 
-        isOpen={showCriteresModal}
-        onClose={() => setShowCriteresModal(false)}
-        marketId={selectedMarketId}
-        existingCriteres={selectedMarket?.criteresEvaluation}
-        onSaveSuccess={fetchData}
-      />
-      <EvalModal
-        isOpen={showEvalModal}
-        onClose={() => setShowEvalModal(false)}
-        offer={targetOffer}
-        marketCriteres={selectedMarket?.criteresEvaluation}
-        onSaveSuccess={fetchData}
-      />
+
     </div>
   );
 };

@@ -1,0 +1,18 @@
+flowchart LR
+    Admin((Admin))
+    Auth(["S'authentifier"])
+    AddUser(["Ajouter un utilisateur"])
+    EditUser(["Modifier un utilisateur"])
+    DeactUser(["Désactiver un compte"])
+    
+    Admin ---> Auth
+    Admin ---> AddUser
+    Admin ---> EditUser
+    Admin ---> DeactUser
+    
+    AddUser -.->|<< include >>| Auth
+    EditUser -.->|<< include >>| Auth
+    DeactUser -.->|<< include >>| Auth
+
+    style Admin fill:#f9f,stroke:#333,stroke-width:2px
+    style Auth fill:#bbf,stroke:#f66,stroke-width:2px,stroke-dasharray: 5 5
